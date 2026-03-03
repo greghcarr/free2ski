@@ -1,0 +1,211 @@
+import Phaser from 'phaser';
+import { COLORS, WORLD_WIDTH, JUMP_DURATION, JUMP_VISUAL_HEIGHT } from '@/data/constants';
+export var PlayerState;
+(function (PlayerState) {
+    PlayerState["Skiing"] = "skiing";
+    PlayerState["Jumping"] = "jumping";
+    PlayerState["Crashed"] = "crashed";
+    PlayerState["Caught"] = "caught";
+    PlayerState["Respawning"] = "respawning";
+})(PlayerState || (PlayerState = {}));
+// How quickly the skier turns (degrees / second)
+const TURN_RATE = 115;
+// How quickly the skier auto-straightens when no key is held
+const RETURN_RATE = 75;
+// Max lean angle from vertical (degrees)
+const MAX_ANGLE = 72;
+// How much horizontal travel the angle produces relative to scroll speed
+const LATERAL_FACTOR = 0.48;
+// Minimum screen margin (px) from world edge
+const X_MARGIN = 64;
+// Brake deceleration when holding Up (fraction of speed per second)
+const BRAKE_RATE = 0.55;
+// Tuck acceleration multiplier when holding Down
+const TUCK_MULT = 1.18;
+export class Player {
+    constructor(scene, x, screenY) {
+        // Gameplay state
+        this.state = PlayerState.Skiing;
+        this.angle = 0; // degrees from vertical; negative = left, positive = right
+        this.velocityX = 0; // px/s horizontal
+        // Jump state
+        this.airTime = 0; // ms of the CURRENT jump (resets each ramp hit)
+        // Internal jump counters
+        this.jumpElapsed = 0;
+        this.visualOffsetY = 0;
+        // Crash state guard
+        this.crashHandled = false;
+        this.scene = scene;
+        this.x = x;
+        this.screenY = screenY;
+        // --- Build visual parts (local coords, 0,0 = centre of mass) ---
+        // Ground shadow — drawn behind everything
+        this.shadow = scene.add.ellipse(3, 16, 26, 9, 0x000000, 0.18);
+        // Ski poles — thin lines from body outward (drawn with Graphics)
+        this.poles = scene.add.graphics();
+        this.drawPoles(0);
+        // Skis — dark, thin, slightly fanned
+        this.leftSki = scene.add.rectangle(-8, 8, 5, 30, 0x111111).setAngle(-10);
+        this.rightSki = scene.add.rectangle(8, 8, 5, 30, 0x111111).setAngle(10);
+        // Jacket / suit body
+        this.body = scene.add.ellipse(0, -3, 17, 21, COLORS.PLAYER_SUIT);
+        // Helmet
+        this.helmet = scene.add.arc(0, -17, 7, 0, 360, false, COLORS.PLAYER);
+        this.container = scene.add.container(x, screenY, [
+            this.shadow,
+            this.poles,
+            this.leftSki,
+            this.rightSki,
+            this.body,
+            this.helmet,
+        ]);
+        this.container.setDepth(10);
+    }
+    // ---------------------------------------------------------------------------
+    // Per-frame update — called from GameScene.update()
+    // scrollSpeed: effective world scroll speed (px/s) already factored by difficulty
+    // Returns a speed multiplier [0.25 – 1.0+] so GameScene can modulate scroll rate
+    // ---------------------------------------------------------------------------
+    update(input, scrollSpeed, delta) {
+        // --- Airborne / jump arc ---
+        if (this.state === PlayerState.Jumping) {
+            const dt = delta / 1000;
+            this.jumpElapsed += delta;
+            this.airTime += delta;
+            const t = Math.min(this.jumpElapsed / JUMP_DURATION, 1);
+            this.visualOffsetY = -JUMP_VISUAL_HEIGHT * Math.sin(t * Math.PI);
+            // Allow steering while airborne
+            if (input.left) {
+                this.angle = Math.max(this.angle - TURN_RATE * dt, -MAX_ANGLE);
+            }
+            else if (input.right) {
+                this.angle = Math.min(this.angle + TURN_RATE * dt, MAX_ANGLE);
+            }
+            const angleRad = Phaser.Math.DegToRad(this.angle);
+            this.velocityX = scrollSpeed * Math.sin(angleRad) * LATERAL_FACTOR;
+            this.x = Phaser.Math.Clamp(this.x + this.velocityX * dt, X_MARGIN, WORLD_WIDTH - X_MARGIN);
+            this.container.setPosition(this.x, this.screenY + this.visualOffsetY);
+            this.container.setAngle(this.angle);
+            if (this.jumpElapsed >= JUMP_DURATION) {
+                this.state = PlayerState.Skiing;
+                this.jumpElapsed = 0;
+                this.visualOffsetY = 0;
+                this.container.setPosition(this.x, this.screenY);
+            }
+            return 1;
+        }
+        if (this.state !== PlayerState.Skiing)
+            return 1;
+        const dt = delta / 1000;
+        // --- Steering ---
+        if (input.left) {
+            this.angle = Math.max(this.angle - TURN_RATE * dt, -MAX_ANGLE);
+        }
+        else if (input.right) {
+            this.angle = Math.min(this.angle + TURN_RATE * dt, MAX_ANGLE);
+        }
+        else {
+            // Smoothly return to straight
+            if (Math.abs(this.angle) < 1.5) {
+                this.angle = 0;
+            }
+            else {
+                const sign = this.angle > 0 ? -1 : 1;
+                const delta_a = sign * RETURN_RATE * dt;
+                this.angle += delta_a;
+                // Clamp overshoot
+                if (sign > 0 && this.angle > 0)
+                    this.angle = 0;
+                if (sign < 0 && this.angle < 0)
+                    this.angle = 0;
+            }
+        }
+        // --- Horizontal travel ---
+        const angleRad = Phaser.Math.DegToRad(this.angle);
+        this.velocityX = scrollSpeed * Math.sin(angleRad) * LATERAL_FACTOR;
+        this.x = Phaser.Math.Clamp(this.x + this.velocityX * dt, X_MARGIN, WORLD_WIDTH - X_MARGIN);
+        // --- Speed modifier ---
+        // Turning reduces effective downhill component (cos²); brake key applies extra drag
+        let speedMod = Math.max(Math.cos(angleRad) ** 2, 0.25);
+        if (input.up)
+            speedMod *= (1 - BRAKE_RATE * dt * 6); // active braking
+        if (input.down)
+            speedMod *= TUCK_MULT; // tuck for speed
+        // --- Update visual ---
+        this.container.setPosition(this.x, this.screenY);
+        this.container.setAngle(this.angle);
+        // Dynamically fan / pinch ski tips based on turn intensity
+        const lean = this.angle / MAX_ANGLE; // -1 … +1
+        this.leftSki.setAngle(-10 + lean * 8);
+        this.rightSki.setAngle(10 + lean * 8);
+        // Redraw poles with current angle context
+        this.drawPoles(lean);
+        return speedMod;
+    }
+    // ---------------------------------------------------------------------------
+    // Hit a ramp — launches the player airborne for JUMP_DURATION ms
+    // ---------------------------------------------------------------------------
+    hitRamp() {
+        if (this.state !== PlayerState.Skiing)
+            return;
+        this.state = PlayerState.Jumping;
+        this.jumpElapsed = 0;
+        this.airTime = 0;
+    }
+    // ---------------------------------------------------------------------------
+    // Trigger crash sequence — animates tumble then calls onComplete
+    // ---------------------------------------------------------------------------
+    crash(onComplete) {
+        if (this.crashHandled)
+            return;
+        this.crashHandled = true;
+        this.state = PlayerState.Crashed;
+        this.scene.tweens.add({
+            targets: this.container,
+            angle: this.container.angle + 900,
+            scaleX: 1.6,
+            scaleY: 1.6,
+            alpha: 0,
+            duration: 750,
+            ease: 'Power3',
+            onComplete,
+        });
+    }
+    // ---------------------------------------------------------------------------
+    // "Yeti got you" — eaten animation, then calls onComplete
+    // ---------------------------------------------------------------------------
+    caughtByYeti(onComplete) {
+        if (this.crashHandled)
+            return;
+        this.crashHandled = true;
+        this.state = PlayerState.Caught;
+        this.scene.tweens.add({
+            targets: this.container,
+            scaleX: 0,
+            scaleY: 0,
+            duration: 350,
+            ease: 'Back.easeIn',
+            onComplete,
+        });
+    }
+    destroy() {
+        this.container.destroy();
+    }
+    // ---------------------------------------------------------------------------
+    // Private helpers
+    // ---------------------------------------------------------------------------
+    drawPoles(lean) {
+        this.poles.clear();
+        this.poles.lineStyle(2, 0x888899, 0.85);
+        // Left pole: body left side → lower-left
+        this.poles.beginPath();
+        this.poles.moveTo(-5, -6);
+        this.poles.lineTo(-18 + lean * 4, 18);
+        this.poles.strokePath();
+        // Right pole
+        this.poles.beginPath();
+        this.poles.moveTo(5, -6);
+        this.poles.lineTo(18 + lean * 4, 18);
+        this.poles.strokePath();
+    }
+}

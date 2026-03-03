@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { COLORS, WORLD_WIDTH } from '@/data/constants';
+import { COLORS, WORLD_WIDTH, JUMP_DURATION, JUMP_VISUAL_HEIGHT } from '@/data/constants';
 import type { InputState } from '@/systems/InputSystem';
 
 export enum PlayerState {
@@ -36,8 +36,13 @@ export class Player {
   state: PlayerState = PlayerState.Skiing;
   angle: number = 0;      // degrees from vertical; negative = left, positive = right
   velocityX: number = 0;  // px/s horizontal
-  airborne: boolean = false;
-  airTime: number = 0;    // ms spent airborne
+
+  // Jump state
+  airTime: number = 0;    // ms of the CURRENT jump (resets each ramp hit)
+
+  // Internal jump counters
+  private jumpElapsed: number = 0;
+  private visualOffsetY: number = 0;
 
   // Visual container (child scene objects)
   private container: Phaser.GameObjects.Container;
@@ -94,6 +99,36 @@ export class Player {
   // Returns a speed multiplier [0.25 – 1.0+] so GameScene can modulate scroll rate
   // ---------------------------------------------------------------------------
   update(input: InputState, scrollSpeed: number, delta: number): number {
+    // --- Airborne / jump arc ---
+    if (this.state === PlayerState.Jumping) {
+      const dt           = delta / 1000;
+      this.jumpElapsed  += delta;
+      this.airTime      += delta;
+      const t            = Math.min(this.jumpElapsed / JUMP_DURATION, 1);
+      this.visualOffsetY = -JUMP_VISUAL_HEIGHT * Math.sin(t * Math.PI);
+
+      // Allow steering while airborne
+      if (input.left) {
+        this.angle = Math.max(this.angle - TURN_RATE * dt, -MAX_ANGLE);
+      } else if (input.right) {
+        this.angle = Math.min(this.angle + TURN_RATE * dt,  MAX_ANGLE);
+      }
+      const angleRad = Phaser.Math.DegToRad(this.angle);
+      this.velocityX = scrollSpeed * Math.sin(angleRad) * LATERAL_FACTOR;
+      this.x = Phaser.Math.Clamp(this.x + this.velocityX * dt, X_MARGIN, WORLD_WIDTH - X_MARGIN);
+
+      this.container.setPosition(this.x, this.screenY + this.visualOffsetY);
+      this.container.setAngle(this.angle);
+
+      if (this.jumpElapsed >= JUMP_DURATION) {
+        this.state         = PlayerState.Skiing;
+        this.jumpElapsed   = 0;
+        this.visualOffsetY = 0;
+        this.container.setPosition(this.x, this.screenY);
+      }
+      return 1;
+    }
+
     if (this.state !== PlayerState.Skiing) return 1;
 
     const dt = delta / 1000;
@@ -145,6 +180,16 @@ export class Player {
     this.drawPoles(lean);
 
     return speedMod;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Hit a ramp — launches the player airborne for JUMP_DURATION ms
+  // ---------------------------------------------------------------------------
+  hitRamp(): void {
+    if (this.state !== PlayerState.Skiing) return;
+    this.state        = PlayerState.Jumping;
+    this.jumpElapsed  = 0;
+    this.airTime      = 0;
   }
 
   // ---------------------------------------------------------------------------

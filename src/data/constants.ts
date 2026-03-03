@@ -17,7 +17,17 @@ export const YETI_CHASE_SPEED    = 1.15;  // multiplier over player speed
 export const YETI_CATCH_DISTANCE = 60;    // px — distance at which yeti "catches" player
 
 // Scoring
-export const PX_PER_METER = 5;           // 5 px = 1 meter of in-game distance
+export const PX_PER_METER     = 5;    // 5 px = 1 meter of in-game distance
+export const GATE_PASS_BONUS  = 50;   // score points per clean slalom gate
+export const AIR_TIME_DIVISOR = 15;   // totalAirTimeMs / this = bonus score
+
+// Slalom gate geometry
+export const GATE_GAP_WIDTH   = 220;  // px gap between the two poles
+export const GATE_POLE_RADIUS = 8;    // collision radius for each pole
+
+// Jump / ramp
+export const JUMP_DURATION      = 1400; // ms the player stays airborne
+export const JUMP_VISUAL_HEIGHT = 50;   // px the container rises at apex
 
 // Achievement IDs (must match Steamworks portal exactly)
 export const ACHIEVEMENTS = {

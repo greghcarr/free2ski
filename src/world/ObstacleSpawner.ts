@@ -1,89 +1,225 @@
 import { SeededRandom } from '@/utils/SeededRandom';
 import { WORLD_WIDTH, CHUNK_HEIGHT } from '@/data/constants';
+import { GameMode } from '@/config/GameModes';
 import type { TreeVariant } from '@/entities/obstacles/Tree';
 import type { RockVariant } from '@/entities/obstacles/Rock';
+import type { GateColor } from '@/entities/obstacles/SlalomGate';
 
-export type ObstacleKind = 'tree' | 'rock';
+export type ObstacleKind = 'tree' | 'rock' | 'gate' | 'ramp';
+export type ObstacleVariant = TreeVariant | RockVariant | GateColor | 'normal';
 
 export interface ObstacleSpawnPoint {
-  kind: ObstacleKind;
-  variant: TreeVariant | RockVariant;
-  worldX: number;
-  worldY: number; // absolute world Y
+  kind:    ObstacleKind;
+  variant: ObstacleVariant;
+  worldX:  number;
+  worldY:  number; // absolute world Y
 }
 
-// Horizontal margins — obstacles never spawn right at the edge
+// Horizontal margins
 const X_MIN = 90;
 const X_MAX = WORLD_WIDTH - 90;
 
-// Minimum distance between any two obstacles (prevents total overlap)
+// Minimum distance between obstacles (prevents total overlap)
 const MIN_SPACING = 40;
 
-// Minimum Y from chunk start before first obstacle (intra-chunk grace distance)
+// Y offset into the chunk before first obstacle
 const CHUNK_GRACE_Y = 120;
 
+// Slalom gate layout constants
+const GATE_SPACING    = 380;   // px between consecutive gates
+const GATE_X_LEFT     = 300;   // centre X for left-side gates
+const GATE_X_RIGHT    = 980;   // centre X for right-side gates
+const GATE_X_JITTER   = 55;    // ±px random offset from the centre line
+
+// TreeSlalom half-gap (tree pair centre ± this = tree X positions)
+const TREE_PAIR_HALF_GAP = 110;
+
 /**
- * Sigmoid density curve: returns a value in [0, 1] that increases
- * smoothly from ~0 at worldY=0 to ~1 at worldY=20_000 (≈4 km).
+ * Sigmoid density curve → [0, 1] rising smoothly over ~4 km.
  */
 function densityFactor(worldYStart: number): number {
   const t = worldYStart / 20_000;
   return 1 / (1 + Math.exp(-10 * (t - 0.3)));
 }
 
-/**
- * Generates obstacle spawn points for a single chunk.
- * Chunk 0 is intentionally left empty as the opening grace zone.
- */
-export function spawnObstacles(chunkIndex: number, chunkSeed: number): ObstacleSpawnPoint[] {
-  // First chunk: no obstacles — gives the player a few seconds to orient
-  if (chunkIndex === 0) return [];
+/** Add a point, enforcing minimum spacing. Returns true if added. */
+function tryAdd(
+  points: ObstacleSpawnPoint[],
+  candidate: ObstacleSpawnPoint,
+): boolean {
+  const tooClose = points.some(
+    p => Math.abs(p.worldX - candidate.worldX) < MIN_SPACING &&
+         Math.abs(p.worldY - candidate.worldY) < MIN_SPACING,
+  );
+  if (tooClose) return false;
+  points.push(candidate);
+  return true;
+}
 
-  const rng = new SeededRandom(chunkSeed);
+// ---------------------------------------------------------------------------
+// Free Ski — random trees and rocks, density rising with distance
+// ---------------------------------------------------------------------------
+function spawnFreeSki(
+  chunkIndex: number,
+  chunkSeed: number,
+): ObstacleSpawnPoint[] {
+  const rng         = new SeededRandom(chunkSeed);
   const worldYStart = chunkIndex * CHUNK_HEIGHT;
-  const density = densityFactor(worldYStart);
-
-  // 8 obstacles at minimum density, up to 30 at maximum
-  const count = Math.floor(8 + density * 22);
+  const density     = densityFactor(worldYStart);
+  const count       = Math.floor(8 + density * 22);
 
   const points: ObstacleSpawnPoint[] = [];
   let attempts = 0;
 
   while (points.length < count && attempts < count * 4) {
     attempts++;
-
     const worldX = rng.range(X_MIN, X_MAX);
     const worldY = worldYStart + CHUNK_GRACE_Y + rng.range(0, CHUNK_HEIGHT - CHUNK_GRACE_Y * 2);
 
-    // Reject if too close to an existing point (basic spacing enforcement)
-    const tooClose = points.some(
-      p => Math.abs(p.worldX - worldX) < MIN_SPACING && Math.abs(p.worldY - worldY) < MIN_SPACING,
-    );
-    if (tooClose) continue;
-
-    // Type: 70% trees (further split into normal/small), 30% rocks
-    let kind: ObstacleKind;
-    let variant: TreeVariant | RockVariant;
-
+    let kind:    ObstacleKind;
+    let variant: ObstacleVariant;
     const roll = rng.next();
-    if (roll < 0.55) {
-      kind = 'tree';
-      variant = 'normal';
-    } else if (roll < 0.70) {
-      kind = 'tree';
-      variant = 'small';
-    } else if (roll < 0.88) {
-      kind = 'rock';
-      variant = 'normal';
-    } else {
-      kind = 'rock';
-      variant = 'small';
-    }
+    if (roll < 0.55)      { kind = 'tree'; variant = 'normal'; }
+    else if (roll < 0.70) { kind = 'tree'; variant = 'small'; }
+    else if (roll < 0.88) { kind = 'rock'; variant = 'normal'; }
+    else                  { kind = 'rock'; variant = 'small'; }
 
-    points.push({ kind, variant, worldX, worldY });
+    tryAdd(points, { kind, variant, worldX, worldY });
   }
-
-  // Sort by worldY so ChunkManager can early-exit collision checks efficiently
   points.sort((a, b) => a.worldY - b.worldY);
   return points;
+}
+
+// ---------------------------------------------------------------------------
+// Slalom — alternating left/right gates, no random obstacles
+// ---------------------------------------------------------------------------
+function spawnSlalom(
+  chunkIndex: number,
+  chunkSeed: number,
+): ObstacleSpawnPoint[] {
+  const rng         = new SeededRandom(chunkSeed);
+  const worldYStart = chunkIndex * CHUNK_HEIGHT;
+  const points: ObstacleSpawnPoint[] = [];
+
+  const gatesInChunk = Math.floor((CHUNK_HEIGHT - CHUNK_GRACE_Y * 2) / GATE_SPACING);
+
+  for (let g = 0; g < gatesInChunk; g++) {
+    const absGateIndex     = chunkIndex * gatesInChunk + g;
+    const isLeft           = (absGateIndex % 2) === 0;
+    const color: GateColor = isLeft ? 'red' : 'blue';
+    const centreX          = isLeft ? GATE_X_LEFT : GATE_X_RIGHT;
+    const worldX           = centreX + rng.range(-GATE_X_JITTER, GATE_X_JITTER);
+    const worldY           = worldYStart + CHUNK_GRACE_Y + g * GATE_SPACING + rng.range(-30, 30);
+    points.push({ kind: 'gate', variant: color, worldX, worldY });
+  }
+
+  points.sort((a, b) => a.worldY - b.worldY);
+  return points;
+}
+
+// ---------------------------------------------------------------------------
+// Tree Slalom — alternating tree pairs as natural gates + random hazards
+// ---------------------------------------------------------------------------
+function spawnTreeSlalom(
+  chunkIndex: number,
+  chunkSeed: number,
+): ObstacleSpawnPoint[] {
+  const rng         = new SeededRandom(chunkSeed);
+  const worldYStart = chunkIndex * CHUNK_HEIGHT;
+  const points: ObstacleSpawnPoint[] = [];
+
+  const pairsInChunk = Math.floor((CHUNK_HEIGHT - CHUNK_GRACE_Y * 2) / GATE_SPACING);
+
+  for (let p = 0; p < pairsInChunk; p++) {
+    const absPairIndex = chunkIndex * pairsInChunk + p;
+    const isLeft       = (absPairIndex % 2) === 0;
+    const pairCentreX  = isLeft ? GATE_X_LEFT : GATE_X_RIGHT;
+    const worldY       = worldYStart + CHUNK_GRACE_Y + p * GATE_SPACING + rng.range(-30, 30);
+    const cx           = pairCentreX + rng.range(-GATE_X_JITTER, GATE_X_JITTER);
+    tryAdd(points, { kind: 'tree', variant: 'normal', worldX: cx - TREE_PAIR_HALF_GAP, worldY });
+    tryAdd(points, { kind: 'tree', variant: 'normal', worldX: cx + TREE_PAIR_HALF_GAP, worldY });
+  }
+
+  // Extra random hazards
+  const density  = densityFactor(worldYStart);
+  const extras   = Math.floor(4 + density * 8);
+  let   attempts = 0;
+
+  while (points.length < pairsInChunk * 2 + extras && attempts < extras * 5) {
+    attempts++;
+    const worldX             = rng.range(X_MIN, X_MAX);
+    const worldY             = worldYStart + CHUNK_GRACE_Y + rng.range(0, CHUNK_HEIGHT - CHUNK_GRACE_Y * 2);
+    const roll               = rng.next();
+    const kind: ObstacleKind = roll < 0.6 ? 'tree' : 'rock';
+    const variant: ObstacleVariant = roll < 0.4 ? 'normal' : 'small';
+    tryAdd(points, { kind, variant, worldX, worldY });
+  }
+
+  points.sort((a, b) => a.worldY - b.worldY);
+  return points;
+}
+
+// ---------------------------------------------------------------------------
+// Jump — ramps + moderate trees, fewer rocks
+// ---------------------------------------------------------------------------
+function spawnJump(
+  chunkIndex: number,
+  chunkSeed: number,
+  rampFrequency: number,
+): ObstacleSpawnPoint[] {
+  if (chunkIndex === 0) return [];
+
+  const rng         = new SeededRandom(chunkSeed);
+  const worldYStart = chunkIndex * CHUNK_HEIGHT;
+  const density     = densityFactor(worldYStart);
+  const points: ObstacleSpawnPoint[] = [];
+
+  // Ramps — evenly spaced with jitter
+  const rampSpacing = Math.floor(CHUNK_HEIGHT / (rampFrequency + 1));
+  for (let r = 0; r < rampFrequency; r++) {
+    const worldX = rng.range(X_MIN + 60, X_MAX - 60);
+    const worldY = worldYStart + rampSpacing * (r + 1) + rng.range(-60, 60);
+    tryAdd(points, { kind: 'ramp', variant: 'normal', worldX, worldY });
+  }
+
+  // Trees around/between ramps
+  const treeCount = Math.floor(5 + density * 14);
+  let   attempts  = 0;
+  while (points.length < rampFrequency + treeCount && attempts < treeCount * 4) {
+    attempts++;
+    const worldX             = rng.range(X_MIN, X_MAX);
+    const worldY             = worldYStart + CHUNK_GRACE_Y + rng.range(0, CHUNK_HEIGHT - CHUNK_GRACE_Y * 2);
+    const variant: ObstacleVariant = rng.next() < 0.65 ? 'normal' : 'small';
+    tryAdd(points, { kind: 'tree', variant, worldX, worldY });
+  }
+
+  points.sort((a, b) => a.worldY - b.worldY);
+  return points;
+}
+
+// ---------------------------------------------------------------------------
+// Public entry point
+// ---------------------------------------------------------------------------
+
+/**
+ * Returns spawn points for one chunk, adapted to the active game mode.
+ */
+export function spawnObstacles(
+  chunkIndex: number,
+  chunkSeed: number,
+  mode: GameMode,
+  rampFrequency = 3,
+): ObstacleSpawnPoint[] {
+  switch (mode) {
+    case GameMode.Slalom:
+      return spawnSlalom(chunkIndex, chunkSeed);
+    case GameMode.TreeSlalom:
+      if (chunkIndex === 0) return [];
+      return spawnTreeSlalom(chunkIndex, chunkSeed);
+    case GameMode.Jump:
+      return spawnJump(chunkIndex, chunkSeed, rampFrequency);
+    default: // FreeSki
+      if (chunkIndex === 0) return [];
+      return spawnFreeSki(chunkIndex, chunkSeed);
+  }
 }
