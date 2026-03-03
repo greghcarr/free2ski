@@ -10,6 +10,8 @@ import {
   PX_PER_METER,
   GATE_PASS_BONUS,
   AIR_TIME_DIVISOR,
+  COURSE_EDGE_WIDE,
+  COURSE_EDGE_NARROW,
 } from '@/data/constants';
 import type { SessionConfig } from '@/config/GameConfig';
 import { GameMode, GAME_MODE_CONFIGS } from '@/config/GameModes';
@@ -22,6 +24,18 @@ import type { GameOverData } from '@/scenes/GameOverScene';
 // Screen Y where the player is positioned (upper-centre area)
 const PLAYER_SCREEN_Y = Math.floor(GAME_HEIGHT * 0.36);
 
+// Trail configuration
+const TRAIL_SAMPLE_INTERVAL = 8;   // world-px between samples
+const TRAIL_MAX_WORLD_PX    = 600; // how far back the trail extends
+const TRAIL_TRACK_HW        = 5;   // half-distance between left and right ski grooves
+const TRAIL_MAX_ALPHA       = 0.45;
+
+interface TrailSample {
+  x:      number;
+  worldY: number; // worldOffsetY at time of recording
+  angle:  number; // player angle (degrees) at time of recording
+}
+
 export class GameScene extends Phaser.Scene {
   // --- State ---
   private naturalSpeed  = BASE_SCROLL_SPEED;
@@ -30,9 +44,9 @@ export class GameScene extends Phaser.Scene {
   private gameActive    = false;
 
   // --- Bonus scoring ---
-  private gatesPassed      = 0;
-  private bonusScore        = 0;
-  private totalAirTimeMs    = 0;
+  private gatesPassed     = 0;
+  private bonusScore      = 0;
+  private totalAirTimeMs  = 0;
 
   // --- Entities ---
   private player!:       Player;
@@ -43,12 +57,18 @@ export class GameScene extends Phaser.Scene {
   // --- Visuals ---
   private slopeGfx!:    Phaser.GameObjects.Graphics;
   private edgeShadows!: Phaser.GameObjects.Graphics;
+  private trailGfx!:    Phaser.GameObjects.Graphics;
+
+  // --- Trail state ---
+  private trailSamples:     TrailSample[] = [];
+  private lastSampleWorldY  = 0;
+  private prevPlayerState:  PlayerState   = PlayerState.Skiing;
 
   // --- HUD ---
   private distanceText!:  Phaser.GameObjects.Text;
   private speedText!:     Phaser.GameObjects.Text;
   private yetiWarning!:   Phaser.GameObjects.Text;
-  private gateText!:      Phaser.GameObjects.Text;   // Slalom / TreeSlalom only
+  private gateText!:      Phaser.GameObjects.Text;
 
   // --- Session ---
   private session!: SessionConfig;
@@ -58,19 +78,24 @@ export class GameScene extends Phaser.Scene {
   }
 
   init(data: { session?: SessionConfig }): void {
-    this.session         = data.session ?? { mode: GameMode.FreeSki, seed: Date.now() };
-    this.naturalSpeed    = BASE_SCROLL_SPEED;
-    this.worldOffsetY    = 0;
-    this.distancePx      = 0;
-    this.gameActive      = true;
-    this.gatesPassed     = 0;
-    this.bonusScore      = 0;
-    this.totalAirTimeMs  = 0;
+    this.session          = data.session ?? { mode: GameMode.FreeSki, seed: Date.now() };
+    this.naturalSpeed     = BASE_SCROLL_SPEED;
+    this.worldOffsetY     = 0;
+    this.distancePx       = 0;
+    this.gameActive       = true;
+    this.gatesPassed      = 0;
+    this.bonusScore       = 0;
+    this.totalAirTimeMs   = 0;
+    this.trailSamples     = [];
+    this.lastSampleWorldY = 0;
+    this.prevPlayerState  = PlayerState.Skiing;
   }
 
   create(): void {
     this.slopeGfx    = this.add.graphics();
     this.edgeShadows = this.add.graphics();
+    // Trail sits above the snow but below obstacles (depth 4) and player (depth 10)
+    this.trailGfx    = this.add.graphics().setDepth(2);
 
     this.drawSlope(0);
     this.drawEdgeShadows();
@@ -105,6 +130,28 @@ export class GameScene extends Phaser.Scene {
     this.worldOffsetY += effectiveSpeed * dt;
     this.distancePx   += effectiveSpeed * dt;
 
+    // --- Record trail sample (only when on the ground) ---
+    // Clear history on landing so the trail doesn't bridge the airborne gap
+    if (this.prevPlayerState === PlayerState.Jumping && this.player.state === PlayerState.Skiing) {
+      this.trailSamples     = [];
+      this.lastSampleWorldY = this.worldOffsetY;
+    }
+    this.prevPlayerState = this.player.state;
+
+    if (this.player.state === PlayerState.Skiing &&
+        this.worldOffsetY - this.lastSampleWorldY >= TRAIL_SAMPLE_INTERVAL) {
+      this.lastSampleWorldY = this.worldOffsetY;
+      this.trailSamples.unshift({ x: this.player.x, worldY: this.worldOffsetY, angle: this.player.angle });
+
+      // Discard samples that have scrolled too far behind
+      while (
+        this.trailSamples.length > 0 &&
+        this.worldOffsetY - this.trailSamples[this.trailSamples.length - 1]!.worldY > TRAIL_MAX_WORLD_PX
+      ) {
+        this.trailSamples.pop();
+      }
+    }
+
     // --- Chunks + collision ---
     const collision = this.chunkManager.update(
       this.worldOffsetY,
@@ -129,12 +176,10 @@ export class GameScene extends Phaser.Scene {
     }
 
     if (collision.gateMissed) {
-      // Slalom mode: missing a gate ends the run
       if (this.session.mode === GameMode.Slalom) {
         this.triggerGateMiss();
         return;
       }
-      // Other modes: no penalty
     }
 
     // --- Yeti ---
@@ -152,8 +197,9 @@ export class GameScene extends Phaser.Scene {
     }
     this.yetiWarning.setVisible(this.yetiSystem.isActive);
 
-    // --- Redraw slope ---
+    // --- Redraw slope + trail ---
     this.drawSlope(this.worldOffsetY);
+    this.drawTrail();
 
     // --- HUD ---
     this.distanceText.setText(`${Math.floor(this.distancePx / PX_PER_METER)} m`);
@@ -179,7 +225,6 @@ export class GameScene extends Phaser.Scene {
     if (!this.gameActive) return;
     this.gameActive = false;
 
-    // Flash red "MISSED GATE" text then end run
     const warn = this.add.text(WORLD_WIDTH / 2, GAME_HEIGHT / 2 - 40, 'MISSED GATE!', {
       fontFamily: 'sans-serif',
       fontSize: '38px',
@@ -211,7 +256,50 @@ export class GameScene extends Phaser.Scene {
   }
 
   // ---------------------------------------------------------------------------
-  // Visual helpers
+  // Trail rendering
+  // ---------------------------------------------------------------------------
+  private drawTrail(): void {
+    this.trailGfx.clear();
+    const N = this.trailSamples.length;
+    if (N < 2) return;
+
+    for (let i = 0; i < N - 1; i++) {
+      const curr = this.trailSamples[i]!;
+      const next = this.trailSamples[i + 1]!;
+
+      const currScreenY = PLAYER_SCREEN_Y + (curr.worldY - this.worldOffsetY);
+      const nextScreenY = PLAYER_SCREEN_Y + (next.worldY - this.worldOffsetY);
+
+      // Skip segments entirely off the top of the screen
+      if (currScreenY < -4 && nextScreenY < -4) continue;
+
+      // Alpha fades linearly from full at index 0 to zero at index N-1
+      const alpha = TRAIL_MAX_ALPHA * (1 - i / (N - 1));
+
+      // Perpendicular to the direction of travel gives the ski spread.
+      // At angle θ from vertical, perp = (cos θ, −sin θ) in screen coords.
+      const rad = Phaser.Math.DegToRad(curr.angle);
+      const px  = Math.cos(rad) * TRAIL_TRACK_HW;
+      const py  = -Math.sin(rad) * TRAIL_TRACK_HW;
+
+      this.trailGfx.lineStyle(1.5, 0x7aaabf, alpha);
+
+      // Left groove
+      this.trailGfx.beginPath();
+      this.trailGfx.moveTo(curr.x - px, currScreenY - py);
+      this.trailGfx.lineTo(next.x - px, nextScreenY - py);
+      this.trailGfx.strokePath();
+
+      // Right groove
+      this.trailGfx.beginPath();
+      this.trailGfx.moveTo(curr.x + px, currScreenY + py);
+      this.trailGfx.lineTo(next.x + px, nextScreenY + py);
+      this.trailGfx.strokePath();
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Slope rendering
   // ---------------------------------------------------------------------------
   private drawSlope(offsetY: number): void {
     this.slopeGfx.clear();
@@ -219,11 +307,12 @@ export class GameScene extends Phaser.Scene {
     this.slopeGfx.fillStyle(COLORS.SNOW_LIGHT, 1);
     this.slopeGfx.fillRect(0, 0, WORLD_WIDTH, GAME_HEIGHT);
 
+    // Subtle horizontal compression lines scrolling downward
     const spacing = 64;
     const count   = Math.ceil(GAME_HEIGHT / spacing) + 2;
     const phase   = offsetY % spacing;
 
-    this.slopeGfx.lineStyle(1, COLORS.SLOPE_TRACK, 0.35);
+    this.slopeGfx.lineStyle(1, COLORS.SLOPE_TRACK, 0.60);
     for (let i = 0; i < count; i++) {
       const y = i * spacing - phase;
       this.slopeGfx.beginPath();
@@ -232,24 +321,29 @@ export class GameScene extends Phaser.Scene {
       this.slopeGfx.strokePath();
     }
 
-    this.drawSkiTracks(offsetY);
-  }
+    // Course boundary lines — scrolling dashed yellow verticals
+    const mode        = this.session?.mode;
+    const edgeX       = (mode === GameMode.Slalom || mode === GameMode.TreeSlalom)
+      ? COURSE_EDGE_NARROW
+      : COURSE_EDGE_WIDE;
+    const boundaryXs  = [edgeX, WORLD_WIDTH - edgeX];
+    const dashLen     = 28;
+    const gapLen      = 14;
+    const period      = dashLen + gapLen;
+    const dashPhase   = offsetY % period;
+    const dashCount   = Math.ceil(GAME_HEIGHT / period) + 2;
 
-  private drawSkiTracks(_offsetY: number): void {
-    const cx     = this.player?.x ?? WORLD_WIDTH / 2;
-    const trackW = 10;
-
-    this.slopeGfx.lineStyle(2, COLORS.SLOPE_TRACK, 0.22);
-
-    this.slopeGfx.beginPath();
-    this.slopeGfx.moveTo(cx - trackW / 2, 0);
-    this.slopeGfx.lineTo(cx - trackW / 2, GAME_HEIGHT);
-    this.slopeGfx.strokePath();
-
-    this.slopeGfx.beginPath();
-    this.slopeGfx.moveTo(cx + trackW / 2, 0);
-    this.slopeGfx.lineTo(cx + trackW / 2, GAME_HEIGHT);
-    this.slopeGfx.strokePath();
+    this.slopeGfx.lineStyle(2, 0xffdd00, 0.55);
+    for (const bx of boundaryXs) {
+      for (let i = 0; i < dashCount; i++) {
+        const y0 = i * period - dashPhase;
+        const y1 = y0 + dashLen;
+        this.slopeGfx.beginPath();
+        this.slopeGfx.moveTo(bx, y0);
+        this.slopeGfx.lineTo(bx, y1);
+        this.slopeGfx.strokePath();
+      }
+    }
   }
 
   private drawEdgeShadows(): void {
@@ -298,7 +392,6 @@ export class GameScene extends Phaser.Scene {
       color:      '#666688',
     }).setOrigin(0, 0).setDepth(21);
 
-    // Gate counter — visible in Slalom / TreeSlalom
     const showGates = this.session.mode === GameMode.Slalom ||
                       this.session.mode === GameMode.TreeSlalom;
     this.gateText = this.add.text(WORLD_WIDTH / 2 - 60, 13, 'Gates: 0', {
@@ -308,7 +401,6 @@ export class GameScene extends Phaser.Scene {
       color:      '#ffdd88',
     }).setDepth(21).setVisible(showGates);
 
-    // Yeti warning indicator
     this.yetiWarning = this.add.text(18, 13, '⚠ YETI', {
       fontFamily: 'sans-serif',
       fontSize:   '16px',
@@ -330,8 +422,7 @@ export class GameScene extends Phaser.Scene {
   // Brief "+50" pop-up when a gate is scored
   // ---------------------------------------------------------------------------
   private showGateBonus(): void {
-    const x   = this.player.x;
-    const pop = this.add.text(x, PLAYER_SCREEN_Y - 40, `+${GATE_PASS_BONUS}`, {
+    const pop = this.add.text(this.player.x, PLAYER_SCREEN_Y - 40, `+${GATE_PASS_BONUS}`, {
       fontFamily: 'sans-serif',
       fontSize:   '22px',
       fontStyle:  'bold',
@@ -365,7 +456,6 @@ export class GameScene extends Phaser.Scene {
   // Scene transition
   // ---------------------------------------------------------------------------
   private gotoGameOver(caughtByYeti: boolean): void {
-    // Final score = distance metres + bonus from gates + bonus from air time
     const airBonus   = Math.floor(this.totalAirTimeMs / AIR_TIME_DIVISOR);
     const finalScore = Math.floor(this.distancePx / PX_PER_METER) + this.bonusScore + airBonus;
 
@@ -409,5 +499,6 @@ export class GameScene extends Phaser.Scene {
     this.player?.destroy();
     this.slopeGfx?.destroy();
     this.edgeShadows?.destroy();
+    this.trailGfx?.destroy();
   }
 }

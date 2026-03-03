@@ -188,16 +188,23 @@ export class ChunkManager {
     const spawnPoints  = spawnObstacles(index, chunkSeed, this.mode, rampFreq);
 
     const obstacles: ObstacleBase[] = spawnPoints.map(pt => {
+      let obs: ObstacleBase;
       switch (pt.kind) {
         case 'tree':
-          return new Tree(this.scene, pt.worldX, pt.worldY, pt.variant as 'normal' | 'small');
+          obs = new Tree(this.scene, pt.worldX, pt.worldY, pt.variant as 'normal' | 'small');
+          break;
         case 'rock':
-          return new Rock(this.scene, pt.worldX, pt.worldY, pt.variant as 'normal' | 'small');
+          obs = new Rock(this.scene, pt.worldX, pt.worldY, pt.variant as 'normal' | 'small');
+          break;
         case 'gate':
-          return new SlalomGate(this.scene, pt.worldX, pt.worldY, pt.variant as 'red' | 'blue');
+          obs = new SlalomGate(this.scene, pt.worldX, pt.worldY, pt.variant as 'red' | 'blue');
+          break;
         case 'ramp':
-          return new Ramp(this.scene, pt.worldX, pt.worldY);
+          obs = new Ramp(this.scene, pt.worldX, pt.worldY);
+          break;
       }
+      if (pt.renderDepth !== undefined) obs.setRenderDepth(pt.renderDepth);
+      return obs;
     });
 
     this.chunks.set(index, { index, obstacles });

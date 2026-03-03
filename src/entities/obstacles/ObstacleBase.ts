@@ -32,6 +32,10 @@ export abstract class ObstacleBase {
     this.container.setVisible(screenY > -CULL_PADDING && screenY < GAME_HEIGHT + CULL_PADDING);
   }
 
+  setRenderDepth(depth: number): void {
+    this.container.setDepth(depth);
+  }
+
   destroy(): void {
     this.container.destroy();
   }

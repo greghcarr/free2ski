@@ -11,9 +11,11 @@ export enum PlayerState {
 }
 
 // How quickly the skier turns (degrees / second)
-const TURN_RATE   = 115;
+const TURN_RATE     = 115;
+// Reduced turning authority while airborne (no edge grip)
+const AIR_TURN_RATE = 32;
 // How quickly the skier auto-straightens when no key is held
-const RETURN_RATE = 75;
+const RETURN_RATE   = 75;
 // Max lean angle from vertical (degrees)
 const MAX_ANGLE   = 72;
 // How much horizontal travel the angle produces relative to scroll speed
@@ -102,13 +104,20 @@ export class Player {
       this.jumpElapsed  += delta;
       this.airTime      += delta;
       const t            = Math.min(this.jumpElapsed / JUMP_DURATION, 1);
-      this.visualOffsetY = -JUMP_VISUAL_HEIGHT * Math.sin(t * Math.PI);
+      const jumpFrac     = Math.sin(t * Math.PI);        // 0 → 1 at apex → 0
+      this.visualOffsetY = -JUMP_VISUAL_HEIGHT * jumpFrac;
 
-      // Allow steering while airborne
+      // Shadow stays pinned to ground: counteract the container's upward movement,
+      // then shrink and fade it to sell the illusion of height.
+      this.shadow.setPosition(3, 16 - this.visualOffsetY);
+      this.shadow.setScale(1 - 0.55 * jumpFrac);
+      this.shadow.setAlpha(1 - 0.50 * jumpFrac);
+
+      // Limited steering while airborne — no edge grip
       if (input.left) {
-        this.angle = Math.max(this.angle - TURN_RATE * dt, -MAX_ANGLE);
+        this.angle = Math.max(this.angle - AIR_TURN_RATE * dt, -MAX_ANGLE);
       } else if (input.right) {
-        this.angle = Math.min(this.angle + TURN_RATE * dt,  MAX_ANGLE);
+        this.angle = Math.min(this.angle + AIR_TURN_RATE * dt,  MAX_ANGLE);
       }
       const angleRad = Phaser.Math.DegToRad(this.angle);
       this.velocityX = scrollSpeed * Math.sin(angleRad) * LATERAL_FACTOR;
@@ -122,6 +131,10 @@ export class Player {
         this.jumpElapsed   = 0;
         this.visualOffsetY = 0;
         this.container.setPosition(this.x, this.screenY);
+        // Restore shadow to its default resting state
+        this.shadow.setPosition(3, 16);
+        this.shadow.setScale(1);
+        this.shadow.setAlpha(1);
       }
       return 1;
     }

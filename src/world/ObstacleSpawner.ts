@@ -1,5 +1,5 @@
 import { SeededRandom } from '@/utils/SeededRandom';
-import { WORLD_WIDTH, CHUNK_HEIGHT } from '@/data/constants';
+import { WORLD_WIDTH, CHUNK_HEIGHT, COURSE_EDGE_WIDE, COURSE_EDGE_NARROW } from '@/data/constants';
 import { GameMode } from '@/config/GameModes';
 import type { TreeVariant } from '@/entities/obstacles/Tree';
 import type { RockVariant } from '@/entities/obstacles/Rock';
@@ -9,15 +9,26 @@ export type ObstacleKind = 'tree' | 'rock' | 'gate' | 'ramp';
 export type ObstacleVariant = TreeVariant | RockVariant | GateColor | 'normal';
 
 export interface ObstacleSpawnPoint {
-  kind:    ObstacleKind;
-  variant: ObstacleVariant;
-  worldX:  number;
-  worldY:  number; // absolute world Y
+  kind:        ObstacleKind;
+  variant:     ObstacleVariant;
+  worldX:      number;
+  worldY:      number; // absolute world Y
+  renderDepth?: number; // overrides the entity's default depth when set
 }
 
-// Horizontal margins
+// Horizontal margins (course obstacles)
 const X_MIN = 90;
 const X_MAX = WORLD_WIDTH - 90;
+
+// Forest border
+// Wide: FreeSki / Jump — push the "hug the edge" exploit out as far as possible.
+// Narrow: Slalom / TreeSlalom — keep clear of gate poles (worst-case left pole ≈ x 135).
+const FOREST_DEPTH_WIDE   = COURSE_EDGE_WIDE;
+const FOREST_DEPTH_NARROW = COURSE_EDGE_NARROW;
+const FOREST_ROW_HEIGHT   = 60;   // px between sample rows
+const FOREST_CANDS        = 8;    // candidates tested per row per side
+const FOREST_MIN_SPACING  = 16;   // tight spacing for dense packing
+const FOREST_GRACE_Y      = 100;  // px from chunk top before forest begins
 
 // Minimum distance between obstacles (prevents total overlap)
 const MIN_SPACING = 40;
@@ -198,6 +209,60 @@ function spawnJump(
 }
 
 // ---------------------------------------------------------------------------
+// Forest border — appears in every mode, independent of course obstacles
+// ---------------------------------------------------------------------------
+// Density falls off from the screen edge inward using a power curve.
+// distFrac = 0 at the edge (dense), 1 at the inner boundary (empty).
+// Exponent 1.4 gives dense packing near the screen edge that tapers
+// quickly so the course centre stays clear.
+function spawnForestBorder(
+  chunkIndex: number,
+  chunkSeed:  number,
+  mode:       GameMode,
+): ObstacleSpawnPoint[] {
+  // XOR with a large prime so forest positions are independent of course positions
+  const rng   = new SeededRandom(chunkSeed ^ 0xC0FFEE17);
+  const depth = (mode === GameMode.Slalom || mode === GameMode.TreeSlalom)
+    ? FOREST_DEPTH_NARROW
+    : FOREST_DEPTH_WIDE;
+
+  const worldYStart = chunkIndex * CHUNK_HEIGHT;
+  const numRows     = Math.ceil((CHUNK_HEIGHT - FOREST_GRACE_Y) / FOREST_ROW_HEIGHT);
+  const points: ObstacleSpawnPoint[] = [];
+
+  for (let row = 0; row < numRows; row++) {
+    const baseY = worldYStart + FOREST_GRACE_Y + row * FOREST_ROW_HEIGHT;
+
+    for (let side = 0; side < 2; side++) {
+      for (let c = 0; c < FOREST_CANDS; c++) {
+        // Pick an X in the forest zone for this side
+        const rawX = rng.range(10, depth);
+        const worldX = side === 0 ? rawX : WORLD_WIDTH - rawX;
+
+        // Probability: 1 at the screen edge, 0 at the inner boundary.
+        // Exponent 0.8 gives a gentler falloff so the forest stays dense further in.
+        const distFrac = rawX / depth;
+        const prob     = Math.pow(1 - distFrac, 0.8);
+        if (rng.next() > prob) continue;
+
+        const worldY = baseY + rng.range(0, FOREST_ROW_HEIGHT);
+        // Size gradient: far edge (distFrac ≈ 0) → almost always 'normal' (old-growth);
+        //               inner fringe (distFrac ≈ 1) → almost always 'small' (recently cleared).
+        const variant: ObstacleVariant = rng.next() < (1 - distFrac) ? 'normal' : 'small';
+
+        const tooClose = points.some(
+          p => Math.abs(p.worldX - worldX) < FOREST_MIN_SPACING &&
+               Math.abs(p.worldY - worldY)  < FOREST_MIN_SPACING,
+        );
+        if (!tooClose) points.push({ kind: 'tree', variant, worldX, worldY, renderDepth: 3 });
+      }
+    }
+  }
+
+  return points;
+}
+
+// ---------------------------------------------------------------------------
 // Public entry point
 // ---------------------------------------------------------------------------
 
@@ -210,16 +275,22 @@ export function spawnObstacles(
   mode: GameMode,
   rampFrequency = 3,
 ): ObstacleSpawnPoint[] {
+  let course: ObstacleSpawnPoint[];
   switch (mode) {
     case GameMode.Slalom:
-      return spawnSlalom(chunkIndex, chunkSeed);
+      course = spawnSlalom(chunkIndex, chunkSeed);
+      break;
     case GameMode.TreeSlalom:
-      if (chunkIndex === 0) return [];
-      return spawnTreeSlalom(chunkIndex, chunkSeed);
+      course = chunkIndex === 0 ? [] : spawnTreeSlalom(chunkIndex, chunkSeed);
+      break;
     case GameMode.Jump:
-      return spawnJump(chunkIndex, chunkSeed, rampFrequency);
+      course = spawnJump(chunkIndex, chunkSeed, rampFrequency);
+      break;
     default: // FreeSki
-      if (chunkIndex === 0) return [];
-      return spawnFreeSki(chunkIndex, chunkSeed);
+      course = chunkIndex === 0 ? [] : spawnFreeSki(chunkIndex, chunkSeed);
+      break;
   }
+
+  const forest = spawnForestBorder(chunkIndex, chunkSeed, mode);
+  return [...course, ...forest].sort((a, b) => a.worldY - b.worldY);
 }

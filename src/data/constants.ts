@@ -28,6 +28,11 @@ export const GATE_POLE_RADIUS = 8;    // collision radius for each pole
 export const JUMP_DURATION      = 1400; // ms the player stays airborne
 export const JUMP_VISUAL_HEIGHT = 50;   // px the container rises at apex
 
+// Course boundary (distance from each side edge where the forest begins)
+// These drive both the forest-tree spawner and the on-slope boundary lines.
+export const COURSE_EDGE_WIDE   = 280;  // FreeSki, Jump
+export const COURSE_EDGE_NARROW = 140;  // Slalom, TreeSlalom
+
 // Achievement IDs (must match Steamworks portal exactly)
 export const ACHIEVEMENTS = {
   FIRST_RUN:       'ACH_FIRST_RUN',
