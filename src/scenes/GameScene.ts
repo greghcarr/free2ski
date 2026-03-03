@@ -11,8 +11,9 @@ import {
 } from '@/data/constants';
 import type { SessionConfig } from '@/config/GameConfig';
 import { GameMode } from '@/config/GameModes';
-import { Player, PlayerState } from '@/entities/Player';
+import { Player } from '@/entities/Player';
 import { InputSystem } from '@/systems/InputSystem';
+import { ChunkManager } from '@/world/ChunkManager';
 import type { GameOverData } from '@/scenes/GameOverScene';
 
 // Screen Y where the player is positioned (upper-centre area)
@@ -26,8 +27,9 @@ export class GameScene extends Phaser.Scene {
   private gameActive   = false;
 
   // --- Entities ---
-  private player!:   Player;
-  private controls!: InputSystem;
+  private player!:       Player;
+  private controls!:     InputSystem;
+  private chunkManager!: ChunkManager;
 
   // --- Visuals ---
   private slopeGfx!:   Phaser.GameObjects.Graphics;
@@ -61,8 +63,9 @@ export class GameScene extends Phaser.Scene {
     this.drawEdgeShadows();
 
     // Player starts horizontally centred
-    this.player   = new Player(this, WORLD_WIDTH / 2, PLAYER_SCREEN_Y);
-    this.controls = new InputSystem(this);
+    this.player       = new Player(this, WORLD_WIDTH / 2, PLAYER_SCREEN_Y);
+    this.controls     = new InputSystem(this);
+    this.chunkManager = new ChunkManager(this, this.session.seed ?? Date.now());
 
     this.buildHUD();
     this.bindPauseKey();
@@ -84,18 +87,19 @@ export class GameScene extends Phaser.Scene {
     this.worldOffsetY += effectiveSpeed * dt;
     this.distancePx   += effectiveSpeed * dt;
 
+    // --- Update chunks + collision detection ---
+    const crashed = this.chunkManager.update(this.worldOffsetY, this.player.x, this.player.screenY);
+    if (crashed) {
+      this.triggerCrash();
+      return;
+    }
+
     // --- Redraw scrolling slope ---
     this.drawSlope(this.worldOffsetY);
 
     // --- HUD ---
     this.distanceText.setText(`${Math.floor(this.distancePx / PX_PER_METER)} m`);
     this.speedText.setText(`${Math.floor(effectiveSpeed / 10)} km/h`);
-
-    // --- Crash check (Phase 2 placeholder — will be driven by obstacles in Phase 3) ---
-    if (this.player.state === PlayerState.Crashed) {
-      this.gameActive = false;
-      // onComplete handled inside Player.crash(), triggered externally in Phase 3
-    }
   }
 
   // ---------------------------------------------------------------------------
@@ -243,7 +247,8 @@ export class GameScene extends Phaser.Scene {
   }
 
   shutdown(): void {
-    this.controls.destroy();
-    this.player.destroy();
+    this.controls?.destroy();
+    this.chunkManager?.destroy();
+    this.player?.destroy();
   }
 }
