@@ -138,9 +138,10 @@ export class GameScene extends Phaser.Scene {
     }
 
     // --- Yeti ---
-    const yetiEnabled = GAME_MODE_CONFIGS[this.session.mode].yetiEnabled;
-    const yetiEvent   = this.yetiSystem.update(
-      this.distancePx, this.player.x, this.player.screenY, delta, yetiEnabled,
+    const modeCfg   = GAME_MODE_CONFIGS[this.session.mode];
+    const yetiEvent = this.yetiSystem.update(
+      this.distancePx, this.player.x, this.player.screenY, delta,
+      modeCfg.yetiEnabled, modeCfg.yetiSpawnDistance,
     );
     if (yetiEvent === 'caught') {
       this.triggerCaughtByYeti();
@@ -406,5 +407,7 @@ export class GameScene extends Phaser.Scene {
     this.chunkManager?.destroy();
     this.yetiSystem?.destroy();
     this.player?.destroy();
+    this.slopeGfx?.destroy();
+    this.edgeShadows?.destroy();
   }
 }

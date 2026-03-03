@@ -12,9 +12,8 @@ export const SPEED_ACCEL_RATE  = 10;    // px/s² passive acceleration
 export const PLAYER_TURN_SPEED = 120;   // degrees per second
 
 // Yeti
-export const YETI_SPAWN_DISTANCE = 1500;  // meters (Free Ski default)
+export const YETI_SPAWN_DISTANCE = 1500;  // meters (Free Ski default; per-mode values are in GameModes.ts)
 export const YETI_CHASE_SPEED    = 1.15;  // multiplier over player speed
-export const YETI_CATCH_DISTANCE = 60;    // px — distance at which yeti "catches" player
 
 // Scoring
 export const PX_PER_METER     = 5;    // 5 px = 1 meter of in-game distance

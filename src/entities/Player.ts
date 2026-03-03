@@ -55,9 +55,6 @@ export class Player {
   private poles:    Phaser.GameObjects.Graphics;
   private shadow:   Phaser.GameObjects.Ellipse;
 
-  // Crash state guard
-  private crashHandled = false;
-
   constructor(scene: Phaser.Scene, x: number, screenY: number) {
     this.scene = scene;
     this.x = x;
@@ -196,8 +193,7 @@ export class Player {
   // Trigger crash sequence — animates tumble then calls onComplete
   // ---------------------------------------------------------------------------
   crash(onComplete: () => void): void {
-    if (this.crashHandled) return;
-    this.crashHandled = true;
+    if (this.state === PlayerState.Crashed || this.state === PlayerState.Caught) return;
     this.state = PlayerState.Crashed;
 
     this.scene.tweens.add({
@@ -216,8 +212,7 @@ export class Player {
   // "Yeti got you" — eaten animation, then calls onComplete
   // ---------------------------------------------------------------------------
   caughtByYeti(onComplete: () => void): void {
-    if (this.crashHandled) return;
-    this.crashHandled = true;
+    if (this.state === PlayerState.Crashed || this.state === PlayerState.Caught) return;
     this.state = PlayerState.Caught;
 
     this.scene.tweens.add({

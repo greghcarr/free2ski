@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { Yeti } from '@/entities/Yeti';
-import { YETI_SPAWN_DISTANCE, YETI_CATCH_DISTANCE, GAME_HEIGHT, WORLD_WIDTH, PX_PER_METER } from '@/data/constants';
+import { GAME_HEIGHT, WORLD_WIDTH, PX_PER_METER } from '@/data/constants';
 
 // Player hit radius for catch detection (must match Player.ts)
 const PLAYER_HIT_RADIUS = 12;
@@ -29,16 +29,17 @@ export class YetiSystem {
   //   'none'     — nothing notable
   // ---------------------------------------------------------------------------
   update(
-    distancePx:    number,
-    playerX:       number,
-    playerScreenY: number,
-    delta:         number,
-    yetiEnabled:   boolean,
+    distancePx:      number,
+    playerX:         number,
+    playerScreenY:   number,
+    delta:           number,
+    yetiEnabled:     boolean,
+    spawnDistanceM:  number,
   ): YetiEvent {
     const distanceM = distancePx / PX_PER_METER;
 
     // --- Spawn ---
-    if (!this.spawned && yetiEnabled && distanceM >= YETI_SPAWN_DISTANCE) {
+    if (!this.spawned && yetiEnabled && distanceM >= spawnDistanceM) {
       this.spawn(playerX, playerScreenY);
       return 'spawned';
     }
