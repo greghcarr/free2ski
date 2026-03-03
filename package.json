@@ -1,0 +1,33 @@
+{
+  "name": "skifree-js",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A SkiFree-inspired endless skiing game for web and Steam",
+  "main": "dist/electron/main.js",
+  "scripts": {
+    "dev:web": "vite --config vite.web.config.ts",
+    "dev:electron": "concurrently \"vite build --watch --config vite.electron.config.ts\" \"electron dist/electron/main.js\"",
+    "build:web": "tsc -p tsconfig.web.json && vite build --config vite.web.config.ts",
+    "build:electron": "tsc -p tsconfig.electron.json && vite build --config vite.electron.config.ts",
+    "build:all": "npm run build:electron && electron-builder",
+    "dist:mac": "npm run build:all -- --mac",
+    "dist:win": "npm run build:all -- --win",
+    "type-check": "tsc --noEmit",
+    "lint": "eslint src electron --ext .ts"
+  },
+  "dependencies": {
+    "phaser": "^3.87.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@typescript-eslint/eslint-plugin": "^8.0.0",
+    "@typescript-eslint/parser": "^8.0.0",
+    "concurrently": "^9.0.0",
+    "electron": "^33.0.0",
+    "electron-builder": "^25.0.0",
+    "eslint": "^9.0.0",
+    "steamworks.js": "^0.3.1",
+    "typescript": "~5.6.2",
+    "vite": "^6.0.5"
+  }
+}
