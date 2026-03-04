@@ -4,7 +4,7 @@ import { GameMode, GAME_MODE_CONFIGS } from '@/config/GameModes';
 import { WORLD_WIDTH, GAME_HEIGHT, COLORS } from '@/data/constants';
 import type { SessionConfig } from '@/config/GameConfig';
 
-const MODES = [GameMode.FreeSki, GameMode.Slalom, GameMode.TreeSlalom, GameMode.Jump];
+const MODES = [GameMode.FreeSki, GameMode.Slalom, GameMode.Jump];
 
 export class ModeSelectScene extends Phaser.Scene {
   constructor() {

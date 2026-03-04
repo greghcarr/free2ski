@@ -409,9 +409,7 @@ export class GameScene extends Phaser.Scene {
 
     // Course boundary lines — scrolling dashed yellow verticals
     const mode        = this.session?.mode;
-    const edgeX       = (mode === GameMode.Slalom || mode === GameMode.TreeSlalom)
-      ? COURSE_EDGE_NARROW
-      : COURSE_EDGE_WIDE;
+    const edgeX       = mode === GameMode.Slalom ? COURSE_EDGE_NARROW : COURSE_EDGE_WIDE;
     const boundaryXs  = [edgeX, WORLD_WIDTH - edgeX];
     const dashLen     = 28;
     const gapLen      = 14;
@@ -499,8 +497,7 @@ export class GameScene extends Phaser.Scene {
       color:      '#666688',
     }).setOrigin(0, 0).setDepth(21);
 
-    const showGates = this.session.mode === GameMode.Slalom ||
-                      this.session.mode === GameMode.TreeSlalom;
+    const showGates = this.session.mode === GameMode.Slalom;
     const gateLabel = isTimeTrial ? `0 / ${this.totalGatesInCourse}` : 'Gates: 0';
     this.gateText = this.add.text(WORLD_WIDTH / 4, 13, gateLabel, {
       fontFamily: 'sans-serif',

@@ -23,7 +23,7 @@ const X_MAX = WORLD_WIDTH - 90;
 
 // Forest border
 // Wide: FreeSki / Jump — push the "hug the edge" exploit out as far as possible.
-// Narrow: Slalom / TreeSlalom — keep clear of gate poles (worst-case left pole ≈ x 135).
+// Narrow: Slalom — keep clear of gate poles (worst-case left pole ≈ x 135).
 const FOREST_DEPTH_WIDE   = COURSE_EDGE_WIDE;
 const FOREST_DEPTH_NARROW = COURSE_EDGE_NARROW;
 const FOREST_ROW_HEIGHT   = 60;   // px between sample rows
@@ -47,9 +47,6 @@ const GATE_Y_JITTER   = 70;    // ±px random offset along the fall line
 // Minimum/maximum gate centre X so neither pole crosses the course boundary line
 const GATE_CENTRE_MIN = COURSE_EDGE_NARROW + GATE_GAP_WIDTH / 2 + GATE_POLE_RADIUS;
 const GATE_CENTRE_MAX = WORLD_WIDTH - COURSE_EDGE_NARROW - GATE_GAP_WIDTH / 2 - GATE_POLE_RADIUS;
-
-// TreeSlalom half-gap (tree pair centre ± this = tree X positions)
-const TREE_PAIR_HALF_GAP = 110;
 
 /**
  * Sigmoid density curve → [0, 1] rising smoothly over ~4 km.
@@ -135,48 +132,6 @@ function spawnSlalom(
     const worldY           = worldYStart + CHUNK_GRACE_Y + g * GATE_SPACING + rng.range(-GATE_Y_JITTER, GATE_Y_JITTER);
     const isFinish         = gateNumber === totalGates - 1;
     points.push({ kind: 'gate', variant: color, worldX, worldY, ...(isFinish && { isFinish: true }) });
-  }
-
-  points.sort((a, b) => a.worldY - b.worldY);
-  return points;
-}
-
-// ---------------------------------------------------------------------------
-// Tree Slalom — alternating tree pairs as natural gates + random hazards
-// ---------------------------------------------------------------------------
-function spawnTreeSlalom(
-  chunkIndex: number,
-  chunkSeed: number,
-): ObstacleSpawnPoint[] {
-  const rng         = new SeededRandom(chunkSeed);
-  const worldYStart = chunkIndex * CHUNK_HEIGHT;
-  const points: ObstacleSpawnPoint[] = [];
-
-  const pairsInChunk = Math.floor((CHUNK_HEIGHT - CHUNK_GRACE_Y * 2) / GATE_SPACING);
-
-  for (let p = 0; p < pairsInChunk; p++) {
-    const absPairIndex = chunkIndex * pairsInChunk + p;
-    const isLeft       = (absPairIndex % 2) === 0;
-    const pairCentreX  = isLeft ? GATE_X_LEFT : GATE_X_RIGHT;
-    const worldY       = worldYStart + CHUNK_GRACE_Y + p * GATE_SPACING + rng.range(-30, 30);
-    const cx           = pairCentreX + rng.range(-GATE_X_JITTER, GATE_X_JITTER);
-    tryAdd(points, { kind: 'tree', variant: 'normal', worldX: cx - TREE_PAIR_HALF_GAP, worldY });
-    tryAdd(points, { kind: 'tree', variant: 'normal', worldX: cx + TREE_PAIR_HALF_GAP, worldY });
-  }
-
-  // Extra random hazards
-  const density  = densityFactor(worldYStart);
-  const extras   = Math.floor(4 + density * 8);
-  let   attempts = 0;
-
-  while (points.length < pairsInChunk * 2 + extras && attempts < extras * 5) {
-    attempts++;
-    const worldX             = rng.range(X_MIN, X_MAX);
-    const worldY             = worldYStart + CHUNK_GRACE_Y + rng.range(0, CHUNK_HEIGHT - CHUNK_GRACE_Y * 2);
-    const roll               = rng.next();
-    const kind: ObstacleKind = roll < 0.6 ? 'tree' : 'rock';
-    const variant: ObstacleVariant = roll < 0.4 ? 'normal' : 'small';
-    tryAdd(points, { kind, variant, worldX, worldY });
   }
 
   points.sort((a, b) => a.worldY - b.worldY);
@@ -293,9 +248,6 @@ export function spawnObstacles(
   switch (mode) {
     case GameMode.Slalom:
       course = chunkIndex === 0 ? [] : spawnSlalom(chunkIndex, chunkSeed, totalSlalomGates);
-      break;
-    case GameMode.TreeSlalom:
-      course = chunkIndex === 0 ? [] : spawnTreeSlalom(chunkIndex, chunkSeed);
       break;
     case GameMode.Jump:
       course = spawnJump(chunkIndex, chunkSeed, rampFrequency);

@@ -32,7 +32,7 @@ export const JUMP_VISUAL_HEIGHT = 50;   // px the container rises at apex
 // Course boundary (distance from each side edge where the forest begins)
 // These drive both the forest-tree spawner and the on-slope boundary lines.
 export const COURSE_EDGE_WIDE   = 280;  // FreeSki, Jump
-export const COURSE_EDGE_NARROW = 140;  // Slalom, TreeSlalom
+export const COURSE_EDGE_NARROW = 140;  // Slalom
 
 // Achievement IDs (must match Steamworks portal exactly)
 export const ACHIEVEMENTS = {
@@ -49,10 +49,9 @@ export const ACHIEVEMENTS = {
 
 // Leaderboard names (must match Steamworks portal exactly)
 export const LEADERBOARDS = {
-  FREE_SKI_DISTANCE:  'FreeSki_Distance',
-  SLALOM_SCORE:       'Slalom_Score',
-  TREE_SLALOM_SCORE:  'TreeSlalom_Score',
-  JUMP_SCORE:         'Jump_Score',
+  FREE_SKI_DISTANCE: 'FreeSki_Distance',
+  SLALOM_SCORE:      'Slalom_Score',
+  JUMP_SCORE:        'Jump_Score',
 } as const;
 
 // Colors (flat 2D palette)

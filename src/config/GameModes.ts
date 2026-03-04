@@ -1,8 +1,7 @@
 export enum GameMode {
-  FreeSki    = 'free_ski',
-  Slalom     = 'slalom',
-  TreeSlalom = 'tree_slalom',
-  Jump       = 'jump',
+  FreeSki = 'free_ski',
+  Slalom  = 'slalom',
+  Jump    = 'jump',
 }
 
 export interface GateConfig {
@@ -52,17 +51,6 @@ export const GAME_MODE_CONFIGS: Record<GameMode, GameModeConfig> = {
     slalomCourse: {
       totalGates:        25,
       gateMissPenaltyMs: 5000,
-    },
-  },
-  [GameMode.TreeSlalom]: {
-    mode: GameMode.TreeSlalom,
-    displayName: 'Tree Slalom',
-    description: 'Weave through trees arranged in a slalom course.',
-    yetiEnabled: false,
-    yetiSpawnDistance: 0,
-    gateConfig: {
-      gateSpacing: 350,
-      timeLimitEnabled: false,
     },
   },
   [GameMode.Jump]: {
