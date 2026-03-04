@@ -37,7 +37,7 @@ const MIN_SPACING = 40;
 const CHUNK_GRACE_Y = 120;
 
 // Slalom gate layout constants
-const GATE_SPACING    = 380;   // px between consecutive gates
+const GATE_SPACING    = 560;   // px between consecutive gates
 const GATE_X_LEFT     = 300;   // centre X for left-side gates
 const GATE_X_RIGHT    = 980;   // centre X for right-side gates
 const GATE_X_JITTER   = 55;    // ±px random offset from the centre line
@@ -278,7 +278,7 @@ export function spawnObstacles(
   let course: ObstacleSpawnPoint[];
   switch (mode) {
     case GameMode.Slalom:
-      course = spawnSlalom(chunkIndex, chunkSeed);
+      course = chunkIndex === 0 ? [] : spawnSlalom(chunkIndex, chunkSeed);
       break;
     case GameMode.TreeSlalom:
       course = chunkIndex === 0 ? [] : spawnTreeSlalom(chunkIndex, chunkSeed);

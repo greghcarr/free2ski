@@ -406,12 +406,12 @@ export class GameScene extends Phaser.Scene {
 
     const showGates = this.session.mode === GameMode.Slalom ||
                       this.session.mode === GameMode.TreeSlalom;
-    this.gateText = this.add.text(WORLD_WIDTH / 2 - 60, 13, 'Gates: 0', {
+    this.gateText = this.add.text(WORLD_WIDTH / 4, 13, 'Gates: 0', {
       fontFamily: 'sans-serif',
       fontSize:   '17px',
       fontStyle:  'bold',
       color:      '#ffdd88',
-    }).setDepth(21).setVisible(showGates);
+    }).setOrigin(0.5, 0).setDepth(21).setVisible(showGates);
 
     this.yetiWarning = this.add.text(18, 13, '⚠ YETI', {
       fontFamily: 'sans-serif',
