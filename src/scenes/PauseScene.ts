@@ -3,16 +3,20 @@ import { SceneKey } from '@/config/SceneKeys';
 import { WORLD_WIDTH, GAME_HEIGHT, COLORS } from '@/data/constants';
 import { addVersionLabel } from '@/ui/versionLabel';
 import { MenuNav, type MenuNavItem } from '@/ui/MenuNav';
+import type { SessionConfig } from '@/config/GameConfig';
+import { GameMode } from '@/config/GameModes';
 
 export class PauseScene extends Phaser.Scene {
   private callerKey = SceneKey.Game;
+  private session!: SessionConfig;
 
   constructor() {
     super({ key: SceneKey.Pause });
   }
 
-  init(data: { callerKey?: SceneKey }): void {
+  init(data: { callerKey?: SceneKey; session?: SessionConfig }): void {
     this.callerKey = data.callerKey ?? SceneKey.Game;
+    this.session   = data.session  ?? { mode: GameMode.FreeSki, seed: Date.now() };
   }
 
   create(): void {
@@ -28,15 +32,19 @@ export class PauseScene extends Phaser.Scene {
 
     const resume = (): void => { this.scene.stop(); this.scene.resume(this.callerKey); };
 
-    const resumeItem = this.createButton(WORLD_WIDTH / 2, 340, 'RESUME', resume);
-    const settingsItem = this.createButton(WORLD_WIDTH / 2, 420, 'SETTINGS', () => { this.scene.start(SceneKey.Settings); });
-    const quitItem = this.createButton(WORLD_WIDTH / 2, 500, 'QUIT TO MENU', () => {
+    let nav: MenuNav | undefined;
+    const resumeItem  = this.createButton(WORLD_WIDTH / 2, 340, 'RESUME',       resume, () => nav?.hoverAt(0));
+    const restartItem = this.createButton(WORLD_WIDTH / 2, 420, 'RESTART', () => {
+      this.scene.stop(this.callerKey);
+      this.scene.stop();
+      this.scene.start(SceneKey.Game, { session: this.session });
+    }, () => nav?.hoverAt(1));
+    const quitItem    = this.createButton(WORLD_WIDTH / 2, 500, 'QUIT TO MENU', () => {
       this.scene.stop(this.callerKey);
       this.scene.stop();
       this.scene.start(SceneKey.MainMenu);
-    });
-
-    new MenuNav(this, [resumeItem, settingsItem, quitItem]);
+    }, () => nav?.hoverAt(2));
+    nav = new MenuNav(this, [resumeItem, restartItem, quitItem]);
 
     if (this.input.keyboard) {
       this.input.keyboard.once('keydown-ESC', resume);
@@ -45,7 +53,7 @@ export class PauseScene extends Phaser.Scene {
     addVersionLabel(this, '#8aaabb');
   }
 
-  private createButton(x: number, y: number, label: string, onClick: () => void): MenuNavItem {
+  private createButton(x: number, y: number, label: string, onClick: () => void, onHover?: () => void): MenuNavItem {
     const btnW = 260;
     const btnH = 54;
     const bg = this.add.graphics();
@@ -62,7 +70,7 @@ export class PauseScene extends Phaser.Scene {
       color: '#ffffff',
     }).setOrigin(0.5);
     const hit = this.add.rectangle(x, y, btnW, btnH).setInteractive({ useHandCursor: true });
-    hit.on('pointerover', () => draw(true));
+    hit.on('pointerover', () => { onHover?.(); draw(true); });
     hit.on('pointerout',  () => draw(false));
     hit.on('pointerdown', onClick);
     return {

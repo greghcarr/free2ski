@@ -32,16 +32,16 @@ export class MainMenuScene extends Phaser.Scene {
     }).setOrigin(0.5);
 
     // Menu buttons
-    const playItem        = this.createButton(WORLD_WIDTH / 2, 340, 'PLAY', () => { this.scene.start(SceneKey.ModeSelect); });
-    const leaderboardItem = this.createButton(WORLD_WIDTH / 2, 420, 'LEADERBOARD', () => { this.scene.start(SceneKey.Leaderboard); });
-    const settingsItem    = this.createButton(WORLD_WIDTH / 2, 500, 'SETTINGS', () => { this.scene.start(SceneKey.Settings); });
-
-    new MenuNav(this, [playItem, leaderboardItem, settingsItem]);
+    let nav: MenuNav | undefined;
+    const playItem        = this.createButton(WORLD_WIDTH / 2, 340, 'PLAY',        () => { this.scene.start(SceneKey.ModeSelect); },   () => nav?.hoverAt(0));
+    const leaderboardItem = this.createButton(WORLD_WIDTH / 2, 420, 'LEADERBOARD', () => { this.scene.start(SceneKey.Leaderboard); }, () => nav?.hoverAt(1));
+    const settingsItem    = this.createButton(WORLD_WIDTH / 2, 500, 'SETTINGS',    () => { this.scene.start(SceneKey.Settings); },    () => nav?.hoverAt(2));
+    nav = new MenuNav(this, [playItem, leaderboardItem, settingsItem]);
 
     addVersionLabel(this);
   }
 
-  private createButton(x: number, y: number, label: string, onClick: () => void): MenuNavItem {
+  private createButton(x: number, y: number, label: string, onClick: () => void, onHover?: () => void): MenuNavItem {
     const btnW = 260;
     const btnH = 54;
 
@@ -63,7 +63,7 @@ export class MainMenuScene extends Phaser.Scene {
     const hitArea = this.add.rectangle(x, y, btnW, btnH)
       .setInteractive({ useHandCursor: true });
 
-    hitArea.on('pointerover', () => drawBg(true));
+    hitArea.on('pointerover', () => { onHover?.(); drawBg(true); });
     hitArea.on('pointerout',  () => drawBg(false));
     hitArea.on('pointerdown', onClick);
 

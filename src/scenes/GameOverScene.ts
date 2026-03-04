@@ -453,16 +453,17 @@ export class GameOverScene extends Phaser.Scene {
   }
 
   private buildButtons(): void {
+    let nav: MenuNav | undefined;
     const playAgain = this.createButton(WORLD_WIDTH / 2, 464, 'PLAY AGAIN', () => {
       this.scene.start(SceneKey.Game, { session: this.summary.session });
-    });
+    }, () => nav?.hoverAt(0));
     const mainMenu = this.createButton(WORLD_WIDTH / 2, 538, 'MAIN MENU', () => {
       this.scene.start(SceneKey.MainMenu);
-    });
-    new MenuNav(this, [playAgain, mainMenu]);
+    }, () => nav?.hoverAt(1));
+    nav = new MenuNav(this, [playAgain, mainMenu]);
   }
 
-  private createButton(x: number, y: number, label: string, onClick: () => void): MenuNavItem {
+  private createButton(x: number, y: number, label: string, onClick: () => void, onHover?: () => void): MenuNavItem {
     const btnW = 270;
     const btnH = 54;
     const bg   = this.add.graphics();
@@ -482,7 +483,7 @@ export class GameOverScene extends Phaser.Scene {
     }).setOrigin(0.5);
 
     const hit = this.add.rectangle(x, y, btnW, btnH).setInteractive({ useHandCursor: true });
-    hit.on('pointerover', () => draw(true));
+    hit.on('pointerover', () => { onHover?.(); draw(true); });
     hit.on('pointerout',  () => draw(false));
     hit.on('pointerdown', onClick);
 

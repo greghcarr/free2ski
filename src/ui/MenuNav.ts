@@ -30,6 +30,12 @@ export class MenuNav {
     kb.on('keydown-ENTER',    () => items[this.index].activate());
   }
 
+  /** Called by a button's pointerover to clear keyboard focus from the previously selected item. */
+  hoverAt(index: number): void {
+    this.items[this.index].setFocus(false);
+    this.index = index;
+  }
+
   private move(delta: number): void {
     this.items[this.index].setFocus(false);
     this.index = (this.index + delta + this.items.length) % this.items.length;

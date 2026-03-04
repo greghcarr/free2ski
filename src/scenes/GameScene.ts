@@ -58,6 +58,8 @@ export class GameScene extends Phaser.Scene {
   private courseStartTimeMs   = 0;
   private penaltyMs           = 0;
   private elapsedMs           = 0; // last value shown on HUD timer
+  private lastUpdateTime      = -1; // used to detect resume and skip paused duration
+  private justResumed         = false;
   private gatesCompleted      = 0;
   private totalGatesInCourse  = 0;
 
@@ -146,6 +148,7 @@ export class GameScene extends Phaser.Scene {
     this.buildHUD();
     this.showCourseAnnouncement();
     this.bindPauseKey();
+    this.events.on('resume', () => { this.justResumed = true; });
   }
 
   update(_time: number, delta: number): void {
@@ -153,6 +156,15 @@ export class GameScene extends Phaser.Scene {
 
     // Latch course start on the first reliable game-clock tick
     if (this.courseStartTimeMs < 0) this.courseStartTimeMs = _time;
+
+    // Skip any time that elapsed while the scene was paused
+    if (this.justResumed) {
+      if (this.lastUpdateTime >= 0 && this.courseStartTimeMs >= 0) {
+        this.courseStartTimeMs += _time - this.lastUpdateTime;
+      }
+      this.justResumed = false;
+    }
+    this.lastUpdateTime = _time;
 
     const dt = delta / 1000;
 
@@ -656,9 +668,9 @@ export class GameScene extends Phaser.Scene {
     }
 
     const lines = [
-      { text: `Course: ${cfg.displayName}`, size: '26px', fontStyle: 'bold italic' },
-      { text: `Personal best: ${bestStr}`,  size: '22px', fontStyle: 'italic'      },
-      { text: `Seed: ${seed}`,              size: '18px', fontStyle: 'italic'      },
+      { text: `Course: ${cfg.displayName}`, size: '26px', fontStyle: 'bold',   underline: true  },
+      { text: `Personal best: ${bestStr}`,  size: '22px', fontStyle: 'normal', underline: false },
+      { text: `Seed: ${seed}`,              size: '18px', fontStyle: 'normal', underline: false },
     ];
     // lineH matches the marking-line spacing exactly so each text line stays
     // centred in one gap as the world scrolls.
@@ -673,7 +685,7 @@ export class GameScene extends Phaser.Scene {
 
     this.announcementContainer = this.add.container(WORLD_WIDTH / 2, initScreenY).setDepth(8).setAlpha(0.55);
 
-    lines.forEach(({ text, size, fontStyle }, i) => {
+    lines.forEach(({ text, size, fontStyle, underline }, i) => {
       const t = this.add.text(0, i * lineH, text, {
         fontFamily: 'sans-serif',
         fontSize:   size,
@@ -681,6 +693,16 @@ export class GameScene extends Phaser.Scene {
         color,
       }).setOrigin(0.5, 0.5);
       this.announcementContainer!.add(t);
+
+      if (underline) {
+        const g = this.add.graphics();
+        g.lineStyle(2, 0x222222, 1);
+        g.beginPath();
+        g.moveTo(-t.width / 2, i * lineH + t.height / 2 + 2);
+        g.lineTo( t.width / 2, i * lineH + t.height / 2 + 2);
+        g.strokePath();
+        this.announcementContainer!.add(g);
+      }
     });
   }
 
@@ -757,7 +779,7 @@ export class GameScene extends Phaser.Scene {
     this.input.keyboard?.on('keydown-ESC', () => {  // Phaser's Scene.input.keyboard
       if (!this.gameActive) return;
       this.scene.pause();
-      this.scene.launch(SceneKey.Pause, { callerKey: SceneKey.Game });
+      this.scene.launch(SceneKey.Pause, { callerKey: SceneKey.Game, session: this.session });
     });
   }
 

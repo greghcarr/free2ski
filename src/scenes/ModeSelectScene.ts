@@ -40,6 +40,7 @@ export class ModeSelectScene extends Phaser.Scene {
     const totalW = MODES.length * cardW + (MODES.length - 1) * spacing;
     const startX = (WORLD_WIDTH - totalW) / 2 + cardW / 2;
 
+    let nav: MenuNav | undefined;
     const cardItems: MenuNavItem[] = MODES.map((mode, i) => {
       const cfg = GAME_MODE_CONFIGS[mode];
       const cx = startX + i * (cardW + spacing);
@@ -47,10 +48,10 @@ export class ModeSelectScene extends Phaser.Scene {
       return this.createModeCard(cx, cy, cardW, cardH, mode, cfg.displayName, cfg.description, () => {
         const session: SessionConfig = { mode, seed: Date.now() };
         this.scene.start(SceneKey.Game, { session });
-      });
+      }, () => nav?.hoverAt(i));
     });
 
-    new MenuNav(this, cardItems, 'horizontal');
+    nav = new MenuNav(this, cardItems, 'horizontal');
 
     // Back button
     this.add.text(60, GAME_HEIGHT - 50, '← Back', {
@@ -76,6 +77,7 @@ export class ModeSelectScene extends Phaser.Scene {
     title: string,
     desc: string,
     onClick: () => void,
+    onHover?: () => void,
   ): MenuNavItem {
     const bg = this.add.graphics();
     const draw = (hovered: boolean): void => {
@@ -115,7 +117,7 @@ export class ModeSelectScene extends Phaser.Scene {
 
     const hit = this.add.rectangle(cx, cy, w, h)
       .setInteractive({ useHandCursor: true });
-    hit.on('pointerover', () => draw(true));
+    hit.on('pointerover', () => { onHover?.(); draw(true); });
     hit.on('pointerout',  () => draw(false));
     hit.on('pointerdown', onClick);
 

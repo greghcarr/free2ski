@@ -34,6 +34,10 @@ export class LeaderboardScene extends Phaser.Scene {
     }).setInteractive({ useHandCursor: true })
       .on('pointerdown', () => this.scene.start(SceneKey.MainMenu));
 
+    if (this.input.keyboard) {
+      this.input.keyboard.on('keydown-ESC', () => this.scene.start(SceneKey.MainMenu));
+    }
+
     addVersionLabel(this);
   }
 }
