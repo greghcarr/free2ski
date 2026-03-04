@@ -78,15 +78,10 @@ export class ModeSelectScene extends Phaser.Scene {
     onClick: () => void,
   ): MenuNavItem {
     const bg = this.add.graphics();
-    let isFocused = false;
     const draw = (hovered: boolean): void => {
       bg.clear();
       bg.fillStyle(hovered ? 0xd0dcec : 0xe8f0f8, 1);
-      if (isFocused) {
-        bg.lineStyle(3, 0xffd700, 1);
-      } else {
-        bg.lineStyle(2, 0x2a5ab8, 1);
-      }
+      bg.lineStyle(2, 0x2a5ab8, 1);
       bg.fillRoundedRect(cx - w / 2, cy - h / 2, w, h, 12);
       bg.strokeRoundedRect(cx - w / 2, cy - h / 2, w, h, 12);
     };
@@ -125,7 +120,7 @@ export class ModeSelectScene extends Phaser.Scene {
     hit.on('pointerdown', onClick);
 
     return {
-      setFocus: (f) => { isFocused = f; draw(false); },
+      setFocus: (f) => draw(f),
       activate: onClick,
     };
   }

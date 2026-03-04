@@ -46,15 +46,10 @@ export class MainMenuScene extends Phaser.Scene {
     const btnH = 54;
 
     const bg = this.add.graphics();
-    let isFocused = false;
     const drawBg = (hovered: boolean): void => {
       bg.clear();
       bg.fillStyle(hovered ? 0x1a3a8a : 0x2a5ab8, 1);
       bg.fillRoundedRect(x - btnW / 2, y - btnH / 2, btnW, btnH, 10);
-      if (isFocused) {
-        bg.lineStyle(3, 0xffd700, 1);
-        bg.strokeRoundedRect(x - btnW / 2, y - btnH / 2, btnW, btnH, 10);
-      }
     };
     drawBg(false);
 
@@ -73,7 +68,7 @@ export class MainMenuScene extends Phaser.Scene {
     hitArea.on('pointerdown', onClick);
 
     return {
-      setFocus: (f) => { isFocused = f; drawBg(false); },
+      setFocus: (f) => drawBg(f),
       activate: onClick,
     };
   }

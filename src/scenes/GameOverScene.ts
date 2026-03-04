@@ -466,16 +466,11 @@ export class GameOverScene extends Phaser.Scene {
     const btnW = 270;
     const btnH = 54;
     const bg   = this.add.graphics();
-    let isFocused = false;
 
     const draw = (hovered: boolean): void => {
       bg.clear();
       bg.fillStyle(hovered ? 0x3a6ae8 : 0x2a5ab8, 1);
       bg.fillRoundedRect(x - btnW / 2, y - btnH / 2, btnW, btnH, 10);
-      if (isFocused) {
-        bg.lineStyle(3, 0xffd700, 1);
-        bg.strokeRoundedRect(x - btnW / 2, y - btnH / 2, btnW, btnH, 10);
-      }
     };
     draw(false);
 
@@ -492,7 +487,7 @@ export class GameOverScene extends Phaser.Scene {
     hit.on('pointerdown', onClick);
 
     return {
-      setFocus: (f) => { isFocused = f; draw(false); },
+      setFocus: (f) => draw(f),
       activate: onClick,
     };
   }

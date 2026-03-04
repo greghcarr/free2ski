@@ -52,8 +52,7 @@ export class SettingsScene extends Phaser.Scene {
     const btnW = 280;
     const btnH = 42;
     const bg   = this.add.graphics();
-    let   pending  = false;
-    let   isFocused = false;
+    let   pending = false;
 
     const draw = (hovered: boolean): void => {
       bg.clear();
@@ -63,10 +62,6 @@ export class SettingsScene extends Phaser.Scene {
         bg.fillStyle(hovered ? 0x884444 : 0x663333, 1);
       }
       bg.fillRoundedRect(x - btnW / 2, y - btnH / 2, btnW, btnH, 8);
-      if (isFocused) {
-        bg.lineStyle(3, 0xffd700, 1);
-        bg.strokeRoundedRect(x - btnW / 2, y - btnH / 2, btnW, btnH, 8);
-      }
     };
     draw(false);
 
@@ -95,7 +90,7 @@ export class SettingsScene extends Phaser.Scene {
     hit.on('pointerdown',  activate);
 
     return {
-      setFocus: (f) => { isFocused = f; draw(false); },
+      setFocus: (f) => draw(f),
       activate,
     };
   }
