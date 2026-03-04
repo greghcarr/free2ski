@@ -312,7 +312,7 @@ export class GameScene extends Phaser.Scene {
     const count   = Math.ceil(GAME_HEIGHT / spacing) + 2;
     const phase   = offsetY % spacing;
 
-    this.slopeGfx.lineStyle(1, COLORS.SLOPE_TRACK, 0.60);
+    this.slopeGfx.lineStyle(1, COLORS.SNOW_SHADOW, 0.80);
     for (let i = 0; i < count; i++) {
       const y = i * spacing - phase;
       this.slopeGfx.beginPath();
@@ -343,6 +343,18 @@ export class GameScene extends Phaser.Scene {
         this.slopeGfx.lineTo(bx, y1);
         this.slopeGfx.strokePath();
       }
+    }
+
+    // Danger-zone lines — solid, at the snow/lighter-green boundary (~85% into forest depth)
+    const dangerOffset = Math.round(edgeX * 0.85);
+    const dangerXs     = [dangerOffset, WORLD_WIDTH - dangerOffset];
+
+    this.slopeGfx.lineStyle(9, 0xff2200, 0.65);
+    for (const dx of dangerXs) {
+      this.slopeGfx.beginPath();
+      this.slopeGfx.moveTo(dx, 0);
+      this.slopeGfx.lineTo(dx, GAME_HEIGHT);
+      this.slopeGfx.strokePath();
     }
   }
 
