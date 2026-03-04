@@ -3,7 +3,7 @@ import path from 'path';
 
 export default defineConfig({
   root: '.',
-  base: './',
+  base: '/free2ski/',
   build: {
     outDir: 'dist/web',
     target: 'es2020',
