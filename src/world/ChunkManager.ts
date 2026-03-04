@@ -17,12 +17,13 @@ const COLLISION_CHECK_RANGE = 80;
 export interface CollisionResult {
   crashed:    boolean;  // player hit a tree, rock, or gate pole
   gatePassed: boolean;  // player cleanly passed through a gate gap
+  gateX:      number;   // world X of the gate that was passed (only valid when gatePassed)
   gateMissed: boolean;  // player crossed a gate's Y line outside the gap
   rampHit:    boolean;  // player hit a ramp (triggers jump, not crash)
 }
 
 const NO_COLLISION: CollisionResult = {
-  crashed: false, gatePassed: false, gateMissed: false, rampHit: false,
+  crashed: false, gatePassed: false, gateX: 0, gateMissed: false, rampHit: false,
 };
 
 interface ActiveChunk {
@@ -171,6 +172,7 @@ export class ChunkManager {
                       playerX <= gate.worldX + halfGap - PLAYER_HIT_RADIUS;
       if (inGap) {
         result.gatePassed = true;
+        result.gateX      = gate.worldX;
       } else {
         result.gateMissed = true;
       }
@@ -184,8 +186,9 @@ export class ChunkManager {
   private activateChunk(index: number): void {
     const chunkSeed    = (this.baseSeed ^ (index * 0x9e3779b9)) >>> 0;
     const modeCfg      = GAME_MODE_CONFIGS[this.mode];
-    const rampFreq     = modeCfg.jumpConfig?.rampFrequency ?? 3;
-    const spawnPoints  = spawnObstacles(index, chunkSeed, this.mode, rampFreq);
+    const rampFreq        = modeCfg.jumpConfig?.rampFrequency ?? 3;
+    const totalSlalomGates = modeCfg.slalomCourse?.totalGates ?? 25;
+    const spawnPoints  = spawnObstacles(index, chunkSeed, this.mode, rampFreq, totalSlalomGates);
 
     const obstacles: ObstacleBase[] = spawnPoints.map(pt => {
       let obs: ObstacleBase;
@@ -197,7 +200,7 @@ export class ChunkManager {
           obs = new Rock(this.scene, pt.worldX, pt.worldY, pt.variant as 'normal' | 'small');
           break;
         case 'gate':
-          obs = new SlalomGate(this.scene, pt.worldX, pt.worldY, pt.variant as 'red' | 'blue');
+          obs = new SlalomGate(this.scene, pt.worldX, pt.worldY, pt.variant as 'red' | 'blue', pt.isFinish);
           break;
         case 'ramp':
           obs = new Ramp(this.scene, pt.worldX, pt.worldY);

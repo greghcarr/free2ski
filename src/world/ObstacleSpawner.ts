@@ -1,5 +1,5 @@
 import { SeededRandom } from '@/utils/SeededRandom';
-import { WORLD_WIDTH, CHUNK_HEIGHT, COURSE_EDGE_WIDE, COURSE_EDGE_NARROW } from '@/data/constants';
+import { WORLD_WIDTH, CHUNK_HEIGHT, COURSE_EDGE_WIDE, COURSE_EDGE_NARROW, GATE_GAP_WIDTH, GATE_POLE_RADIUS } from '@/data/constants';
 import { GameMode } from '@/config/GameModes';
 import type { TreeVariant } from '@/entities/obstacles/Tree';
 import type { RockVariant } from '@/entities/obstacles/Rock';
@@ -9,11 +9,12 @@ export type ObstacleKind = 'tree' | 'rock' | 'gate' | 'ramp';
 export type ObstacleVariant = TreeVariant | RockVariant | GateColor | 'normal';
 
 export interface ObstacleSpawnPoint {
-  kind:        ObstacleKind;
-  variant:     ObstacleVariant;
-  worldX:      number;
-  worldY:      number; // absolute world Y
+  kind:         ObstacleKind;
+  variant:      ObstacleVariant;
+  worldX:       number;
+  worldY:       number; // absolute world Y
   renderDepth?: number; // overrides the entity's default depth when set
+  isFinish?:    boolean; // true for the final slalom gate (checkered flag style)
 }
 
 // Horizontal margins (course obstacles)
@@ -40,7 +41,12 @@ const CHUNK_GRACE_Y = 120;
 const GATE_SPACING    = 560;   // px between consecutive gates
 const GATE_X_LEFT     = 300;   // centre X for left-side gates
 const GATE_X_RIGHT    = 980;   // centre X for right-side gates
-const GATE_X_JITTER   = 55;    // ±px random offset from the centre line
+const GATE_X_JITTER   = 100;   // ±px random offset from the centre line
+const GATE_Y_JITTER   = 70;    // ±px random offset along the fall line
+
+// Minimum/maximum gate centre X so neither pole crosses the course boundary line
+const GATE_CENTRE_MIN = COURSE_EDGE_NARROW + GATE_GAP_WIDTH / 2 + GATE_POLE_RADIUS;
+const GATE_CENTRE_MAX = WORLD_WIDTH - COURSE_EDGE_NARROW - GATE_GAP_WIDTH / 2 - GATE_POLE_RADIUS;
 
 // TreeSlalom half-gap (tree pair centre ± this = tree X positions)
 const TREE_PAIR_HALF_GAP = 110;
@@ -107,6 +113,7 @@ function spawnFreeSki(
 function spawnSlalom(
   chunkIndex: number,
   chunkSeed: number,
+  totalGates: number,
 ): ObstacleSpawnPoint[] {
   const rng         = new SeededRandom(chunkSeed);
   const worldYStart = chunkIndex * CHUNK_HEIGHT;
@@ -115,13 +122,19 @@ function spawnSlalom(
   const gatesInChunk = Math.floor((CHUNK_HEIGHT - CHUNK_GRACE_Y * 2) / GATE_SPACING);
 
   for (let g = 0; g < gatesInChunk; g++) {
-    const absGateIndex     = chunkIndex * gatesInChunk + g;
+    const absGateIndex = chunkIndex * gatesInChunk + g;
+    // Chunk 0 is always skipped for slalom, so gate indices start at gatesInChunk.
+    // Subtract that offset to get a 0-based gate number for capping and finish detection.
+    const gateNumber = absGateIndex - gatesInChunk;
+    if (gateNumber >= totalGates) break;
+
     const isLeft           = (absGateIndex % 2) === 0;
     const color: GateColor = isLeft ? 'red' : 'blue';
     const centreX          = isLeft ? GATE_X_LEFT : GATE_X_RIGHT;
-    const worldX           = centreX + rng.range(-GATE_X_JITTER, GATE_X_JITTER);
-    const worldY           = worldYStart + CHUNK_GRACE_Y + g * GATE_SPACING + rng.range(-30, 30);
-    points.push({ kind: 'gate', variant: color, worldX, worldY });
+    const worldX           = Math.max(GATE_CENTRE_MIN, Math.min(GATE_CENTRE_MAX, centreX + rng.range(-GATE_X_JITTER, GATE_X_JITTER)));
+    const worldY           = worldYStart + CHUNK_GRACE_Y + g * GATE_SPACING + rng.range(-GATE_Y_JITTER, GATE_Y_JITTER);
+    const isFinish         = gateNumber === totalGates - 1;
+    points.push({ kind: 'gate', variant: color, worldX, worldY, ...(isFinish && { isFinish: true }) });
   }
 
   points.sort((a, b) => a.worldY - b.worldY);
@@ -274,11 +287,12 @@ export function spawnObstacles(
   chunkSeed: number,
   mode: GameMode,
   rampFrequency = 3,
+  totalSlalomGates = 25,
 ): ObstacleSpawnPoint[] {
   let course: ObstacleSpawnPoint[];
   switch (mode) {
     case GameMode.Slalom:
-      course = chunkIndex === 0 ? [] : spawnSlalom(chunkIndex, chunkSeed);
+      course = chunkIndex === 0 ? [] : spawnSlalom(chunkIndex, chunkSeed, totalSlalomGates);
       break;
     case GameMode.TreeSlalom:
       course = chunkIndex === 0 ? [] : spawnTreeSlalom(chunkIndex, chunkSeed);

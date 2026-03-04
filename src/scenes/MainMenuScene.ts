@@ -14,7 +14,7 @@ export class MainMenuScene extends Phaser.Scene {
     bg.fillRect(0, 0, WORLD_WIDTH, GAME_HEIGHT);
 
     // Title
-    this.add.text(WORLD_WIDTH / 2, 160, 'SKIFREE', {
+    this.add.text(WORLD_WIDTH / 2, 160, 'FREE2SKI', {
       fontFamily: 'sans-serif',
       fontSize: '72px',
       fontStyle: 'bold',

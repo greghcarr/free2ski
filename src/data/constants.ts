@@ -21,8 +21,9 @@ export const GATE_PASS_BONUS  = 50;   // score points per clean slalom gate
 export const AIR_TIME_DIVISOR = 15;   // totalAirTimeMs / this = bonus score
 
 // Slalom gate geometry
-export const GATE_GAP_WIDTH   = 220;  // px gap between the two poles
-export const GATE_POLE_RADIUS = 8;    // collision radius for each pole
+export const GATE_GAP_WIDTH     = 220;   // px gap between the two poles
+export const GATE_POLE_RADIUS   = 8;     // collision radius for each pole
+export const SLALOM_COURSE_SEED = 0x5C10; // fixed seed — same course every run
 
 // Jump / ramp
 export const JUMP_DURATION      = 1400; // ms the player stays airborne

@@ -12,6 +12,7 @@ import {
   AIR_TIME_DIVISOR,
   COURSE_EDGE_WIDE,
   COURSE_EDGE_NARROW,
+  SLALOM_COURSE_SEED,
 } from '@/data/constants';
 import type { SessionConfig } from '@/config/GameConfig';
 import { GameMode, GAME_MODE_CONFIGS } from '@/config/GameModes';
@@ -115,7 +116,10 @@ export class GameScene extends Phaser.Scene {
 
     this.player       = new Player(this, WORLD_WIDTH / 2, PLAYER_SCREEN_Y);
     this.controls     = new InputSystem(this);
-    this.chunkManager = new ChunkManager(this, this.session.seed ?? Date.now(), this.session.mode);
+    const worldSeed = this.session.mode === GameMode.Slalom
+      ? SLALOM_COURSE_SEED
+      : (this.session.seed ?? Date.now());
+    this.chunkManager = new ChunkManager(this, worldSeed, this.session.mode);
     this.yetiSystem   = new YetiSystem(this);
 
     this.buildHUD();
@@ -189,6 +193,7 @@ export class GameScene extends Phaser.Scene {
       this.gatesPassed++;
       if (this.session.mode === GameMode.Slalom) {
         this.gatesCompleted++;
+        this.showGatePass(collision.gateX);
         this.checkCourseFinish();
         if (!this.gameActive) return;
       } else {
@@ -283,6 +288,26 @@ export class GameScene extends Phaser.Scene {
         msg.destroy();
         this.gotoGameOver(false, finishTimeMs);
       },
+    });
+  }
+
+  private showGatePass(gateWorldX: number): void {
+    const pop = this.add.text(gateWorldX, PLAYER_SCREEN_Y - 60, '+1', {
+      fontFamily: 'sans-serif',
+      fontSize:   '28px',
+      fontStyle:  'bold',
+      color:      '#ffd700',
+      stroke:     '#000000',
+      strokeThickness: 2,
+    }).setOrigin(0.5).setDepth(30);
+
+    this.tweens.add({
+      targets:  pop,
+      y:        pop.y - 40,
+      alpha:    0,
+      duration: 900,
+      ease:     'Power2',
+      onComplete: () => pop.destroy(),
     });
   }
 
@@ -394,7 +419,7 @@ export class GameScene extends Phaser.Scene {
     const dashPhase   = offsetY % period;
     const dashCount   = Math.ceil(GAME_HEIGHT / period) + 2;
 
-    this.slopeGfx.lineStyle(2, 0xffdd00, 0.55);
+    this.slopeGfx.lineStyle(4, 0xffdd00, 0.75);
     for (const bx of boundaryXs) {
       for (let i = 0; i < dashCount; i++) {
         const y0 = i * period - dashPhase;
