@@ -19,26 +19,26 @@ export class MenuNav {
     axis: 'vertical' | 'horizontal' = 'vertical',
   ) {
     if (!items.length) return;
-    items[0].setFocus(true);
+    items[0]!.setFocus(true);
     const kb = scene.input.keyboard;
     if (!kb) return;
     const prev = axis === 'vertical' ? 'UP'   : 'LEFT';
     const next = axis === 'vertical' ? 'DOWN' : 'RIGHT';
     kb.on(`keydown-${prev}`,  () => this.move(-1));
     kb.on(`keydown-${next}`,  () => this.move(+1));
-    kb.on('keydown-SPACE',    () => items[this.index].activate());
-    kb.on('keydown-ENTER',    () => items[this.index].activate());
+    kb.on('keydown-SPACE',    () => items[this.index]!.activate());
+    kb.on('keydown-ENTER',    () => items[this.index]!.activate());
   }
 
   /** Called by a button's pointerover to clear keyboard focus from the previously selected item. */
   hoverAt(index: number): void {
-    this.items[this.index].setFocus(false);
+    this.items[this.index]!.setFocus(false);
     this.index = index;
   }
 
   private move(delta: number): void {
-    this.items[this.index].setFocus(false);
+    this.items[this.index]!.setFocus(false);
     this.index = (this.index + delta + this.items.length) % this.items.length;
-    this.items[this.index].setFocus(true);
+    this.items[this.index]!.setFocus(true);
   }
 }
