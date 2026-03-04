@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { SceneKey } from '@/config/SceneKeys';
 import { WORLD_WIDTH, GAME_HEIGHT, COLORS } from '@/data/constants';
 import { addVersionLabel } from '@/ui/versionLabel';
+import { MenuNav, type MenuNavItem } from '@/ui/MenuNav';
 
 export class MainMenuScene extends Phaser.Scene {
   constructor() {
@@ -31,34 +32,33 @@ export class MainMenuScene extends Phaser.Scene {
     }).setOrigin(0.5);
 
     // Menu buttons
-    this.createButton(WORLD_WIDTH / 2, 340, 'PLAY', () => {
-      this.scene.start(SceneKey.ModeSelect);
-    });
+    const playItem        = this.createButton(WORLD_WIDTH / 2, 340, 'PLAY', () => { this.scene.start(SceneKey.ModeSelect); });
+    const leaderboardItem = this.createButton(WORLD_WIDTH / 2, 420, 'LEADERBOARD', () => { this.scene.start(SceneKey.Leaderboard); });
+    const settingsItem    = this.createButton(WORLD_WIDTH / 2, 500, 'SETTINGS', () => { this.scene.start(SceneKey.Settings); });
 
-    this.createButton(WORLD_WIDTH / 2, 420, 'LEADERBOARD', () => {
-      this.scene.start(SceneKey.Leaderboard);
-    });
-
-    this.createButton(WORLD_WIDTH / 2, 500, 'SETTINGS', () => {
-      this.scene.start(SceneKey.Settings);
-    });
+    new MenuNav(this, [playItem, leaderboardItem, settingsItem]);
 
     addVersionLabel(this);
   }
 
-  private createButton(x: number, y: number, label: string, onClick: () => void): void {
+  private createButton(x: number, y: number, label: string, onClick: () => void): MenuNavItem {
     const btnW = 260;
     const btnH = 54;
 
     const bg = this.add.graphics();
+    let isFocused = false;
     const drawBg = (hovered: boolean): void => {
       bg.clear();
       bg.fillStyle(hovered ? 0x1a3a8a : 0x2a5ab8, 1);
       bg.fillRoundedRect(x - btnW / 2, y - btnH / 2, btnW, btnH, 10);
+      if (isFocused) {
+        bg.lineStyle(3, 0xffd700, 1);
+        bg.strokeRoundedRect(x - btnW / 2, y - btnH / 2, btnW, btnH, 10);
+      }
     };
     drawBg(false);
 
-    const text = this.add.text(x, y, label, {
+    this.add.text(x, y, label, {
       fontFamily: 'sans-serif',
       fontSize: '22px',
       fontStyle: 'bold',
@@ -69,7 +69,12 @@ export class MainMenuScene extends Phaser.Scene {
       .setInteractive({ useHandCursor: true });
 
     hitArea.on('pointerover', () => drawBg(true));
-    hitArea.on('pointerout', () => drawBg(false));
+    hitArea.on('pointerout',  () => drawBg(false));
     hitArea.on('pointerdown', onClick);
+
+    return {
+      setFocus: (f) => { isFocused = f; drawBg(false); },
+      activate: onClick,
+    };
   }
 }

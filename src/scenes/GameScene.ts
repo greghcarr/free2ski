@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { SceneKey } from '@/config/SceneKeys';
+import { addVersionLabel } from '@/ui/versionLabel';
 import {
   WORLD_WIDTH,
   GAME_HEIGHT,
@@ -23,6 +24,7 @@ import { ChunkManager } from '@/world/ChunkManager';
 import { YetiSystem } from '@/systems/YetiSystem';
 import type { GameOverData } from '@/scenes/GameOverScene';
 import { formatRaceTime, getDailySeed } from '@/utils/MathUtils';
+import { HighScoreManager } from '@/data/HighScoreManager';
 
 // Screen Y where the player is positioned (upper-centre area)
 const PLAYER_SCREEN_Y = Math.floor(GAME_HEIGHT * 0.36);
@@ -55,6 +57,7 @@ export class GameScene extends Phaser.Scene {
   // --- Slalom time-trial ---
   private courseStartTimeMs   = 0;
   private penaltyMs           = 0;
+  private elapsedMs           = 0; // last value shown on HUD timer
   private gatesCompleted      = 0;
   private totalGatesInCourse  = 0;
 
@@ -87,6 +90,10 @@ export class GameScene extends Phaser.Scene {
 
   // --- Finish line (Jump mode) ---
   private finishLineGfx?: Phaser.GameObjects.Graphics;
+
+  // --- Course announcement (world-space) ---
+  private announcementContainer: Phaser.GameObjects.Container | undefined;
+  private announcementWorldY     = 0;
 
 
   // --- Session ---
@@ -137,6 +144,7 @@ export class GameScene extends Phaser.Scene {
     }
 
     this.buildHUD();
+    this.showCourseAnnouncement();
     this.bindPauseKey();
   }
 
@@ -269,9 +277,19 @@ export class GameScene extends Phaser.Scene {
     // --- HUD ---
     this.distanceText.setText(`${Math.floor(this.distancePx / PX_PER_METER)} m`);
     if (this.session.mode === GameMode.Slalom && this.totalGatesInCourse > 0) {
-      const elapsed = Math.round(_time - this.courseStartTimeMs) + this.penaltyMs;
-      this.timerText.setText(formatRaceTime(elapsed));
-      this.gateText.setText(`${this.gatesPassed} / ${this.totalGatesInCourse}`);
+      this.elapsedMs = Math.round(_time - this.courseStartTimeMs) + this.penaltyMs;
+      this.timerText.setText(formatRaceTime(this.elapsedMs));
+      this.gateText.setText(`${this.gatesPassed} / ${this.totalGatesInCourse} Gates`);
+    }
+
+    // --- Course announcement (world-space scroll) ---
+    if (this.announcementContainer) {
+      const screenY = PLAYER_SCREEN_Y + (this.announcementWorldY - this.worldOffsetY);
+      this.announcementContainer.setY(screenY);
+      if (screenY < -160) {
+        this.announcementContainer.destroy();
+        this.announcementContainer = undefined;
+      }
     }
   }
 
@@ -514,6 +532,23 @@ export class GameScene extends Phaser.Scene {
       color:      '#ffffff',
     }).setOrigin(1, 0).setDepth(21);
 
+    const best    = HighScoreManager.getBest(this.session.mode);
+    const bestStr = (() => {
+      if (!best) return '–';
+      switch (this.session.mode) {
+        case GameMode.FreeSki: return `${best.distance.toLocaleString()} m`;
+        case GameMode.Slalom:  return best.timeMs !== undefined ? formatRaceTime(best.timeMs) : '–';
+        case GameMode.Jump:    return `${best.score}`;
+      }
+    })();
+    const bestX      = this.session.mode === GameMode.FreeSki ? WORLD_WIDTH - 18 : WORLD_WIDTH / 2;
+    const bestOrigin = this.session.mode === GameMode.FreeSki ? 1 : 0.5;
+    this.add.text(bestX, 30, `Best: ${bestStr}`, {
+      fontFamily: 'sans-serif',
+      fontSize:   '12px',
+      color:      '#aaaacc',
+    }).setOrigin(bestOrigin, 0).setDepth(21);
+
     const isTimeTrial = this.session.mode === GameMode.Slalom && this.totalGatesInCourse > 0;
 
     this.timerText = this.add.text(WORLD_WIDTH / 2, 13, '0:00.0', {
@@ -561,6 +596,8 @@ export class GameScene extends Phaser.Scene {
       repeat:   -1,
       ease:     'Sine.easeInOut',
     });
+
+    addVersionLabel(this, '#8aaabb');
   }
 
   // ---------------------------------------------------------------------------
@@ -603,6 +640,48 @@ export class GameScene extends Phaser.Scene {
       }
     }
     this.finishLineGfx.setY(GAME_HEIGHT + 200); // off-screen initially
+  }
+
+  private showCourseAnnouncement(): void {
+    const mode = this.session.mode;
+    const cfg  = GAME_MODE_CONFIGS[mode];
+    const best = HighScoreManager.getBest(mode);
+    const seed = getDailySeed();
+
+    let bestStr: string;
+    switch (mode) {
+      case GameMode.FreeSki: bestStr = best ? `${best.distance.toLocaleString()} m` : '–'; break;
+      case GameMode.Slalom:  bestStr = (best && best.timeMs !== undefined) ? formatRaceTime(best.timeMs) : '–'; break;
+      case GameMode.Jump:    bestStr = best ? `${best.score}` : '–'; break;
+    }
+
+    const lines = [
+      { text: `Course: ${cfg.displayName}`, size: '26px', fontStyle: 'bold italic' },
+      { text: `Personal best: ${bestStr}`,  size: '22px', fontStyle: 'italic'      },
+      { text: `Seed: ${seed}`,              size: '18px', fontStyle: 'italic'      },
+    ];
+    // lineH matches the marking-line spacing exactly so each text line stays
+    // centred in one gap as the world scrolls.
+    const lineH = 64;
+    const color = '#222222';
+
+    // announcementWorldY % 64 must equal 32 so the first line's centre lands
+    // in the middle of a gap (gaps are centred at n*64 + 32 in world space).
+    // 288 = 32 + 4*64, and puts all three lines on-screen at run start.
+    this.announcementWorldY = 288;
+    const initScreenY = PLAYER_SCREEN_Y + this.announcementWorldY;
+
+    this.announcementContainer = this.add.container(WORLD_WIDTH / 2, initScreenY).setDepth(8).setAlpha(0.55);
+
+    lines.forEach(({ text, size, fontStyle }, i) => {
+      const t = this.add.text(0, i * lineH, text, {
+        fontFamily: 'sans-serif',
+        fontSize:   size,
+        fontStyle,
+        color,
+      }).setOrigin(0.5, 0.5);
+      this.announcementContainer!.add(t);
+    });
   }
 
   private showJumpBonus(x: number, y: number): void {
@@ -710,7 +789,7 @@ export class GameScene extends Phaser.Scene {
         gatesMissed: this.gatesCompleted - this.gatesPassed,
       }),
       ...(isSlalom && finishTimeMs === undefined && {
-        elapsedTimeMs:      Math.max(0, Math.round(this.time.now - this.courseStartTimeMs)) + this.penaltyMs,
+        elapsedTimeMs:      this.elapsedMs,
         gatesPassed:        this.gatesPassed,
         totalGatesInCourse: this.totalGatesInCourse,
       }),

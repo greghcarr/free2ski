@@ -1,0 +1,38 @@
+import Phaser from 'phaser';
+
+export interface MenuNavItem {
+  setFocus: (focused: boolean) => void;
+  activate: () => void;
+}
+
+/**
+ * Keyboard navigation manager for menu scenes.
+ * First item receives focus automatically on construction.
+ * Arrow keys move focus; Space/Enter activate the focused item.
+ */
+export class MenuNav {
+  private index = 0;
+
+  constructor(
+    scene: Phaser.Scene,
+    private readonly items: MenuNavItem[],
+    axis: 'vertical' | 'horizontal' = 'vertical',
+  ) {
+    if (!items.length) return;
+    items[0].setFocus(true);
+    const kb = scene.input.keyboard;
+    if (!kb) return;
+    const prev = axis === 'vertical' ? 'UP'   : 'LEFT';
+    const next = axis === 'vertical' ? 'DOWN' : 'RIGHT';
+    kb.on(`keydown-${prev}`,  () => this.move(-1));
+    kb.on(`keydown-${next}`,  () => this.move(+1));
+    kb.on('keydown-SPACE',    () => items[this.index].activate());
+    kb.on('keydown-ENTER',    () => items[this.index].activate());
+  }
+
+  private move(delta: number): void {
+    this.items[this.index].setFocus(false);
+    this.index = (this.index + delta + this.items.length) % this.items.length;
+    this.items[this.index].setFocus(true);
+  }
+}

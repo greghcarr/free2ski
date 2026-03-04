@@ -44,9 +44,12 @@ const GATE_X_RIGHT    = 980;   // centre X for right-side gates
 const GATE_X_JITTER   = 100;   // ±px random offset from the centre line
 const GATE_Y_JITTER   = 70;    // ±px random offset along the fall line
 
-// Minimum/maximum gate centre X so neither pole crosses the course boundary line
-const GATE_CENTRE_MIN = COURSE_EDGE_NARROW + GATE_GAP_WIDTH / 2 + GATE_POLE_RADIUS;
-const GATE_CENTRE_MAX = WORLD_WIDTH - COURSE_EDGE_NARROW - GATE_GAP_WIDTH / 2 - GATE_POLE_RADIUS;
+// Buffer inside the yellow boundary line where no gate pole may appear
+const GATE_BOUNDARY_BUFFER = 40;
+
+// Minimum/maximum gate centre X so neither pole crosses into the buffer zone
+const GATE_CENTRE_MIN = COURSE_EDGE_NARROW + GATE_BOUNDARY_BUFFER + GATE_GAP_WIDTH / 2 + GATE_POLE_RADIUS;
+const GATE_CENTRE_MAX = WORLD_WIDTH - COURSE_EDGE_NARROW - GATE_BOUNDARY_BUFFER - GATE_GAP_WIDTH / 2 - GATE_POLE_RADIUS;
 
 /**
  * Sigmoid density curve → [0, 1] rising smoothly over ~4 km.

@@ -6,6 +6,7 @@ import { HighScoreManager, type SubmitResult } from '@/data/HighScoreManager';
 import type { SessionConfig } from '@/config/GameConfig';
 import { GameMode } from '@/config/GameModes';
 import { formatRaceTime } from '@/utils/MathUtils';
+import { MenuNav, type MenuNavItem } from '@/ui/MenuNav';
 
 export interface GameOverData {
   session:             SessionConfig;
@@ -266,9 +267,10 @@ export class GameOverScene extends Phaser.Scene {
 
     if (bestMs !== null) {
       const deltaMs = timeMs - bestMs;
-      const prefix  = deltaMs > 0 ? '+' : '-';
-      const color   = deltaMs <= 0 ? '#78bb78' : '#cc7777';
-      this.add.text(WORLD_WIDTH / 2, 390, `${prefix}${formatRaceTime(Math.abs(deltaMs))} this run`, {
+      const label   = deltaMs === 0 ? 'Same as this run'
+                    : `${deltaMs > 0 ? '+' : '-'}${formatRaceTime(Math.abs(deltaMs))} this run`;
+      const color   = deltaMs === 0 ? '#ffcc00' : deltaMs < 0 ? '#78bb78' : '#cc7777';
+      this.add.text(WORLD_WIDTH / 2, 390, label, {
         fontFamily: 'sans-serif',
         fontSize: '15px',
         color,
@@ -351,10 +353,11 @@ export class GameOverScene extends Phaser.Scene {
     }).setOrigin(0.5);
 
     if (bestM !== null) {
-      const delta  = distanceM - bestM;
-      const prefix = delta >= 0 ? '+' : '-';
-      const color  = delta >= 0 ? '#78bb78' : '#cc7777';
-      this.add.text(WORLD_WIDTH / 2, 390, `${prefix}${Math.abs(delta).toLocaleString()} m this run`, {
+      const delta = distanceM - bestM;
+      const label = delta === 0 ? 'Same as this run'
+                  : `${delta > 0 ? '+' : '-'}${Math.abs(delta).toLocaleString()} m this run`;
+      const color = delta === 0 ? '#ffcc00' : delta > 0 ? '#78bb78' : '#cc7777';
+      this.add.text(WORLD_WIDTH / 2, 390, label, {
         fontFamily: 'sans-serif',
         fontSize: '15px',
         color,
@@ -437,10 +440,11 @@ export class GameOverScene extends Phaser.Scene {
     }).setOrigin(0.5);
 
     if (bestScore !== null) {
-      const delta  = score - bestScore;
-      const prefix = delta >= 0 ? '+' : '';
-      const color  = delta >= 0 ? '#78bb78' : '#cc7777';
-      this.add.text(WORLD_WIDTH / 2, 390, `${prefix}${delta} this run`, {
+      const delta = score - bestScore;
+      const label = delta === 0 ? 'Same as this run'
+                  : `${delta > 0 ? '+' : ''}${delta} this run`;
+      const color = delta === 0 ? '#ffcc00' : delta > 0 ? '#78bb78' : '#cc7777';
+      this.add.text(WORLD_WIDTH / 2, 390, label, {
         fontFamily: 'sans-serif',
         fontSize:   '15px',
         color,
@@ -449,23 +453,29 @@ export class GameOverScene extends Phaser.Scene {
   }
 
   private buildButtons(): void {
-    this.createButton(WORLD_WIDTH / 2, 464, 'PLAY AGAIN', () => {
+    const playAgain = this.createButton(WORLD_WIDTH / 2, 464, 'PLAY AGAIN', () => {
       this.scene.start(SceneKey.Game, { session: this.summary.session });
     });
-    this.createButton(WORLD_WIDTH / 2, 538, 'MAIN MENU', () => {
+    const mainMenu = this.createButton(WORLD_WIDTH / 2, 538, 'MAIN MENU', () => {
       this.scene.start(SceneKey.MainMenu);
     });
+    new MenuNav(this, [playAgain, mainMenu]);
   }
 
-  private createButton(x: number, y: number, label: string, onClick: () => void): void {
+  private createButton(x: number, y: number, label: string, onClick: () => void): MenuNavItem {
     const btnW = 270;
     const btnH = 54;
     const bg   = this.add.graphics();
+    let isFocused = false;
 
     const draw = (hovered: boolean): void => {
       bg.clear();
       bg.fillStyle(hovered ? 0x3a6ae8 : 0x2a5ab8, 1);
       bg.fillRoundedRect(x - btnW / 2, y - btnH / 2, btnW, btnH, 10);
+      if (isFocused) {
+        bg.lineStyle(3, 0xffd700, 1);
+        bg.strokeRoundedRect(x - btnW / 2, y - btnH / 2, btnW, btnH, 10);
+      }
     };
     draw(false);
 
@@ -480,5 +490,10 @@ export class GameOverScene extends Phaser.Scene {
     hit.on('pointerover', () => draw(true));
     hit.on('pointerout',  () => draw(false));
     hit.on('pointerdown', onClick);
+
+    return {
+      setFocus: (f) => { isFocused = f; draw(false); },
+      activate: onClick,
+    };
   }
 }

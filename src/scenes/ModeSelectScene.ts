@@ -6,6 +6,7 @@ import type { SessionConfig } from '@/config/GameConfig';
 import { addVersionLabel } from '@/ui/versionLabel';
 import { HighScoreManager } from '@/data/HighScoreManager';
 import { formatRaceTime } from '@/utils/MathUtils';
+import { MenuNav, type MenuNavItem } from '@/ui/MenuNav';
 
 const MODES = [GameMode.Slalom, GameMode.FreeSki, GameMode.Jump];
 
@@ -39,15 +40,17 @@ export class ModeSelectScene extends Phaser.Scene {
     const totalW = MODES.length * cardW + (MODES.length - 1) * spacing;
     const startX = (WORLD_WIDTH - totalW) / 2 + cardW / 2;
 
-    MODES.forEach((mode, i) => {
+    const cardItems: MenuNavItem[] = MODES.map((mode, i) => {
       const cfg = GAME_MODE_CONFIGS[mode];
       const cx = startX + i * (cardW + spacing);
       const cy = GAME_HEIGHT / 2 + 30;
-      this.createModeCard(cx, cy, cardW, cardH, mode, cfg.displayName, cfg.description, () => {
+      return this.createModeCard(cx, cy, cardW, cardH, mode, cfg.displayName, cfg.description, () => {
         const session: SessionConfig = { mode, seed: Date.now() };
         this.scene.start(SceneKey.Game, { session });
       });
     });
+
+    new MenuNav(this, cardItems, 'horizontal');
 
     // Back button
     this.add.text(60, GAME_HEIGHT - 50, '← Back', {
@@ -56,6 +59,10 @@ export class ModeSelectScene extends Phaser.Scene {
       color: '#1a3a8a',
     }).setInteractive({ useHandCursor: true })
       .on('pointerdown', () => this.scene.start(SceneKey.MainMenu));
+
+    if (this.input.keyboard) {
+      this.input.keyboard.on('keydown-ESC', () => this.scene.start(SceneKey.MainMenu));
+    }
 
     addVersionLabel(this);
   }
@@ -69,12 +76,17 @@ export class ModeSelectScene extends Phaser.Scene {
     title: string,
     desc: string,
     onClick: () => void,
-  ): void {
+  ): MenuNavItem {
     const bg = this.add.graphics();
+    let isFocused = false;
     const draw = (hovered: boolean): void => {
       bg.clear();
       bg.fillStyle(hovered ? 0xd0dcec : 0xe8f0f8, 1);
-      bg.lineStyle(2, 0x2a5ab8, 1);
+      if (isFocused) {
+        bg.lineStyle(3, 0xffd700, 1);
+      } else {
+        bg.lineStyle(2, 0x2a5ab8, 1);
+      }
       bg.fillRoundedRect(cx - w / 2, cy - h / 2, w, h, 12);
       bg.strokeRoundedRect(cx - w / 2, cy - h / 2, w, h, 12);
     };
@@ -109,8 +121,13 @@ export class ModeSelectScene extends Phaser.Scene {
     const hit = this.add.rectangle(cx, cy, w, h)
       .setInteractive({ useHandCursor: true });
     hit.on('pointerover', () => draw(true));
-    hit.on('pointerout', () => draw(false));
+    hit.on('pointerout',  () => draw(false));
     hit.on('pointerdown', onClick);
+
+    return {
+      setFocus: (f) => { isFocused = f; draw(false); },
+      activate: onClick,
+    };
   }
 
   private bestLabel(mode: GameMode): string {
@@ -118,7 +135,7 @@ export class ModeSelectScene extends Phaser.Scene {
     if (!best) return 'No personal best yet';
     switch (mode) {
       case GameMode.FreeSki: return `Personal best: ${best.distance.toLocaleString()} m`;
-      case GameMode.Slalom:  return `Personal best: ${formatRaceTime(best.timeMs ?? 0)}`;
+      case GameMode.Slalom:  return best.timeMs !== undefined ? `Personal best: ${formatRaceTime(best.timeMs)}` : 'No personal best yet';
       case GameMode.Jump:    return `Personal best: ${best.score}`;
     }
   }
