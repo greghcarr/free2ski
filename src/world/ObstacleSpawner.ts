@@ -188,7 +188,7 @@ function spawnJump(
   // Ramps — evenly spaced with jitter
   const rampSpacing = Math.floor(CHUNK_HEIGHT / (rampFrequency + 1));
   for (let r = 0; r < rampFrequency; r++) {
-    const worldX = rng.range(X_MIN + 60, X_MAX - 60);
+    const worldX = rng.range(FOREST_DEPTH_WIDE, WORLD_WIDTH - FOREST_DEPTH_WIDE);
     const worldY = worldYStart + rampSpacing * (r + 1) + rng.range(-60, 60);
     tryAdd(points, { kind: 'ramp', variant: 'normal', worldX, worldY });
   }
