@@ -12,7 +12,8 @@ import {
   AIR_TIME_DIVISOR,
   COURSE_EDGE_WIDE,
   COURSE_EDGE_NARROW,
-  SLALOM_COURSE_SEED,
+  JUMP_COURSE_DISTANCE_M,
+  FINISH_LINE_H,
 } from '@/data/constants';
 import type { SessionConfig } from '@/config/GameConfig';
 import { GameMode, GAME_MODE_CONFIGS } from '@/config/GameModes';
@@ -21,7 +22,7 @@ import { InputSystem } from '@/systems/InputSystem';
 import { ChunkManager } from '@/world/ChunkManager';
 import { YetiSystem } from '@/systems/YetiSystem';
 import type { GameOverData } from '@/scenes/GameOverScene';
-import { formatRaceTime } from '@/utils/MathUtils';
+import { formatRaceTime, getDailySeed } from '@/utils/MathUtils';
 
 // Screen Y where the player is positioned (upper-centre area)
 const PLAYER_SCREEN_Y = Math.floor(GAME_HEIGHT * 0.36);
@@ -36,6 +37,7 @@ interface TrailSample {
   x:      number;
   worldY: number; // worldOffsetY at time of recording
   angle:  number; // player angle (degrees) at time of recording
+  lean:   number; // normalised lean -1…+1 (matches Player MAX_ANGLE=72)
 }
 
 export class GameScene extends Phaser.Scene {
@@ -56,6 +58,10 @@ export class GameScene extends Phaser.Scene {
   private gatesCompleted      = 0;
   private totalGatesInCourse  = 0;
 
+  // --- Jump mode ---
+  private jumpScore         = 0;
+  private finishLineCrossed = false;
+
   // --- Entities ---
   private player!:       Player;
   private controls!:     InputSystem;
@@ -74,10 +80,14 @@ export class GameScene extends Phaser.Scene {
 
   // --- HUD ---
   private distanceText!:  Phaser.GameObjects.Text;
-  private speedText!:     Phaser.GameObjects.Text;
   private timerText!:     Phaser.GameObjects.Text;
   private yetiWarning!:   Phaser.GameObjects.Text;
   private gateText!:      Phaser.GameObjects.Text;
+  private jumpScoreText!: Phaser.GameObjects.Text;
+
+  // --- Finish line (Jump mode) ---
+  private finishLineGfx?: Phaser.GameObjects.Graphics;
+
 
   // --- Session ---
   private session!: SessionConfig;
@@ -98,6 +108,8 @@ export class GameScene extends Phaser.Scene {
     this.penaltyMs        = 0;
     this.gatesCompleted   = 0;
     this.courseStartTimeMs = -1; // set on first update frame
+    this.jumpScore        = 0;
+    this.finishLineCrossed = false;
     const modeCfg = GAME_MODE_CONFIGS[this.session.mode];
     this.totalGatesInCourse = modeCfg.slalomCourse?.totalGates ?? 0;
     this.trailSamples     = [];
@@ -109,18 +121,20 @@ export class GameScene extends Phaser.Scene {
     this.slopeGfx    = this.add.graphics();
     this.edgeShadows = this.add.graphics();
     // Trail sits above the snow but below obstacles (depth 4) and player (depth 10)
-    this.trailGfx    = this.add.graphics().setDepth(2);
+    this.trailGfx      = this.add.graphics().setDepth(2);
 
     this.drawSlope(0);
     this.drawEdgeShadows();
 
     this.player       = new Player(this, WORLD_WIDTH / 2, PLAYER_SCREEN_Y);
     this.controls     = new InputSystem(this);
-    const worldSeed = this.session.mode === GameMode.Slalom
-      ? SLALOM_COURSE_SEED
-      : (this.session.seed ?? Date.now());
+    const worldSeed = getDailySeed();
     this.chunkManager = new ChunkManager(this, worldSeed, this.session.mode);
     this.yetiSystem   = new YetiSystem(this);
+
+    if (this.session.mode === GameMode.Jump) {
+      this.buildFinishLine();
+    }
 
     this.buildHUD();
     this.bindPauseKey();
@@ -161,7 +175,7 @@ export class GameScene extends Phaser.Scene {
     if (this.player.state === PlayerState.Skiing &&
         this.worldOffsetY - this.lastSampleWorldY >= TRAIL_SAMPLE_INTERVAL) {
       this.lastSampleWorldY = this.worldOffsetY;
-      this.trailSamples.unshift({ x: this.player.x, worldY: this.worldOffsetY, angle: this.player.angle });
+      this.trailSamples.unshift({ x: this.player.x, worldY: this.worldOffsetY, angle: this.player.angle, lean: this.player.angle / 72 });
 
       // Discard samples that have scrolled too far behind
       while (
@@ -187,6 +201,11 @@ export class GameScene extends Phaser.Scene {
 
     if (collision.rampHit) {
       this.player.hitRamp();
+      if (this.session.mode === GameMode.Jump) {
+        this.jumpScore++;
+        this.jumpScoreText.setText(`Score: ${this.jumpScore}`);
+        this.showJumpBonus(this.player.x, PLAYER_SCREEN_Y - 10);
+      }
     }
 
     if (collision.gatePassed) {
@@ -217,16 +236,31 @@ export class GameScene extends Phaser.Scene {
     const modeCfg   = GAME_MODE_CONFIGS[this.session.mode];
     const yetiEvent = this.yetiSystem.update(
       this.distancePx, this.player.x, this.player.screenY, delta,
-      modeCfg.yetiEnabled, modeCfg.yetiSpawnDistance,
+      modeCfg.yetiEnabled,
     );
     if (yetiEvent === 'caught') {
       this.triggerCaughtByYeti();
       return;
     }
+    if (yetiEvent === 'evaded') {
+      this.showYetiEvaded();
+    }
     if (yetiEvent === 'spawned') {
       this.showYetiWarning();
     }
     this.yetiWarning.setVisible(this.yetiSystem.isActive);
+
+    // --- Jump mode finish line ---
+    if (this.session.mode === GameMode.Jump && this.finishLineGfx && !this.finishLineCrossed) {
+      const finishWorldY  = JUMP_COURSE_DISTANCE_M * PX_PER_METER;
+      const finishScreenY = PLAYER_SCREEN_Y + (finishWorldY - this.worldOffsetY);
+      this.finishLineGfx.setY(finishScreenY);
+      if (this.worldOffsetY >= finishWorldY) {
+        this.finishLineCrossed = true;
+        this.triggerJumpCourseFinish();
+        return;
+      }
+    }
 
     // --- Redraw slope + trail ---
     this.drawSlope(this.worldOffsetY);
@@ -238,11 +272,6 @@ export class GameScene extends Phaser.Scene {
       const elapsed = Math.round(_time - this.courseStartTimeMs) + this.penaltyMs;
       this.timerText.setText(formatRaceTime(elapsed));
       this.gateText.setText(`${this.gatesPassed} / ${this.totalGatesInCourse}`);
-    } else {
-      this.speedText.setText(`${Math.floor(effectiveSpeed / 10)} km/h`);
-      if (this.gateText.visible) {
-        this.gateText.setText(`Gates: ${this.gatesPassed}`);
-      }
     }
   }
 
@@ -368,21 +397,30 @@ export class GameScene extends Phaser.Scene {
       const px  = Math.cos(rad) * TRAIL_TRACK_HW;
       const py  = -Math.sin(rad) * TRAIL_TRACK_HW;
 
-      this.trailGfx.lineStyle(1.5, 0x7aaabf, alpha);
+      // Outside ski carries more weight → deeper groove.
+      // lean > 0 = right turn → left ski is outside; lean < 0 = left → right is outside.
+      const abslean = Math.abs(curr.lean);
+      const outsideAlpha = alpha * (1 + 0.6 * abslean);
+      const insideAlpha  = alpha * (1 - 0.8 * abslean);
+      const leftAlpha  = curr.lean >= 0 ? outsideAlpha : insideAlpha;
+      const rightAlpha = curr.lean >= 0 ? insideAlpha  : outsideAlpha;
 
       // Left groove
+      this.trailGfx.lineStyle(1.5, 0x7aaabf, leftAlpha);
       this.trailGfx.beginPath();
       this.trailGfx.moveTo(curr.x - px, currScreenY - py);
       this.trailGfx.lineTo(next.x - px, nextScreenY - py);
       this.trailGfx.strokePath();
 
       // Right groove
+      this.trailGfx.lineStyle(1.5, 0x7aaabf, rightAlpha);
       this.trailGfx.beginPath();
       this.trailGfx.moveTo(curr.x + px, currScreenY + py);
       this.trailGfx.lineTo(next.x + px, nextScreenY + py);
       this.trailGfx.strokePath();
     }
   }
+
 
   // ---------------------------------------------------------------------------
   // Slope rendering
@@ -478,12 +516,6 @@ export class GameScene extends Phaser.Scene {
 
     const isTimeTrial = this.session.mode === GameMode.Slalom && this.totalGatesInCourse > 0;
 
-    this.speedText = this.add.text(WORLD_WIDTH / 2, 13, '0 km/h', {
-      fontFamily: 'sans-serif',
-      fontSize:   '17px',
-      color:      '#ccddff',
-    }).setOrigin(0.5, 0).setDepth(21).setVisible(!isTimeTrial);
-
     this.timerText = this.add.text(WORLD_WIDTH / 2, 13, '0:00.0', {
       fontFamily: 'sans-serif',
       fontSize:   '18px',
@@ -505,6 +537,14 @@ export class GameScene extends Phaser.Scene {
       fontStyle:  'bold',
       color:      '#ffdd88',
     }).setOrigin(0.5, 0).setDepth(21).setVisible(showGates);
+
+    const isJump = this.session.mode === GameMode.Jump;
+    this.jumpScoreText = this.add.text(WORLD_WIDTH / 2, 13, 'Score: 0', {
+      fontFamily: 'sans-serif',
+      fontSize:   '18px',
+      fontStyle:  'bold',
+      color:      '#ffcc00',
+    }).setOrigin(0.5, 0).setDepth(21).setVisible(isJump);
 
     this.yetiWarning = this.add.text(18, 13, '⚠ YETI', {
       fontFamily: 'sans-serif',
@@ -547,6 +587,91 @@ export class GameScene extends Phaser.Scene {
   }
 
   // ---------------------------------------------------------------------------
+  // Jump mode helpers
+  // ---------------------------------------------------------------------------
+  private buildFinishLine(): void {
+    const sqSize = 32;
+    const cols   = Math.ceil(WORLD_WIDTH / sqSize);
+    const rows   = FINISH_LINE_H / sqSize; // = 2
+
+    this.finishLineGfx = this.add.graphics().setDepth(8);
+    for (let row = 0; row < rows; row++) {
+      for (let col = 0; col < cols; col++) {
+        const black = (row + col) % 2 === 0;
+        this.finishLineGfx.fillStyle(black ? 0x000000 : 0xffffff, 1);
+        this.finishLineGfx.fillRect(col * sqSize, row * sqSize, sqSize, sqSize);
+      }
+    }
+    this.finishLineGfx.setY(GAME_HEIGHT + 200); // off-screen initially
+  }
+
+  private showJumpBonus(x: number, y: number): void {
+    const pop = this.add.text(x, y, '+1', {
+      fontFamily: 'sans-serif',
+      fontSize:   '28px',
+      fontStyle:  'bold',
+      color:      '#ffcc00',
+      stroke:     '#000000',
+      strokeThickness: 2,
+    }).setOrigin(0.5).setDepth(30);
+
+    this.tweens.add({
+      targets:  pop,
+      y:        y - 60,
+      alpha:    0,
+      duration: 900,
+      ease:     'Power2',
+      onComplete: () => pop.destroy(),
+    });
+  }
+
+  private showYetiEvaded(): void {
+    const y = PLAYER_SCREEN_Y - 10;
+    const pop = this.add.text(this.player.x, y, '+1', {
+      fontFamily: 'sans-serif',
+      fontSize:   '28px',
+      fontStyle:  'bold',
+      color:      '#ffcc00',
+      stroke:     '#000000',
+      strokeThickness: 2,
+    }).setOrigin(0.5).setDepth(30);
+
+    this.tweens.add({
+      targets:  pop,
+      y:        y - 60,
+      alpha:    0,
+      duration: 900,
+      ease:     'Power2',
+      onComplete: () => pop.destroy(),
+    });
+  }
+
+  private triggerJumpCourseFinish(): void {
+    if (!this.gameActive) return;
+    this.gameActive = false;
+
+    const msg = this.add.text(WORLD_WIDTH / 2, GAME_HEIGHT / 2 - 40, 'COURSE COMPLETE', {
+      fontFamily: 'sans-serif',
+      fontSize:   '48px',
+      fontStyle:  'bold',
+      color:      '#ffd700',
+      stroke:     '#000000',
+      strokeThickness: 3,
+    }).setOrigin(0.5).setDepth(30);
+
+    this.tweens.add({
+      targets:  msg,
+      alpha:    0,
+      duration: 600,
+      delay:    800,
+      onComplete: () => {
+        msg.destroy();
+        this.gotoGameOver(false, undefined, true);
+      },
+    });
+  }
+
+  // ---------------------------------------------------------------------------
   // Controls
   // ---------------------------------------------------------------------------
   private bindPauseKey(): void {
@@ -560,22 +685,34 @@ export class GameScene extends Phaser.Scene {
   // ---------------------------------------------------------------------------
   // Scene transition
   // ---------------------------------------------------------------------------
-  private gotoGameOver(caughtByYeti: boolean, finishTimeMs?: number): void {
+  private gotoGameOver(caughtByYeti: boolean, finishTimeMs?: number, courseComplete = false): void {
+    const isJump     = this.session.mode === GameMode.Jump;
     const airBonus   = Math.floor(this.totalAirTimeMs / AIR_TIME_DIVISOR);
-    const finalScore = finishTimeMs !== undefined
-      ? finishTimeMs
-      : Math.floor(this.distancePx / PX_PER_METER) + this.bonusScore + airBonus;
+    const finalScore = isJump
+      ? this.jumpScore
+      : finishTimeMs !== undefined
+        ? finishTimeMs
+        : Math.floor(this.distancePx / PX_PER_METER) + this.bonusScore + airBonus;
+
+    const isSlalom = this.session.mode === GameMode.Slalom;
 
     const data: GameOverData = {
       session:      this.session,
       distancePx:   this.distancePx,
       score:        finalScore,
       caughtByYeti,
+      courseComplete,
+      yetisEvaded:  this.yetiSystem.evadeCount,
       ...(finishTimeMs !== undefined && {
         finishTimeMs,
         penaltyMs:   this.penaltyMs,
         gatesPassed: this.gatesPassed,
         gatesMissed: this.gatesCompleted - this.gatesPassed,
+      }),
+      ...(isSlalom && finishTimeMs === undefined && {
+        elapsedTimeMs:      Math.max(0, Math.round(this.time.now - this.courseStartTimeMs)) + this.penaltyMs,
+        gatesPassed:        this.gatesPassed,
+        totalGatesInCourse: this.totalGatesInCourse,
       }),
     };
     this.scene.start(SceneKey.GameOver, data);
@@ -613,5 +750,6 @@ export class GameScene extends Phaser.Scene {
     this.slopeGfx?.destroy();
     this.edgeShadows?.destroy();
     this.trailGfx?.destroy();
+    this.finishLineGfx?.destroy();
   }
 }

@@ -56,9 +56,9 @@ export const GAME_MODE_CONFIGS: Record<GameMode, GameModeConfig> = {
   [GameMode.Jump]: {
     mode: GameMode.Jump,
     displayName: 'Jump',
-    description: 'Hit ramps and score big air. Distance plus hang-time wins.',
-    yetiEnabled: true,
-    yetiSpawnDistance: 2000,
+    description: 'Hit ramps and score big air.',
+    yetiEnabled: false,
+    yetiSpawnDistance: 0,
     jumpConfig: {
       rampFrequency: 3,
       scoreMultiplier: 2.0,

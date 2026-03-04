@@ -124,7 +124,17 @@ export class Player {
       this.x = Phaser.Math.Clamp(this.x + this.velocityX * dt, X_MARGIN, WORLD_WIDTH - X_MARGIN);
 
       this.container.setPosition(this.x, this.screenY + this.visualOffsetY);
-      this.container.setAngle(this.angle);
+
+      const jumpLean = this.angle / MAX_ANGLE;
+      const jumpSplay = Math.abs(jumpLean) * 10;
+      const jumpBase = -jumpLean * 60;
+      if (jumpLean >= 0) {
+        this.leftSki.setAngle(jumpBase);
+        this.rightSki.setAngle(jumpBase - jumpSplay);
+      } else {
+        this.rightSki.setAngle(jumpBase);
+        this.leftSki.setAngle(jumpBase + jumpSplay);
+      }
 
       if (this.jumpElapsed >= JUMP_DURATION) {
         this.state         = PlayerState.Skiing;
@@ -179,12 +189,19 @@ export class Player {
 
     // --- Update visual ---
     this.container.setPosition(this.x, this.screenY);
-    this.container.setAngle(this.angle);
 
-    // Dynamically fan / pinch ski tips based on turn intensity
+    // When curving right, the outside of the arc is the left side (and vice versa).
+    // Outside ski tracks the direction of travel; inside ski splays outward.
     const lean = this.angle / MAX_ANGLE; // -1 … +1
-    this.leftSki.setAngle(-10 + lean * 8);
-    this.rightSki.setAngle(10 + lean * 8);
+    const splay = Math.abs(lean) * 10;  // max 10° splay at full turn
+    const baseAngle = -lean * 60;        // ±60° spread evenly across the full turn range
+    if (lean >= 0) {
+      this.leftSki.setAngle(baseAngle);          // outside: direction of travel
+      this.rightSki.setAngle(baseAngle - splay); // inside: splayed
+    } else {
+      this.rightSki.setAngle(baseAngle);         // outside: direction of travel
+      this.leftSki.setAngle(baseAngle + splay);  // inside: splayed
+    }
 
     // Redraw poles with current angle context
     this.drawPoles(lean);

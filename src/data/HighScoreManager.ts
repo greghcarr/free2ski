@@ -1,4 +1,4 @@
-import type { GameMode } from '@/config/GameModes';
+import { GameMode } from '@/config/GameModes';
 import { EMPTY_SAVE, type RunRecord, type SaveData } from './SaveData';
 
 const STORAGE_KEY = 'skifree_save_v1';
@@ -77,11 +77,14 @@ export class HighScoreManager {
       ...(timeMs !== undefined && { timeMs }),
     };
 
-    // Time-trial modes (timeMs provided): lower time is better.
+    // Time-trial: lower time is better.
+    // Jump mode: higher score (ramp count) is better.
     // All other modes: greater distance is better.
     const isNewBest = timeMs !== undefined
       ? prevBest === null || timeMs < (prevBest.timeMs ?? Infinity)
-      : prevBest === null || distance > prevBest.distance;
+      : mode === GameMode.Jump
+        ? prevBest === null || score > (prevBest.score ?? 0)
+        : prevBest === null || distance > prevBest.distance;
 
     data.totalRuns += 1;
     if (isNewBest) {

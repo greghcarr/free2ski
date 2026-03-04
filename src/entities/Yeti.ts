@@ -1,8 +1,6 @@
 import Phaser from 'phaser';
-import { COLORS } from '@/data/constants';
+import { COLORS, YETI_INITIAL_WAVE_SPEED } from '@/data/constants';
 
-// Pixels per second the yeti gains on the player when first spawned
-const INITIAL_CHASE_SPEED = 85;
 // How many additional px/s the yeti gains each second (escalating pressure)
 const CHASE_ACCELERATION = 1.8;
 // Max yeti speed so the catch never feels instant at ultra-high difficulty
@@ -19,14 +17,15 @@ export class Yeti {
   screenY: number;
 
   /** Growing chase speed */
-  private chaseSpeed: number = INITIAL_CHASE_SPEED;
-  private elapsed: number   = 0;
+  private chaseSpeed: number;
+  private elapsed: number = 0;
 
   private container: Phaser.GameObjects.Container;
 
-  constructor(scene: Phaser.Scene, startX: number, startY: number) {
-    this.screenX = startX;
-    this.screenY = startY;
+  constructor(scene: Phaser.Scene, startX: number, startY: number, initialChaseSpeed = YETI_INITIAL_WAVE_SPEED) {
+    this.screenX    = startX;
+    this.screenY    = startY;
+    this.chaseSpeed = initialChaseSpeed;
 
     const gfx = scene.add.graphics();
     this.drawYeti(gfx);

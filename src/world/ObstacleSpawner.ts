@@ -190,9 +190,7 @@ function spawnForestBorder(
 ): ObstacleSpawnPoint[] {
   // XOR with a large prime so forest positions are independent of course positions
   const rng   = new SeededRandom(chunkSeed ^ 0xC0FFEE17);
-  const depth = (mode === GameMode.Slalom || mode === GameMode.TreeSlalom)
-    ? FOREST_DEPTH_NARROW
-    : FOREST_DEPTH_WIDE;
+  const depth = mode === GameMode.Slalom ? FOREST_DEPTH_NARROW : FOREST_DEPTH_WIDE;
 
   const worldYStart = chunkIndex * CHUNK_HEIGHT;
   const numRows     = Math.ceil((CHUNK_HEIGHT - FOREST_GRACE_Y) / FOREST_ROW_HEIGHT);

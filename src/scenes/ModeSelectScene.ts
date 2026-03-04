@@ -1,10 +1,13 @@
 import Phaser from 'phaser';
 import { SceneKey } from '@/config/SceneKeys';
 import { GameMode, GAME_MODE_CONFIGS } from '@/config/GameModes';
-import { WORLD_WIDTH, GAME_HEIGHT, COLORS } from '@/data/constants';
+import { WORLD_WIDTH, GAME_HEIGHT, COLORS, GATE_POLE_RADIUS } from '@/data/constants';
 import type { SessionConfig } from '@/config/GameConfig';
+import { addVersionLabel } from '@/ui/versionLabel';
+import { HighScoreManager } from '@/data/HighScoreManager';
+import { formatRaceTime } from '@/utils/MathUtils';
 
-const MODES = [GameMode.FreeSki, GameMode.Slalom, GameMode.Jump];
+const MODES = [GameMode.Slalom, GameMode.FreeSki, GameMode.Jump];
 
 export class ModeSelectScene extends Phaser.Scene {
   constructor() {
@@ -17,11 +20,17 @@ export class ModeSelectScene extends Phaser.Scene {
     bg.fillGradientStyle(COLORS.SNOW_LIGHT, COLORS.SNOW_LIGHT, COLORS.SNOW_SHADOW, COLORS.SNOW_SHADOW, 1);
     bg.fillRect(0, 0, WORLD_WIDTH, GAME_HEIGHT);
 
-    this.add.text(WORLD_WIDTH / 2, 60, 'SELECT MODE', {
+    this.add.text(WORLD_WIDTH / 2, 160, 'SELECT MODE', {
       fontFamily: 'sans-serif',
       fontSize: '40px',
       fontStyle: 'bold',
       color: '#1a3a8a',
+    }).setOrigin(0.5);
+
+    this.add.text(WORLD_WIDTH / 2, 202, `Total runs: ${HighScoreManager.getTotalRuns()}`, {
+      fontFamily: 'sans-serif',
+      fontSize: '16px',
+      color: '#3a5a9a',
     }).setOrigin(0.5);
 
     const cardW = 240;
@@ -34,7 +43,7 @@ export class ModeSelectScene extends Phaser.Scene {
       const cfg = GAME_MODE_CONFIGS[mode];
       const cx = startX + i * (cardW + spacing);
       const cy = GAME_HEIGHT / 2 + 30;
-      this.createModeCard(cx, cy, cardW, cardH, cfg.displayName, cfg.description, () => {
+      this.createModeCard(cx, cy, cardW, cardH, mode, cfg.displayName, cfg.description, () => {
         const session: SessionConfig = { mode, seed: Date.now() };
         this.scene.start(SceneKey.Game, { session });
       });
@@ -47,6 +56,8 @@ export class ModeSelectScene extends Phaser.Scene {
       color: '#1a3a8a',
     }).setInteractive({ useHandCursor: true })
       .on('pointerdown', () => this.scene.start(SceneKey.MainMenu));
+
+    addVersionLabel(this);
   }
 
   private createModeCard(
@@ -54,6 +65,7 @@ export class ModeSelectScene extends Phaser.Scene {
     cy: number,
     w: number,
     h: number,
+    mode: GameMode,
     title: string,
     desc: string,
     onClick: () => void,
@@ -75,7 +87,7 @@ export class ModeSelectScene extends Phaser.Scene {
       color: '#1a3a8a',
     }).setOrigin(0.5);
 
-    this.add.text(cx, cy - h / 2 + 80, desc, {
+    this.add.text(cx, cy - h / 2 + 68, desc, {
       fontFamily: 'sans-serif',
       fontSize: '14px',
       color: '#3a5a9a',
@@ -83,10 +95,181 @@ export class ModeSelectScene extends Phaser.Scene {
       align: 'center',
     }).setOrigin(0.5, 0);
 
+    this.add.text(cx, cy + 4, this.bestLabel(mode), {
+      fontFamily: 'sans-serif',
+      fontSize: '13px',
+      fontStyle: 'bold',
+      color: '#1a3a8a',
+      align: 'center',
+    }).setOrigin(0.5, 1);
+
+    // Mode illustration in the lower half of the card
+    this.drawModeIllustration(mode, cx, cy);
+
     const hit = this.add.rectangle(cx, cy, w, h)
       .setInteractive({ useHandCursor: true });
     hit.on('pointerover', () => draw(true));
     hit.on('pointerout', () => draw(false));
     hit.on('pointerdown', onClick);
+  }
+
+  private bestLabel(mode: GameMode): string {
+    const best = HighScoreManager.getBest(mode);
+    if (!best) return 'No personal best yet';
+    switch (mode) {
+      case GameMode.FreeSki: return `Personal best: ${best.distance.toLocaleString()} m`;
+      case GameMode.Slalom:  return `Personal best: ${formatRaceTime(best.timeMs ?? 0)}`;
+      case GameMode.Jump:    return `Personal best: ${best.score}`;
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Per-mode illustrations — exact same drawing logic as the in-game entities,
+  // scaled to fit the lower half of a 240×260 card.
+  // ---------------------------------------------------------------------------
+
+  private drawModeIllustration(mode: GameMode, cx: number, cy: number): void {
+    switch (mode) {
+      case GameMode.FreeSki: this.drawTree(cx, cy);  break;
+      case GameMode.Slalom:  this.drawGate(cx, cy);  break;
+      case GameMode.Jump:    this.drawRamp(cx, cy);  break;
+    }
+  }
+
+  /**
+   * Pine tree — matches Tree.ts drawTree() at scale 2.0.
+   * Origin placed so the visual mass is centred in the lower card half.
+   */
+  private drawTree(cx: number, cy: number): void {
+    const g  = this.add.graphics();
+    const s  = 2.0;
+    // Shift origin so the tree sits comfortably in the lower card half.
+    // At s=2: top of snow cap = oy-52, trunk bottom = oy+14, shadow bottom = oy+30
+    const oy = cy + 75;
+
+    // Drop shadow
+    g.fillStyle(0x000000, 0.12);
+    g.fillEllipse(cx + 4 * s, oy + 10 * s, 28 * s, 10 * s);
+
+    // Trunk
+    g.fillStyle(0x5c3a1e, 1);
+    g.fillRect(cx - 3 * s, oy + 4 * s, 6 * s, 10 * s);
+
+    // Base layer (widest, darkest green)
+    g.fillStyle(COLORS.TREE_DARK, 1);
+    g.fillTriangle(cx - 15 * s, oy + 8 * s, cx + 15 * s, oy + 8 * s, cx, oy - 6 * s);
+
+    // Mid layer
+    g.fillStyle(COLORS.TREE_MID, 1);
+    g.fillTriangle(cx - 11 * s, oy + 1 * s, cx + 11 * s, oy + 1 * s, cx, oy - 16 * s);
+
+    // Top layer
+    g.fillStyle(0x4c9040, 1);
+    g.fillTriangle(cx - 7 * s, oy - 7 * s, cx + 7 * s, oy - 7 * s, cx, oy - 22 * s);
+
+  }
+
+  /**
+   * Slalom gate — matches SlalomGate.ts at a scaled-down half-gap so it fits
+   * within the 240 px card width.
+   */
+  private drawGate(cx: number, cy: number): void {
+    const g        = this.add.graphics();
+    const halfGap  = 55;    // scaled from in-game 110 to fit card
+    const halfPole = GATE_POLE_RADIUS;   // 8 px — same as game
+    const poleH    = 56;    // close to in-game POLE_H=64, trimmed slightly
+    const bannerH  = 14;    // same as in-game BANNER_H
+    // Centre vertically in the lower card half
+    const oy = cy + 68;
+
+    // Drop shadows under poles
+    g.fillStyle(0x000000, 0.12);
+    g.fillEllipse(cx - halfGap, oy + poleH / 2 + 4, halfPole * 4, 8);
+    g.fillEllipse(cx + halfGap, oy + poleH / 2 + 4, halfPole * 4, 8);
+
+    const colorVal = COLORS.GATE_LEFT; // red gate
+
+    // Left pole body
+    g.fillStyle(colorVal, 1);
+    g.fillRect(cx - halfGap - halfPole, oy - poleH / 2, halfPole * 2, poleH);
+
+    // Right pole body
+    g.fillRect(cx + halfGap - halfPole, oy - poleH / 2, halfPole * 2, poleH);
+
+    // White stripe on each pole
+    g.fillStyle(0xffffff, 1);
+    g.fillRect(cx - halfGap - halfPole, oy - poleH / 2 + 4, halfPole * 2, 10);
+    g.fillRect(cx + halfGap - halfPole, oy - poleH / 2 + 4, halfPole * 2, 10);
+
+    // Horizontal banner connecting the poles
+    g.fillStyle(colorVal, 0.80);
+    g.fillRect(cx - halfGap, oy - bannerH / 2, halfGap * 2, bannerH);
+
+    // Banner centre stripe (white) for visibility
+    g.fillStyle(0xffffff, 0.50);
+    g.fillRect(cx - halfGap + 8, oy - 3, halfGap * 2 - 16, 6);
+  }
+
+  /**
+   * Jump ramp — matches Ramp.ts at scale 2×.
+   */
+  private drawRamp(cx: number, cy: number): void {
+    const g = this.add.graphics();
+    const s = 2;
+
+    const RAMP_W = 70, RAMP_D = 28, CORNER = 7;
+    const hw   = (RAMP_W / 2) * s;
+    const hd   = (RAMP_D / 2) * s;
+    const lipH = 7 * s;
+
+    // Centre vertically in the lower card half
+    const oy = cy + 68;
+
+    // Drop shadow
+    g.fillStyle(0x000000, 0.18);
+    g.fillRoundedRect(cx - hw + 4 * s, oy + hd - 2 * s, RAMP_W * s, 10 * s, 4);
+
+    // Main ramp platform
+    g.fillStyle(0xd0dce8, 1);
+    g.fillRoundedRect(cx - hw, oy - hd, RAMP_W * s, RAMP_D * s, CORNER * s);
+
+    // Upper highlight
+    g.fillStyle(0xeaf4ff, 0.70);
+    g.fillRoundedRect(cx - hw + 4 * s, oy - hd + 2 * s, (RAMP_W - 8) * s, RAMP_D * 0.45 * s, (CORNER - 2) * s);
+
+    // Front launch lip
+    g.fillStyle(0x6888a8, 1);
+    g.fillRoundedRect(cx - hw, oy + hd - lipH, RAMP_W * s, lipH, { tl: 0, tr: 0, bl: CORNER * s, br: CORNER * s });
+
+    // Yellow direction arrow (same path as Ramp.ts)
+    const asx  = 3 * s;
+    const asy1 = oy - hd + 5 * s;
+    const asy2 = oy - hd + 14 * s;
+    const ahw  = 11 * s;
+    const atip = oy + hd - lipH - 2 * s;
+
+    const drawArrow = (): void => {
+      g.beginPath();
+      g.moveTo(cx - asx, asy1);
+      g.lineTo(cx + asx, asy1);
+      g.lineTo(cx + asx, asy2);
+      g.lineTo(cx + ahw, asy2);
+      g.lineTo(cx,       atip);
+      g.lineTo(cx - ahw, asy2);
+      g.lineTo(cx - asx, asy2);
+      g.closePath();
+    };
+
+    g.fillStyle(0xffee00, 0.92);
+    drawArrow();
+    g.fillPath();
+
+    g.lineStyle(1.5, 0x000000, 0.80);
+    drawArrow();
+    g.strokePath();
+
+    // Platform outline
+    g.lineStyle(1.5, 0x8aaccc, 0.8);
+    g.strokeRoundedRect(cx - hw, oy - hd, RAMP_W * s, RAMP_D * s, CORNER * s);
   }
 }

@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { SceneKey } from '@/config/SceneKeys';
 import { WORLD_WIDTH, GAME_HEIGHT, COLORS } from '@/data/constants';
+import { addVersionLabel } from '@/ui/versionLabel';
 
 export class LeaderboardScene extends Phaser.Scene {
   constructor() {
@@ -32,5 +33,7 @@ export class LeaderboardScene extends Phaser.Scene {
       color: '#1a3a8a',
     }).setInteractive({ useHandCursor: true })
       .on('pointerdown', () => this.scene.start(SceneKey.MainMenu));
+
+    addVersionLabel(this);
   }
 }

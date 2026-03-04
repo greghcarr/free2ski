@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { SceneKey } from '@/config/SceneKeys';
 import { WORLD_WIDTH, GAME_HEIGHT, COLORS } from '@/data/constants';
+import { addVersionLabel } from '@/ui/versionLabel';
 
 export class PauseScene extends Phaser.Scene {
   private callerKey = SceneKey.Game;
@@ -45,6 +46,8 @@ export class PauseScene extends Phaser.Scene {
         this.scene.resume(this.callerKey);
       });
     }
+
+    addVersionLabel(this, '#8aaabb');
   }
 
   private createButton(x: number, y: number, label: string, onClick: () => void): void {

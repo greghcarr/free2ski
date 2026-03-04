@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { SceneKey } from '@/config/SceneKeys';
 import { WORLD_WIDTH, GAME_HEIGHT, COLORS } from '@/data/constants';
+import { addVersionLabel } from '@/ui/versionLabel';
 
 export class MainMenuScene extends Phaser.Scene {
   constructor() {
@@ -41,6 +42,8 @@ export class MainMenuScene extends Phaser.Scene {
     this.createButton(WORLD_WIDTH / 2, 500, 'SETTINGS', () => {
       this.scene.start(SceneKey.Settings);
     });
+
+    addVersionLabel(this);
   }
 
   private createButton(x: number, y: number, label: string, onClick: () => void): void {

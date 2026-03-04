@@ -17,6 +17,9 @@ export function createGame(platform: IPlatformService): Phaser.Game {
     width: WORLD_WIDTH,
     height: GAME_HEIGHT,
     backgroundColor: '#e8f0f8',
+    render: {
+      resolution: window.devicePixelRatio ?? 1,
+    },
     parent: document.body,
     scale: {
       mode: Phaser.Scale.FIT,

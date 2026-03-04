@@ -1,23 +1,39 @@
 import Phaser from 'phaser';
 import { Yeti } from '@/entities/Yeti';
-import { GAME_HEIGHT, WORLD_WIDTH, PX_PER_METER } from '@/data/constants';
+import {
+  GAME_HEIGHT,
+  WORLD_WIDTH,
+  PX_PER_METER,
+  YETI_WAVE_INTERVAL_M,
+  YETI_INITIAL_WAVE_SPEED,
+  YETI_SPEED_PER_WAVE,
+  YETI_INITIAL_SPEED_CAP,
+} from '@/data/constants';
 
 // Player hit radius for catch detection (must match Player.ts)
 const PLAYER_HIT_RADIUS = 12;
 
-export type YetiEvent = 'none' | 'spawned' | 'caught';
+// Yeti is considered evaded when its centre clears the top of the screen
+const EVADE_SCREEN_TOP = -100;
+
+export type YetiEvent = 'none' | 'spawned' | 'caught' | 'evaded';
 
 export class YetiSystem {
-  private scene:   Phaser.Scene;
-  private yeti:    Yeti | null = null;
-  private spawned: boolean     = false;
+  private scene:        Phaser.Scene;
+  private yeti:         Yeti | null = null;
+  private yetisEvaded   = 0;
+  private nextSpawnM    = YETI_WAVE_INTERVAL_M;
 
   constructor(scene: Phaser.Scene) {
     this.scene = scene;
   }
 
   get isActive(): boolean {
-    return this.spawned;
+    return this.yeti !== null;
+  }
+
+  get evadeCount(): number {
+    return this.yetisEvaded;
   }
 
   // ---------------------------------------------------------------------------
@@ -26,21 +42,25 @@ export class YetiSystem {
   // Returns:
   //   'spawned'  — yeti just appeared this frame (show warning)
   //   'caught'   — yeti caught the player this frame (trigger game over)
+  //   'evaded'   — yeti passed the player and flew off screen (show +1)
   //   'none'     — nothing notable
   // ---------------------------------------------------------------------------
   update(
-    distancePx:      number,
-    playerX:         number,
-    playerScreenY:   number,
-    delta:           number,
-    yetiEnabled:     boolean,
-    spawnDistanceM:  number,
+    distancePx:    number,
+    playerX:       number,
+    playerScreenY: number,
+    delta:         number,
+    yetiEnabled:   boolean,
   ): YetiEvent {
     const distanceM = distancePx / PX_PER_METER;
 
-    // --- Spawn ---
-    if (!this.spawned && yetiEnabled && distanceM >= spawnDistanceM) {
-      this.spawn(playerX, playerScreenY);
+    // --- Spawn next wave ---
+    if (!this.yeti && yetiEnabled && distanceM >= this.nextSpawnM) {
+      const initSpeed = Math.min(
+        YETI_INITIAL_WAVE_SPEED + this.yetisEvaded * YETI_SPEED_PER_WAVE,
+        YETI_INITIAL_SPEED_CAP,
+      );
+      this.spawn(playerX, playerScreenY, initSpeed);
       return 'spawned';
     }
 
@@ -58,26 +78,30 @@ export class YetiSystem {
       return 'caught';
     }
 
+    // --- Evasion: yeti scrolled off the top of the screen ---
+    if (this.yeti.screenY < EVADE_SCREEN_TOP) {
+      this.yeti.destroy();
+      this.yeti = null;
+      this.yetisEvaded++;
+      this.nextSpawnM += YETI_WAVE_INTERVAL_M;
+      return 'evaded';
+    }
+
     return 'none';
   }
 
   destroy(): void {
     this.yeti?.destroy();
     this.yeti    = null;
-    this.spawned = false;
   }
 
   // ---------------------------------------------------------------------------
   // Private
   // ---------------------------------------------------------------------------
 
-  private spawn(playerX: number, playerScreenY: number): void {
-    this.spawned = true;
-
-    // Start at bottom-centre of screen, slightly offset from player X
+  private spawn(playerX: number, _playerScreenY: number, initialSpeed: number): void {
     const startX = Phaser.Math.Clamp(playerX + Phaser.Math.Between(-80, 80), 100, WORLD_WIDTH - 100);
     const startY = GAME_HEIGHT + 90;
-
-    this.yeti = new Yeti(this.scene, startX, startY);
+    this.yeti = new Yeti(this.scene, startX, startY, initialSpeed);
   }
 }

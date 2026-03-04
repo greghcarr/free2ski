@@ -15,6 +15,12 @@ export const PLAYER_TURN_SPEED = 120;   // degrees per second
 export const YETI_SPAWN_DISTANCE = 1500;  // meters (Free Ski default; per-mode values are in GameModes.ts)
 export const YETI_CHASE_SPEED    = 1.15;  // multiplier over player speed
 
+// Yeti wave system (FreeSki)
+export const YETI_WAVE_INTERVAL_M    = 2000;  // meters between waves
+export const YETI_INITIAL_WAVE_SPEED = 85;    // chase px/s for wave 1       (tunable)
+export const YETI_SPEED_PER_WAVE     = 15;    // extra px/s per wave          (tunable)
+export const YETI_INITIAL_SPEED_CAP  = 220;   // max initial wave speed px/s  (tunable)
+
 // Scoring
 export const PX_PER_METER     = 5;    // 5 px = 1 meter of in-game distance
 export const GATE_PASS_BONUS  = 50;   // score points per clean slalom gate
@@ -23,11 +29,12 @@ export const AIR_TIME_DIVISOR = 15;   // totalAirTimeMs / this = bonus score
 // Slalom gate geometry
 export const GATE_GAP_WIDTH     = 220;   // px gap between the two poles
 export const GATE_POLE_RADIUS   = 8;     // collision radius for each pole
-export const SLALOM_COURSE_SEED = 0x5C10; // fixed seed — same course every run
 
 // Jump / ramp
-export const JUMP_DURATION      = 1400; // ms the player stays airborne
-export const JUMP_VISUAL_HEIGHT = 50;   // px the container rises at apex
+export const JUMP_DURATION          = 1400; // ms the player stays airborne
+export const JUMP_VISUAL_HEIGHT     = 50;   // px the container rises at apex
+export const JUMP_COURSE_DISTANCE_M = 5000; // metres to the finish line
+export const FINISH_LINE_H          = 64;   // px height of the checkered band
 
 // Course boundary (distance from each side edge where the forest begins)
 // These drive both the forest-tree spawner and the on-slope boundary lines.
