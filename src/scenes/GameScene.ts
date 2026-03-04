@@ -20,6 +20,7 @@ import { InputSystem } from '@/systems/InputSystem';
 import { ChunkManager } from '@/world/ChunkManager';
 import { YetiSystem } from '@/systems/YetiSystem';
 import type { GameOverData } from '@/scenes/GameOverScene';
+import { formatRaceTime } from '@/utils/MathUtils';
 
 // Screen Y where the player is positioned (upper-centre area)
 const PLAYER_SCREEN_Y = Math.floor(GAME_HEIGHT * 0.36);
@@ -48,6 +49,12 @@ export class GameScene extends Phaser.Scene {
   private bonusScore      = 0;
   private totalAirTimeMs  = 0;
 
+  // --- Slalom time-trial ---
+  private courseStartTimeMs   = 0;
+  private penaltyMs           = 0;
+  private gatesCompleted      = 0;
+  private totalGatesInCourse  = 0;
+
   // --- Entities ---
   private player!:       Player;
   private controls!:     InputSystem;
@@ -67,6 +74,7 @@ export class GameScene extends Phaser.Scene {
   // --- HUD ---
   private distanceText!:  Phaser.GameObjects.Text;
   private speedText!:     Phaser.GameObjects.Text;
+  private timerText!:     Phaser.GameObjects.Text;
   private yetiWarning!:   Phaser.GameObjects.Text;
   private gateText!:      Phaser.GameObjects.Text;
 
@@ -86,6 +94,11 @@ export class GameScene extends Phaser.Scene {
     this.gatesPassed      = 0;
     this.bonusScore       = 0;
     this.totalAirTimeMs   = 0;
+    this.penaltyMs        = 0;
+    this.gatesCompleted   = 0;
+    this.courseStartTimeMs = -1; // set on first update frame
+    const modeCfg = GAME_MODE_CONFIGS[this.session.mode];
+    this.totalGatesInCourse = modeCfg.slalomCourse?.totalGates ?? 0;
     this.trailSamples     = [];
     this.lastSampleWorldY = 0;
     this.prevPlayerState  = PlayerState.Skiing;
@@ -111,6 +124,9 @@ export class GameScene extends Phaser.Scene {
 
   update(_time: number, delta: number): void {
     if (!this.gameActive) return;
+
+    // Latch course start on the first reliable game-clock tick
+    if (this.courseStartTimeMs < 0) this.courseStartTimeMs = _time;
 
     const dt = delta / 1000;
 
@@ -171,14 +187,24 @@ export class GameScene extends Phaser.Scene {
 
     if (collision.gatePassed) {
       this.gatesPassed++;
-      this.bonusScore += GATE_PASS_BONUS;
-      this.showGateBonus();
+      if (this.session.mode === GameMode.Slalom) {
+        this.gatesCompleted++;
+        this.checkCourseFinish();
+        if (!this.gameActive) return;
+      } else {
+        this.bonusScore += GATE_PASS_BONUS;
+        this.showGateBonus();
+      }
     }
 
     if (collision.gateMissed) {
       if (this.session.mode === GameMode.Slalom) {
-        this.triggerGateMiss();
-        return;
+        this.gatesCompleted++;
+        const penaltyMs = GAME_MODE_CONFIGS[GameMode.Slalom].slalomCourse!.gateMissPenaltyMs;
+        this.penaltyMs += penaltyMs;
+        this.showPenalty(penaltyMs);
+        this.checkCourseFinish();
+        if (!this.gameActive) return;
       }
     }
 
@@ -203,9 +229,15 @@ export class GameScene extends Phaser.Scene {
 
     // --- HUD ---
     this.distanceText.setText(`${Math.floor(this.distancePx / PX_PER_METER)} m`);
-    this.speedText.setText(`${Math.floor(effectiveSpeed / 10)} km/h`);
-    if (this.gateText.visible) {
-      this.gateText.setText(`Gates: ${this.gatesPassed}`);
+    if (this.session.mode === GameMode.Slalom && this.totalGatesInCourse > 0) {
+      const elapsed = Math.round(_time - this.courseStartTimeMs) + this.penaltyMs;
+      this.timerText.setText(formatRaceTime(elapsed));
+      this.gateText.setText(`${this.gatesPassed} / ${this.totalGatesInCourse}`);
+    } else {
+      this.speedText.setText(`${Math.floor(effectiveSpeed / 10)} km/h`);
+      if (this.gateText.visible) {
+        this.gateText.setText(`Gates: ${this.gatesPassed}`);
+      }
     }
   }
 
@@ -221,28 +253,57 @@ export class GameScene extends Phaser.Scene {
     });
   }
 
-  private triggerGateMiss(): void {
+  private checkCourseFinish(): void {
+    if (this.gatesCompleted >= this.totalGatesInCourse) {
+      this.triggerCourseFinish();
+    }
+  }
+
+  private triggerCourseFinish(): void {
     if (!this.gameActive) return;
     this.gameActive = false;
 
-    const warn = this.add.text(WORLD_WIDTH / 2, GAME_HEIGHT / 2 - 40, 'MISSED GATE!', {
+    const finishTimeMs = Math.max(0, Math.round(this.time.now - this.courseStartTimeMs)) + this.penaltyMs;
+
+    const msg = this.add.text(WORLD_WIDTH / 2, GAME_HEIGHT / 2 - 40, 'FINISH!', {
       fontFamily: 'sans-serif',
-      fontSize: '38px',
-      fontStyle: 'bold',
-      color: '#ff2222',
-      stroke: '#000000',
+      fontSize:   '52px',
+      fontStyle:  'bold',
+      color:      '#ffd700',
+      stroke:     '#000000',
       strokeThickness: 3,
     }).setOrigin(0.5).setDepth(30);
 
     this.tweens.add({
-      targets: warn,
-      alpha: 0,
+      targets:  msg,
+      alpha:    0,
       duration: 600,
-      delay: 500,
+      delay:    800,
       onComplete: () => {
-        warn.destroy();
-        this.gotoGameOver(false);
+        msg.destroy();
+        this.gotoGameOver(false, finishTimeMs);
       },
+    });
+  }
+
+  private showPenalty(penaltyMs: number): void {
+    const secs = penaltyMs / 1000;
+    const pop  = this.add.text(WORLD_WIDTH / 2, PLAYER_SCREEN_Y - 60, `+${secs}s PENALTY`, {
+      fontFamily: 'sans-serif',
+      fontSize:   '26px',
+      fontStyle:  'bold',
+      color:      '#ff4444',
+      stroke:     '#000000',
+      strokeThickness: 2,
+    }).setOrigin(0.5).setDepth(30);
+
+    this.tweens.add({
+      targets:  pop,
+      y:        pop.y - 40,
+      alpha:    0,
+      duration: 900,
+      ease:     'Power2',
+      onComplete: () => pop.destroy(),
     });
   }
 
@@ -392,11 +453,20 @@ export class GameScene extends Phaser.Scene {
       color:      '#ffffff',
     }).setOrigin(1, 0).setDepth(21);
 
+    const isTimeTrial = this.session.mode === GameMode.Slalom && this.totalGatesInCourse > 0;
+
     this.speedText = this.add.text(WORLD_WIDTH / 2, 13, '0 km/h', {
       fontFamily: 'sans-serif',
       fontSize:   '17px',
       color:      '#ccddff',
-    }).setOrigin(0.5, 0).setDepth(21);
+    }).setOrigin(0.5, 0).setDepth(21).setVisible(!isTimeTrial);
+
+    this.timerText = this.add.text(WORLD_WIDTH / 2, 13, '0:00.0', {
+      fontFamily: 'sans-serif',
+      fontSize:   '18px',
+      fontStyle:  'bold',
+      color:      '#ffffff',
+    }).setOrigin(0.5, 0).setDepth(21).setVisible(isTimeTrial);
 
     this.add.text(WORLD_WIDTH / 2 + 130, 13, '  ESC: pause', {
       fontFamily: 'sans-serif',
@@ -406,7 +476,8 @@ export class GameScene extends Phaser.Scene {
 
     const showGates = this.session.mode === GameMode.Slalom ||
                       this.session.mode === GameMode.TreeSlalom;
-    this.gateText = this.add.text(WORLD_WIDTH / 4, 13, 'Gates: 0', {
+    const gateLabel = isTimeTrial ? `0 / ${this.totalGatesInCourse}` : 'Gates: 0';
+    this.gateText = this.add.text(WORLD_WIDTH / 4, 13, gateLabel, {
       fontFamily: 'sans-serif',
       fontSize:   '17px',
       fontStyle:  'bold',
@@ -467,15 +538,23 @@ export class GameScene extends Phaser.Scene {
   // ---------------------------------------------------------------------------
   // Scene transition
   // ---------------------------------------------------------------------------
-  private gotoGameOver(caughtByYeti: boolean): void {
+  private gotoGameOver(caughtByYeti: boolean, finishTimeMs?: number): void {
     const airBonus   = Math.floor(this.totalAirTimeMs / AIR_TIME_DIVISOR);
-    const finalScore = Math.floor(this.distancePx / PX_PER_METER) + this.bonusScore + airBonus;
+    const finalScore = finishTimeMs !== undefined
+      ? finishTimeMs
+      : Math.floor(this.distancePx / PX_PER_METER) + this.bonusScore + airBonus;
 
     const data: GameOverData = {
       session:      this.session,
       distancePx:   this.distancePx,
       score:        finalScore,
       caughtByYeti,
+      ...(finishTimeMs !== undefined && {
+        finishTimeMs,
+        penaltyMs:   this.penaltyMs,
+        gatesPassed: this.gatesPassed,
+        gatesMissed: this.gatesCompleted - this.gatesPassed,
+      }),
     };
     this.scene.start(SceneKey.GameOver, data);
   }

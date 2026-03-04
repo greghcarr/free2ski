@@ -69,12 +69,19 @@ export class HighScoreManager {
    * Records the run, updates the personal best if beaten, and returns a
    * comparison result so the GameOver screen can give feedback.
    */
-  static submitRun(mode: GameMode, distance: number, score: number): SubmitResult {
+  static submitRun(mode: GameMode, distance: number, score: number, timeMs?: number): SubmitResult {
     const data     = this.load();
     const prevBest = data.highScores[mode] ?? null;
-    const current: RunRecord = { distance, score, timestamp: Date.now() };
+    const current: RunRecord = {
+      distance, score, timestamp: Date.now(),
+      ...(timeMs !== undefined && { timeMs }),
+    };
 
-    const isNewBest = prevBest === null || distance > prevBest.distance;
+    // Time-trial modes (timeMs provided): lower time is better.
+    // All other modes: greater distance is better.
+    const isNewBest = timeMs !== undefined
+      ? prevBest === null || timeMs < (prevBest.timeMs ?? Infinity)
+      : prevBest === null || distance > prevBest.distance;
 
     data.totalRuns += 1;
     if (isNewBest) {

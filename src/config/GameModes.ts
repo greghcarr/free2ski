@@ -15,6 +15,11 @@ export interface JumpConfig {
   scoreMultiplier: number;
 }
 
+export interface SlalomCourseConfig {
+  totalGates:        number;  // fixed gate count — run ends when reached
+  gateMissPenaltyMs: number;  // ms added to finish time per missed gate
+}
+
 export interface GameModeConfig {
   mode: GameMode;
   displayName: string;
@@ -23,6 +28,7 @@ export interface GameModeConfig {
   yetiSpawnDistance: number;  // meters before yeti appears
   gateConfig?: GateConfig;
   jumpConfig?: JumpConfig;
+  slalomCourse?: SlalomCourseConfig;
 }
 
 export const GAME_MODE_CONFIGS: Record<GameMode, GameModeConfig> = {
@@ -36,12 +42,16 @@ export const GAME_MODE_CONFIGS: Record<GameMode, GameModeConfig> = {
   [GameMode.Slalom]: {
     mode: GameMode.Slalom,
     displayName: 'Slalom',
-    description: 'Pass through every gate. Miss one and it\'s over.',
+    description: 'Race through 25 gates as fast as possible. Missing a gate adds +5s.',
     yetiEnabled: false,
     yetiSpawnDistance: 0,
     gateConfig: {
       gateSpacing: 400,
       timeLimitEnabled: false,
+    },
+    slalomCourse: {
+      totalGates:        25,
+      gateMissPenaltyMs: 5000,
     },
   },
   [GameMode.TreeSlalom]: {
