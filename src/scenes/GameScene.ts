@@ -642,7 +642,7 @@ const isJump = this.session.mode === GameMode.Jump;
     const cols   = Math.ceil(WORLD_WIDTH / sqSize);
     const rows   = FINISH_LINE_H / sqSize; // = 2
 
-    this.finishLineGfx = this.add.graphics().setDepth(8);
+    this.finishLineGfx = this.add.graphics().setDepth(3);
     for (let row = 0; row < rows; row++) {
       for (let col = 0; col < cols; col++) {
         const black = (row + col) % 2 === 0;
@@ -682,7 +682,7 @@ const isJump = this.session.mode === GameMode.Jump;
     this.announcementWorldY = 288;
     const initScreenY = PLAYER_SCREEN_Y + this.announcementWorldY;
 
-    this.announcementContainer = this.add.container(WORLD_WIDTH / 2, initScreenY).setDepth(3).setAlpha(0.55);
+    this.announcementContainer = this.add.container(WORLD_WIDTH / 2, initScreenY).setDepth(3).setAlpha(0.8);
 
     lines.forEach(({ text, size, fontStyle, underline }, i) => {
       const t = this.add.text(0, i * lineH, text, {
