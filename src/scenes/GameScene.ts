@@ -682,7 +682,7 @@ const isJump = this.session.mode === GameMode.Jump;
     this.announcementWorldY = 288;
     const initScreenY = PLAYER_SCREEN_Y + this.announcementWorldY;
 
-    this.announcementContainer = this.add.container(WORLD_WIDTH / 2, initScreenY).setDepth(8).setAlpha(0.55);
+    this.announcementContainer = this.add.container(WORLD_WIDTH / 2, initScreenY).setDepth(3).setAlpha(0.55);
 
     lines.forEach(({ text, size, fontStyle, underline }, i) => {
       const t = this.add.text(0, i * lineH, text, {
