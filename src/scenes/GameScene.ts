@@ -538,15 +538,12 @@ export class GameScene extends Phaser.Scene {
     }).setDepth(21);
 
     const isFreeSki = this.session.mode === GameMode.FreeSki;
-    const distX      = isFreeSki ? WORLD_WIDTH / 2 : WORLD_WIDTH - 18;
-    const distOrigin = isFreeSki ? 0.5 : 1;
-    const distColor  = isFreeSki ? '#ffcc00' : '#ffffff';
-    this.distanceText = this.add.text(distX, 13, '0 m', {
+    this.distanceText = this.add.text(WORLD_WIDTH / 2, 13, '0 m', {
       fontFamily: 'sans-serif',
       fontSize:   '18px',
       fontStyle:  'bold',
-      color:      distColor,
-    }).setOrigin(distOrigin, 0).setDepth(21);
+      color:      '#ffcc00',
+    }).setOrigin(0.5, 0).setDepth(21).setVisible(isFreeSki);
 
     const best    = HighScoreManager.getBest(this.session.mode);
     const bestStr = (() => {
@@ -557,13 +554,11 @@ export class GameScene extends Phaser.Scene {
         case GameMode.Jump:    return `${best.score}`;
       }
     })();
-    const bestX      = isFreeSki ? WORLD_WIDTH / 2 : WORLD_WIDTH - 18;
-    const bestOrigin = isFreeSki ? 0.5 : 1;
-    this.add.text(bestX, 30, `Best: ${bestStr}`, {
+    this.add.text(WORLD_WIDTH / 2, 30, `Best: ${bestStr}`, {
       fontFamily: 'sans-serif',
       fontSize:   '12px',
       color:      '#aaaacc',
-    }).setOrigin(bestOrigin, 0).setDepth(21);
+    }).setOrigin(0.5, 0).setDepth(21);
 
     const isTimeTrial = this.session.mode === GameMode.Slalom && this.totalGatesInCourse > 0;
 
