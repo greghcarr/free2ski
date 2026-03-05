@@ -48,6 +48,7 @@ export class PauseScene extends Phaser.Scene {
 
     if (this.input.keyboard) {
       this.input.keyboard.once('keydown-ESC', resume);
+      this.input.keyboard.once('keydown-P', resume);
     }
 
     addVersionLabel(this, '#8aaabb');
