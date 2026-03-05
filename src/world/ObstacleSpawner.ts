@@ -15,6 +15,7 @@ export interface ObstacleSpawnPoint {
   worldY:       number; // absolute world Y
   renderDepth?: number; // overrides the entity's default depth when set
   isFinish?:    boolean; // true for the final slalom gate (checkered flag style)
+  gateNumber?:  number;  // 1-based gate number for slalom gates
 }
 
 // Horizontal margins (course obstacles)
@@ -134,7 +135,7 @@ function spawnSlalom(
     const worldX           = Math.max(GATE_CENTRE_MIN, Math.min(GATE_CENTRE_MAX, centreX + rng.range(-GATE_X_JITTER, GATE_X_JITTER)));
     const worldY           = worldYStart + CHUNK_GRACE_Y + g * GATE_SPACING + rng.range(-GATE_Y_JITTER, GATE_Y_JITTER);
     const isFinish         = gateNumber === totalGates - 1;
-    points.push({ kind: 'gate', variant: color, worldX, worldY, ...(isFinish && { isFinish: true }) });
+    points.push({ kind: 'gate', variant: color, worldX, worldY, gateNumber: gateNumber + 1, ...(isFinish && { isFinish: true }) });
   }
 
   points.sort((a, b) => a.worldY - b.worldY);

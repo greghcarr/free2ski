@@ -200,7 +200,7 @@ export class ChunkManager {
           obs = new Rock(this.scene, pt.worldX, pt.worldY, pt.variant as 'normal' | 'small');
           break;
         case 'gate':
-          obs = new SlalomGate(this.scene, pt.worldX, pt.worldY, pt.variant as 'red' | 'blue', pt.isFinish);
+          obs = new SlalomGate(this.scene, pt.worldX, pt.worldY, pt.variant as 'red' | 'blue', pt.isFinish, pt.gateNumber);
           break;
         case 'ramp':
           obs = new Ramp(this.scene, pt.worldX, pt.worldY);

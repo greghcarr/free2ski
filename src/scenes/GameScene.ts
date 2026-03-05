@@ -87,7 +87,6 @@ export class GameScene extends Phaser.Scene {
   private distanceText!:  Phaser.GameObjects.Text;
   private timerText!:     Phaser.GameObjects.Text;
   private yetiWarning!:   Phaser.GameObjects.Text;
-  private gateText!:      Phaser.GameObjects.Text;
   private jumpScoreText!: Phaser.GameObjects.Text;
 
   // --- Finish line (Jump mode) ---
@@ -291,7 +290,6 @@ export class GameScene extends Phaser.Scene {
     if (this.session.mode === GameMode.Slalom && this.totalGatesInCourse > 0) {
       this.elapsedMs = Math.round(_time - this.courseStartTimeMs) + this.penaltyMs;
       this.timerText.setText(formatRaceTime(this.elapsedMs));
-      this.gateText.setText(`${this.gatesPassed} / ${this.totalGatesInCourse} Gates`);
     }
 
     // --- Course announcement (world-space scroll) ---
@@ -570,15 +568,7 @@ export class GameScene extends Phaser.Scene {
     }).setOrigin(0.5, 0).setDepth(21).setVisible(isTimeTrial);
 
 
-    const showGates = this.session.mode === GameMode.Slalom;
-    const gateLabel = isTimeTrial ? `0 / ${this.totalGatesInCourse}` : 'Gates: 0';
-    this.gateText = this.add.text(WORLD_WIDTH * 3 / 4, 13, gateLabel, {
-      fontFamily: 'sans-serif',
-      fontSize:   '14px',
-      color:      '#ffffff',
-    }).setOrigin(0.5, 0).setDepth(21).setVisible(showGates);
-
-    const isJump = this.session.mode === GameMode.Jump;
+const isJump = this.session.mode === GameMode.Jump;
     this.jumpScoreText = this.add.text(WORLD_WIDTH / 2, 13, 'Score: 0', {
       fontFamily: 'sans-serif',
       fontSize:   '18px',
