@@ -75,6 +75,6 @@ export class Ramp extends ObstacleBase {
     gfx.strokeRoundedRect(-hw, -hd, RAMP_W, RAMP_D, CORNER);
 
     this.container = scene.add.container(worldX, 9_999, [gfx]);
-    this.container.setDepth(4);
+    this.container.setDepth(3);
   }
 }
