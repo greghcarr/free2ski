@@ -171,7 +171,23 @@ export class GameScene extends Phaser.Scene {
     this.naturalSpeed = Math.min(this.naturalSpeed + SPEED_ACCEL_RATE * dt, MAX_SCROLL_SPEED);
 
     // --- Player update ---
-    const speedMod       = this.player.update(this.controls.getState(), this.naturalSpeed, delta);
+    const inputState = this.controls.getState();
+    const pointer    = this.input.activePointer;
+    if (pointer.isDown) {
+      // Determine which side of the skier's current trajectory the pointer is on.
+      // Dot the pointer-relative vector against the trajectory's right-normal:
+      //   trajectory direction = (sin a, cos a)
+      //   right-normal         = (cos a, -sin a)
+      // Positive result → pointer is right of trajectory → steer right.
+      const a   = Phaser.Math.DegToRad(this.player.angle);
+      const mdx = pointer.x - this.player.x;
+      const mdy = pointer.y - this.player.screenY;
+      const side = mdx * Math.cos(a) - mdy * Math.sin(a);
+      const DEAD_ZONE = 12;
+      if (side >  DEAD_ZONE) inputState.right = true;
+      if (side < -DEAD_ZONE) inputState.left  = true;
+    }
+    const speedMod       = this.player.update(inputState, this.naturalSpeed, delta);
     const effectiveSpeed = this.naturalSpeed * speedMod;
 
     // Track air time for Jump mode score
