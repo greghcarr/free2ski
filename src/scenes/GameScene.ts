@@ -570,11 +570,6 @@ export class GameScene extends Phaser.Scene {
       color:      '#ffffff',
     }).setOrigin(0.5, 0).setDepth(21).setVisible(isTimeTrial);
 
-    this.add.text(WORLD_WIDTH / 2 + 130, 13, '  ESC: pause', {
-      fontFamily: 'sans-serif',
-      fontSize:   '13px',
-      color:      '#666688',
-    }).setOrigin(0, 0).setDepth(21);
 
     const showGates = this.session.mode === GameMode.Slalom;
     const gateLabel = isTimeTrial ? `0 / ${this.totalGatesInCourse}` : 'Gates: 0';
@@ -776,11 +771,13 @@ export class GameScene extends Phaser.Scene {
   // Controls
   // ---------------------------------------------------------------------------
   private bindPauseKey(): void {
-    this.input.keyboard?.on('keydown-ESC', () => {  // Phaser's Scene.input.keyboard
+    const openPause = () => {
       if (!this.gameActive) return;
       this.scene.pause();
       this.scene.launch(SceneKey.Pause, { callerKey: SceneKey.Game, session: this.session });
-    });
+    };
+    this.input.keyboard?.on('keydown-ESC', openPause);
+    this.input.keyboard?.on('keydown-P', openPause);
   }
 
   // ---------------------------------------------------------------------------
