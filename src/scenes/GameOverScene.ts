@@ -111,7 +111,7 @@ export class GameOverScene extends Phaser.Scene {
     if (courseComplete || finishTimeMs !== undefined) {
       headline = 'COURSE COMPLETE'; color = '#ffd700'; fontSize = '50px';
     } else if (caughtByYeti) {
-      headline = 'THE YETI GOT YOU'; color = '#c8ddf0'; fontSize = '50px';
+      headline = 'THE YETI GOT YOU'; color = '#e63030'; fontSize = '50px';
     } else {
       headline = 'WIPEOUT'; color = '#e63030'; fontSize = '62px';
     }
