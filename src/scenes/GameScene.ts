@@ -537,12 +537,16 @@ export class GameScene extends Phaser.Scene {
       color:      '#aaaacc',
     }).setDepth(21);
 
-    this.distanceText = this.add.text(WORLD_WIDTH - 18, 13, '0 m', {
+    const isFreeSki = this.session.mode === GameMode.FreeSki;
+    const distX      = isFreeSki ? WORLD_WIDTH / 2 : WORLD_WIDTH - 18;
+    const distOrigin = isFreeSki ? 0.5 : 1;
+    const distColor  = isFreeSki ? '#ffcc00' : '#ffffff';
+    this.distanceText = this.add.text(distX, 13, '0 m', {
       fontFamily: 'sans-serif',
       fontSize:   '18px',
       fontStyle:  'bold',
-      color:      '#ffffff',
-    }).setOrigin(1, 0).setDepth(21);
+      color:      distColor,
+    }).setOrigin(distOrigin, 0).setDepth(21);
 
     const best    = HighScoreManager.getBest(this.session.mode);
     const bestStr = (() => {
@@ -553,8 +557,8 @@ export class GameScene extends Phaser.Scene {
         case GameMode.Jump:    return `${best.score}`;
       }
     })();
-    const bestX      = this.session.mode === GameMode.FreeSki ? WORLD_WIDTH - 18 : WORLD_WIDTH / 2;
-    const bestOrigin = this.session.mode === GameMode.FreeSki ? 1 : 0.5;
+    const bestX      = isFreeSki ? WORLD_WIDTH / 2 : WORLD_WIDTH - 18;
+    const bestOrigin = isFreeSki ? 0.5 : 1;
     this.add.text(bestX, 30, `Best: ${bestStr}`, {
       fontFamily: 'sans-serif',
       fontSize:   '12px',
