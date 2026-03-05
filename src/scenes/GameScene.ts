@@ -571,13 +571,13 @@ export class GameScene extends Phaser.Scene {
       fontFamily: 'sans-serif',
       fontSize:   '18px',
       fontStyle:  'bold',
-      color:      '#ffffff',
+      color:      '#ffcc00',
     }).setOrigin(0.5, 0).setDepth(21).setVisible(isTimeTrial);
 
 
     const showGates = this.session.mode === GameMode.Slalom;
     const gateLabel = isTimeTrial ? `0 / ${this.totalGatesInCourse}` : 'Gates: 0';
-    this.gateText = this.add.text(WORLD_WIDTH / 4, 13, gateLabel, {
+    this.gateText = this.add.text(WORLD_WIDTH * 3 / 4, 13, gateLabel, {
       fontFamily: 'sans-serif',
       fontSize:   '14px',
       color:      '#ffffff',
