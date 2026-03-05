@@ -89,7 +89,7 @@ export class Player {
       this.body,
       this.helmet,
     ]);
-    this.container.setDepth(10);
+    this.container.setDepth(2);
   }
 
   // ---------------------------------------------------------------------------
