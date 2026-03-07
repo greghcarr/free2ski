@@ -1,1 +1,0 @@
-class r{isAvailable(){return!1}async unlockAchievement(e){}async getAchievementUnlocked(e){return!1}async submitScore(e,a){}async fetchLeaderboard(e,a){return[]}async cloudSave(e,a){}async cloudLoad(e){return null}openOverlay(e){}}export{r as NullPlatformService};
