@@ -608,6 +608,21 @@ const isJump = this.session.mode === GameMode.Jump;
       ease:     'Sine.easeInOut',
     });
 
+    // Pause button — top-right corner, finger-friendly hit area
+    const pauseBtn = this.add.text(WORLD_WIDTH - 18, 13, '⏸', {
+      fontFamily: 'sans-serif',
+      fontSize:   '22px',
+      color:      '#aaaacc',
+    }).setOrigin(1, 0).setDepth(21).setInteractive({ useHandCursor: true });
+
+    // Invisible hit area larger than the glyph for easy tapping
+    const pauseHit = this.add.rectangle(WORLD_WIDTH - 18, 23, 56, 46, 0xffffff, 0)
+      .setOrigin(1, 0.5).setDepth(21).setInteractive();
+
+    const openPause = () => this.triggerPause();
+    pauseBtn.on('pointerdown', openPause);
+    pauseHit.on('pointerdown', openPause);
+
     addVersionLabel(this, '#8aaabb');
   }
 
@@ -774,14 +789,15 @@ const isJump = this.session.mode === GameMode.Jump;
   // ---------------------------------------------------------------------------
   // Controls
   // ---------------------------------------------------------------------------
+  private triggerPause(): void {
+    if (!this.gameActive) return;
+    this.scene.pause();
+    this.scene.launch(SceneKey.Pause, { callerKey: SceneKey.Game, session: this.session });
+  }
+
   private bindPauseKey(): void {
-    const openPause = () => {
-      if (!this.gameActive) return;
-      this.scene.pause();
-      this.scene.launch(SceneKey.Pause, { callerKey: SceneKey.Game, session: this.session });
-    };
-    this.input.keyboard?.on('keydown-ESC', openPause);
-    this.input.keyboard?.on('keydown-P', openPause);
+    this.input.keyboard?.on('keydown-ESC', () => this.triggerPause());
+    this.input.keyboard?.on('keydown-P',   () => this.triggerPause());
   }
 
   // ---------------------------------------------------------------------------
