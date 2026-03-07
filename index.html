@@ -2,7 +2,15 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- user-scalable=no prevents pinch-zoom breaking the canvas;
+         viewport-fit=cover extends into notch/home-indicator areas -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <!-- PWA / Add-to-Home-Screen: hides browser chrome for a fullscreen feel -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-fullscreen" />
+    <!-- Colours the browser address bar on Android Chrome -->
+    <meta name="theme-color" content="#1a2a3a" />
     <title>Free2Ski</title>
     <style>
       * {
@@ -10,21 +18,74 @@
         padding: 0;
         box-sizing: border-box;
       }
-      html, body {
+      html {
+        /* dvh = dynamic viewport height: shrinks/grows as URL bar shows/hides.
+           The vh fallback is used on browsers that don't support dvh yet. */
+        height: 100vh;
+        height: 100dvh;
+      }
+      body {
+        /* position:fixed prevents the page from scrolling when the URL bar
+           animates in/out, which would otherwise resize and shift the canvas. */
+        position: fixed;
+        top: 0;
+        left: 0;
         width: 100%;
-        height: 100%;
+        height: 100vh;
+        height: 100dvh;
         background: #1a2a3a;
         overflow: hidden;
         display: flex;
         align-items: center;
         justify-content: center;
+        /* Prevent long-press text selection and callout menus on mobile */
+        user-select: none;
+        -webkit-user-select: none;
+        -webkit-touch-callout: none;
       }
       canvas {
         display: block;
+        /* Let Phaser handle all pointer events; tell the browser not to
+           interpret touches as scroll or zoom gestures on the canvas. */
+        touch-action: none;
+      }
+      /* Portrait-mode nudge for phones held upright */
+      #rotate-prompt {
+        display: none;
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        background: #1a2a3a;
+        color: #e8f0f8;
+        font-family: sans-serif;
+        font-size: 1.1rem;
+        text-align: center;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 1rem;
+      }
+      #rotate-prompt svg {
+        width: 56px;
+        height: 56px;
+        opacity: 0.7;
+      }
+      @media (orientation: portrait) and (max-device-width: 900px) {
+        #rotate-prompt { display: flex; }
       }
     </style>
   </head>
   <body>
+    <!-- Shown only when a phone is held in portrait mode -->
+    <div id="rotate-prompt" aria-live="polite">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <rect x="5" y="2" width="14" height="20" rx="2"/>
+        <path d="M9 21h6" stroke-linecap="round"/>
+        <!-- rotation arrow -->
+        <path d="M17 7 A7 7 0 0 1 7 17" stroke-linecap="round" marker-end="url(#arr)"/>
+      </svg>
+      <span>Rotate your device to play</span>
+    </div>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
