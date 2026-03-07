@@ -99,7 +99,7 @@ export class GameOverScene extends Phaser.Scene {
     const { caughtByYeti, courseComplete, session, finishTimeMs } = this.summary;
 
     this.add.text(WORLD_WIDTH / 2, 58, session.mode.replace(/_/g, ' ').toUpperCase(), {
-      fontFamily: 'sans-serif',
+      fontFamily: 'FoxwhelpFont',
       fontSize: '14px',
       color: COLORS.UI_MUTED,
       letterSpacing: 3,
@@ -117,7 +117,7 @@ export class GameOverScene extends Phaser.Scene {
     }
 
     this.add.text(WORLD_WIDTH / 2, 120, headline, {
-      fontFamily: 'sans-serif',
+      fontFamily: 'FoxwhelpFont',
       fontSize,
       fontStyle:  'bold',
       color,
@@ -139,7 +139,7 @@ export class GameOverScene extends Phaser.Scene {
 
     const total = HighScoreManager.getTotalRuns();
     this.add.text(WORLD_WIDTH / 2, GAME_HEIGHT - 28, `Run #${total}`, {
-      fontFamily: 'sans-serif',
+      fontFamily: 'FoxwhelpFont',
       fontSize: '18px',
       color: COLORS.UI_COUNT,
     }).setOrigin(0.5);
@@ -153,14 +153,14 @@ export class GameOverScene extends Phaser.Scene {
     const total   = this.summary.totalGatesInCourse ?? 0;
 
     this.add.text(WORLD_WIDTH / 2, 226, formatRaceTime(elapsed), {
-      fontFamily: 'sans-serif',
+      fontFamily: 'FoxwhelpFont',
       fontSize:   '58px',
       fontStyle:  'bold',
       color:      '#ffffff',
     }).setOrigin(0.5);
 
     this.add.text(WORLD_WIDTH / 2, 292, `${passed} / ${total} gates passed`, {
-      fontFamily: 'sans-serif',
+      fontFamily: 'FoxwhelpFont',
       fontSize:   '16px',
       color:      COLORS.UI_SECONDARY,
     }).setOrigin(0.5);
@@ -175,14 +175,14 @@ export class GameOverScene extends Phaser.Scene {
     const bestMs = HighScoreManager.getBest(GameMode.Slalom)?.timeMs ?? null;
     if (bestMs !== null) {
       this.add.text(WORLD_WIDTH / 2, 358, `Personal best: ${formatRaceTime(bestMs)}`, {
-        fontFamily: 'sans-serif',
+        fontFamily: 'FoxwhelpFont',
         fontSize:   '19px',
         color:      COLORS.UI_SECONDARY,
       }).setOrigin(0.5);
 
     } else {
       this.add.text(WORLD_WIDTH / 2, 358, 'No completed runs on record', {
-        fontFamily: 'sans-serif',
+        fontFamily: 'FoxwhelpFont',
         fontSize:   '16px',
         color:      COLORS.UI_SECONDARY,
       }).setOrigin(0.5);
@@ -198,7 +198,7 @@ export class GameOverScene extends Phaser.Scene {
     const penalty = penaltyMs  ?? 0;
 
     this.add.text(WORLD_WIDTH / 2, 220, formatRaceTime(finishTimeMs!), {
-      fontFamily: 'sans-serif',
+      fontFamily: 'FoxwhelpFont',
       fontSize: '58px',
       fontStyle: 'bold',
       color: '#ffffff',
@@ -208,7 +208,7 @@ export class GameOverScene extends Phaser.Scene {
       ? `${missed} gate${missed > 1 ? 's' : ''} missed  ·  +${penalty / 1000}s penalty`
       : `${(gatesPassed ?? 0)} / ${(gatesPassed ?? 0) + missed} gates  ·  no penalties`;
     this.add.text(WORLD_WIDTH / 2, 292, subtitle, {
-      fontFamily: 'sans-serif',
+      fontFamily: 'FoxwhelpFont',
       fontSize: '16px',
       color: missed > 0 ? COLORS.SCORE_WORSE : COLORS.SCORE_BETTER,
     }).setOrigin(0.5);
@@ -229,7 +229,7 @@ export class GameOverScene extends Phaser.Scene {
 
   private buildNewBestTimeBadge(timeMs: number, prevMs: number | null): void {
     const badge = this.add.text(WORLD_WIDTH / 2, 360, '★  NEW PERSONAL BEST  ★', {
-      fontFamily: 'sans-serif',
+      fontFamily: 'FoxwhelpFont',
       fontSize: '24px',
       fontStyle: 'bold',
       color: COLORS.POPUP_GOLD,
@@ -251,7 +251,7 @@ export class GameOverScene extends Phaser.Scene {
       ? `${formatRaceTime(prevMs)}  →  ${formatRaceTime(timeMs)}`
       : 'First run on record!';
     this.add.text(WORLD_WIDTH / 2, 398, sub, {
-      fontFamily: 'sans-serif',
+      fontFamily: 'FoxwhelpFont',
       fontSize: '15px',
       color: COLORS.UI_DETAIL,
     }).setOrigin(0.5);
@@ -260,7 +260,7 @@ export class GameOverScene extends Phaser.Scene {
   private buildExistingBestTimeRow(timeMs: number, bestMs: number | null): void {
     const best = bestMs ?? timeMs;
     this.add.text(WORLD_WIDTH / 2, 358, `Personal best: ${formatRaceTime(best)}`, {
-      fontFamily: 'sans-serif',
+      fontFamily: 'FoxwhelpFont',
       fontSize: '19px',
       color: COLORS.UI_SECONDARY,
     }).setOrigin(0.5);
@@ -271,7 +271,7 @@ export class GameOverScene extends Phaser.Scene {
                     : `${deltaMs > 0 ? '+' : '-'}${formatRaceTime(Math.abs(deltaMs))} this run`;
       const color   = deltaMs === 0 ? COLORS.HUD_VALUE : deltaMs < 0 ? COLORS.SCORE_BETTER : COLORS.SCORE_WORSE;
       this.add.text(WORLD_WIDTH / 2, 390, label, {
-        fontFamily: 'sans-serif',
+        fontFamily: 'FoxwhelpFont',
         fontSize: '15px',
         color,
       }).setOrigin(0.5);
@@ -285,7 +285,7 @@ export class GameOverScene extends Phaser.Scene {
     const { isNewBest, prevBest } = result;
 
     this.add.text(WORLD_WIDTH / 2, 226, `${distanceM.toLocaleString()} m`, {
-      fontFamily: 'sans-serif',
+      fontFamily: 'FoxwhelpFont',
       fontSize: '52px',
       fontStyle: 'bold',
       color: '#ffffff',
@@ -295,7 +295,7 @@ export class GameOverScene extends Phaser.Scene {
       ? `Yetis evaded: ${yetisEvaded ?? 0}`
       : `Score: ${score.toLocaleString()}`;
     this.add.text(WORLD_WIDTH / 2, 290, subLabel, {
-      fontFamily: 'sans-serif',
+      fontFamily: 'FoxwhelpFont',
       fontSize: '20px',
       color: COLORS.UI_SECONDARY,
     }).setOrigin(0.5);
@@ -316,7 +316,7 @@ export class GameOverScene extends Phaser.Scene {
 
   private buildNewBestDistanceBadge(distanceM: number, prevM: number | null): void {
     const badge = this.add.text(WORLD_WIDTH / 2, 360, '★  NEW PERSONAL BEST  ★', {
-      fontFamily: 'sans-serif',
+      fontFamily: 'FoxwhelpFont',
       fontSize: '24px',
       fontStyle: 'bold',
       color: COLORS.POPUP_GOLD,
@@ -338,7 +338,7 @@ export class GameOverScene extends Phaser.Scene {
       ? `+${(distanceM - prevM).toLocaleString()} m over previous  (${prevM.toLocaleString()} m)`
       : 'First run on record!';
     this.add.text(WORLD_WIDTH / 2, 398, sub, {
-      fontFamily: 'sans-serif',
+      fontFamily: 'FoxwhelpFont',
       fontSize: '15px',
       color: COLORS.UI_DETAIL,
     }).setOrigin(0.5);
@@ -347,7 +347,7 @@ export class GameOverScene extends Phaser.Scene {
   private buildExistingBestDistanceRow(distanceM: number, bestM: number | null): void {
     const best = bestM ?? distanceM;
     this.add.text(WORLD_WIDTH / 2, 358, `Personal best: ${best.toLocaleString()} m`, {
-      fontFamily: 'sans-serif',
+      fontFamily: 'FoxwhelpFont',
       fontSize: '19px',
       color: COLORS.UI_SECONDARY,
     }).setOrigin(0.5);
@@ -358,7 +358,7 @@ export class GameOverScene extends Phaser.Scene {
                   : `${delta > 0 ? '+' : '-'}${Math.abs(delta).toLocaleString()} m this run`;
       const color = delta === 0 ? COLORS.HUD_VALUE : delta > 0 ? COLORS.SCORE_BETTER : COLORS.SCORE_WORSE;
       this.add.text(WORLD_WIDTH / 2, 390, label, {
-        fontFamily: 'sans-serif',
+        fontFamily: 'FoxwhelpFont',
         fontSize: '15px',
         color,
       }).setOrigin(0.5);
@@ -372,7 +372,7 @@ export class GameOverScene extends Phaser.Scene {
     const { isNewBest, prevBest } = result;
 
     this.add.text(WORLD_WIDTH / 2, 226, `Score: ${score}`, {
-      fontFamily: 'sans-serif',
+      fontFamily: 'FoxwhelpFont',
       fontSize:   '52px',
       fontStyle:  'bold',
       color:      '#ffffff',
@@ -381,7 +381,7 @@ export class GameOverScene extends Phaser.Scene {
     if (!courseComplete) {
       const courseM = JUMP_COURSE_DISTANCE_M;
       this.add.text(WORLD_WIDTH / 2, 290, `${distanceM.toLocaleString()} / ${courseM.toLocaleString()} m`, {
-        fontFamily: 'sans-serif',
+        fontFamily: 'FoxwhelpFont',
         fontSize:   '20px',
         color:      COLORS.UI_SECONDARY,
       }).setOrigin(0.5);
@@ -403,7 +403,7 @@ export class GameOverScene extends Phaser.Scene {
 
   private buildNewBestJumpBadge(score: number, prevScore: number | null): void {
     const badge = this.add.text(WORLD_WIDTH / 2, 360, '★  NEW PERSONAL BEST  ★', {
-      fontFamily: 'sans-serif',
+      fontFamily: 'FoxwhelpFont',
       fontSize:   '24px',
       fontStyle:  'bold',
       color:      COLORS.POPUP_GOLD,
@@ -425,7 +425,7 @@ export class GameOverScene extends Phaser.Scene {
       ? `+${score - prevScore} over previous  (best: ${prevScore})`
       : 'First run on record!';
     this.add.text(WORLD_WIDTH / 2, 398, sub, {
-      fontFamily: 'sans-serif',
+      fontFamily: 'FoxwhelpFont',
       fontSize:   '15px',
       color:      COLORS.UI_DETAIL,
     }).setOrigin(0.5);
@@ -434,7 +434,7 @@ export class GameOverScene extends Phaser.Scene {
   private buildExistingBestJumpRow(score: number, bestScore: number | null): void {
     const best = bestScore ?? score;
     this.add.text(WORLD_WIDTH / 2, 358, `Personal best: ${best}`, {
-      fontFamily: 'sans-serif',
+      fontFamily: 'FoxwhelpFont',
       fontSize:   '19px',
       color:      COLORS.UI_SECONDARY,
     }).setOrigin(0.5);
@@ -445,7 +445,7 @@ export class GameOverScene extends Phaser.Scene {
                   : `${delta > 0 ? '+' : ''}${delta} this run`;
       const color = delta === 0 ? COLORS.HUD_VALUE : delta > 0 ? COLORS.SCORE_BETTER : COLORS.SCORE_WORSE;
       this.add.text(WORLD_WIDTH / 2, 390, label, {
-        fontFamily: 'sans-serif',
+        fontFamily: 'FoxwhelpFont',
         fontSize:   '15px',
         color,
       }).setOrigin(0.5);
@@ -476,7 +476,7 @@ export class GameOverScene extends Phaser.Scene {
     draw(false);
 
     this.add.text(x, y, label, {
-      fontFamily: 'sans-serif',
+      fontFamily: 'FoxwhelpFont',
       fontSize: '20px',
       fontStyle: 'bold',
       color: '#ffffff',

@@ -16,8 +16,8 @@ export class MainMenuScene extends Phaser.Scene {
     bg.fillRect(0, 0, WORLD_WIDTH, GAME_HEIGHT);
 
     // Title
-    this.add.text(WORLD_WIDTH / 2, 160, 'FREE2SKI', {
-      fontFamily: 'sans-serif',
+    this.add.text(WORLD_WIDTH / 2, 160, 'free2ski', {
+      fontFamily: 'FoxwhelpFont',
       fontSize: '72px',
       fontStyle: 'bold',
       color: COLORS.UI_TITLE,
@@ -25,17 +25,17 @@ export class MainMenuScene extends Phaser.Scene {
       strokeThickness: 4,
     }).setOrigin(0.5);
 
-    this.add.text(WORLD_WIDTH / 2, 240, 'An endless skiing adventure', {
-      fontFamily: 'sans-serif',
+    this.add.text(WORLD_WIDTH / 2, 240, 'a skiing adventure', {
+      fontFamily: 'FoxwhelpFont',
       fontSize: '22px',
       color: COLORS.UI_SUBTITLE,
     }).setOrigin(0.5);
 
     // Menu buttons
     let nav: MenuNav | undefined;
-    const playItem        = this.createButton(WORLD_WIDTH / 2, 340, 'PLAY',        () => { this.scene.start(SceneKey.ModeSelect); },   () => nav?.hoverAt(0));
-    const leaderboardItem = this.createButton(WORLD_WIDTH / 2, 420, 'LEADERBOARD', () => { this.scene.start(SceneKey.Leaderboard); }, () => nav?.hoverAt(1));
-    const settingsItem    = this.createButton(WORLD_WIDTH / 2, 500, 'SETTINGS',    () => { this.scene.start(SceneKey.Settings); },    () => nav?.hoverAt(2));
+    const playItem        = this.createButton(WORLD_WIDTH / 2, 340, 'play',        () => { this.scene.start(SceneKey.ModeSelect); },   () => nav?.hoverAt(0));
+    const leaderboardItem = this.createButton(WORLD_WIDTH / 2, 420, 'leaderboard', () => { this.scene.start(SceneKey.Leaderboard); }, () => nav?.hoverAt(1));
+    const settingsItem    = this.createButton(WORLD_WIDTH / 2, 500, 'settings',    () => { this.scene.start(SceneKey.Settings); },    () => nav?.hoverAt(2));
     nav = new MenuNav(this, [playItem, leaderboardItem, settingsItem]);
 
     addVersionLabel(this);
@@ -54,7 +54,7 @@ export class MainMenuScene extends Phaser.Scene {
     drawBg(false);
 
     this.add.text(x, y, label, {
-      fontFamily: 'sans-serif',
+      fontFamily: 'FoxwhelpFont',
       fontSize: '22px',
       fontStyle: 'bold',
       color: '#ffffff',

@@ -21,7 +21,7 @@ export class PreloadScene extends Phaser.Scene {
     const bar = this.add.graphics();
 
     const label = this.add.text(WORLD_WIDTH / 2, barY - 24, 'Loading…', {
-      fontFamily: 'sans-serif',
+      fontFamily: 'FoxwhelpFont',
       fontSize: '18px',
       color: '#ffffff',
     }).setOrigin(0.5, 0);

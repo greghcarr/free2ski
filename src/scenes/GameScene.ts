@@ -343,8 +343,8 @@ export class GameScene extends Phaser.Scene {
 
     const finishTimeMs = Math.max(0, Math.round(this.time.now - this.courseStartTimeMs)) + this.penaltyMs;
 
-    const msg = this.add.text(WORLD_WIDTH / 2, GAME_HEIGHT / 2 - 40, 'FINISH!', {
-      fontFamily: 'sans-serif',
+    const msg = this.add.text(WORLD_WIDTH / 2, GAME_HEIGHT / 2 - 40, 'finish!', {
+      fontFamily: 'FoxwhelpFont',
       fontSize:   '52px',
       fontStyle:  'bold',
       color:      COLORS.POPUP_GOLD,
@@ -366,7 +366,7 @@ export class GameScene extends Phaser.Scene {
 
   private showGatePass(gateWorldX: number): void {
     const pop = this.add.text(gateWorldX, PLAYER_SCREEN_Y - 60, '+1', {
-      fontFamily: 'sans-serif',
+      fontFamily: 'FoxwhelpFont',
       fontSize:   '28px',
       fontStyle:  'bold',
       color:      COLORS.POPUP_GOLD,
@@ -387,7 +387,7 @@ export class GameScene extends Phaser.Scene {
   private showPenalty(penaltyMs: number): void {
     const secs = penaltyMs / 1000;
     const pop  = this.add.text(WORLD_WIDTH / 2, PLAYER_SCREEN_Y - 60, `+${secs}s PENALTY`, {
-      fontFamily: 'sans-serif',
+      fontFamily: 'FoxwhelpFont',
       fontSize:   '26px',
       fontStyle:  'bold',
       color:      COLORS.POPUP_PENALTY,
@@ -545,7 +545,7 @@ export class GameScene extends Phaser.Scene {
 
     const modeLabel = this.session.mode.replace(/_/g, ' ').toUpperCase();
     this.add.text(18, 13, modeLabel, {
-      fontFamily: 'sans-serif',
+      fontFamily: 'FoxwhelpFont',
       fontSize:   '17px',
       fontStyle:  'bold',
       color:      COLORS.HUD_LABEL,
@@ -553,7 +553,7 @@ export class GameScene extends Phaser.Scene {
 
     const isFreeSki = this.session.mode === GameMode.FreeSki;
     this.distanceText = this.add.text(WORLD_WIDTH / 2, 13, '0 m', {
-      fontFamily: 'sans-serif',
+      fontFamily: 'FoxwhelpFont',
       fontSize:   '18px',
       fontStyle:  'bold',
       color:      COLORS.HUD_VALUE,
@@ -569,7 +569,7 @@ export class GameScene extends Phaser.Scene {
       }
     })();
     this.add.text(WORLD_WIDTH / 2, 30, `Best: ${bestStr}`, {
-      fontFamily: 'sans-serif',
+      fontFamily: 'FoxwhelpFont',
       fontSize:   '12px',
       color:      COLORS.HUD_LABEL,
     }).setOrigin(0.5, 0).setDepth(DEPTH.HUD);
@@ -577,7 +577,7 @@ export class GameScene extends Phaser.Scene {
     const isTimeTrial = this.session.mode === GameMode.Slalom && this.totalGatesInCourse > 0;
 
     this.timerText = this.add.text(WORLD_WIDTH / 2, 13, '0:00.0', {
-      fontFamily: 'sans-serif',
+      fontFamily: 'FoxwhelpFont',
       fontSize:   '18px',
       fontStyle:  'bold',
       color:      COLORS.HUD_VALUE,
@@ -586,14 +586,14 @@ export class GameScene extends Phaser.Scene {
 
 const isJump = this.session.mode === GameMode.Jump;
     this.jumpScoreText = this.add.text(WORLD_WIDTH / 2, 13, 'Score: 0', {
-      fontFamily: 'sans-serif',
+      fontFamily: 'FoxwhelpFont',
       fontSize:   '18px',
       fontStyle:  'bold',
       color:      COLORS.HUD_VALUE,
     }).setOrigin(0.5, 0).setDepth(DEPTH.HUD).setVisible(isJump);
 
     this.yetiWarning = this.add.text(18, 13, '⚠ YETI', {
-      fontFamily: 'sans-serif',
+      fontFamily: 'FoxwhelpFont',
       fontSize:   '16px',
       fontStyle:  'bold',
       color:      COLORS.YETI_WARNING,
@@ -610,7 +610,7 @@ const isJump = this.session.mode === GameMode.Jump;
 
     // Pause button — top-right corner, finger-friendly hit area
     const pauseBtn = this.add.text(WORLD_WIDTH - 18, 13, '⏸', {
-      fontFamily: 'sans-serif',
+      fontFamily: 'FoxwhelpFont',
       fontSize:   '22px',
       color:      COLORS.HUD_LABEL,
     }).setOrigin(1, 0).setDepth(DEPTH.HUD).setInteractive({ useHandCursor: true });
@@ -631,7 +631,7 @@ const isJump = this.session.mode === GameMode.Jump;
   // ---------------------------------------------------------------------------
   private showGateBonus(): void {
     const pop = this.add.text(this.player.x, PLAYER_SCREEN_Y - 40, `+${GATE_PASS_BONUS}`, {
-      fontFamily: 'sans-serif',
+      fontFamily: 'FoxwhelpFont',
       fontSize:   '22px',
       fontStyle:  'bold',
       color:      COLORS.POPUP_BONUS,
@@ -701,7 +701,7 @@ const isJump = this.session.mode === GameMode.Jump;
 
     lines.forEach(({ text, size, fontStyle, underline }, i) => {
       const t = this.add.text(0, i * lineH, text, {
-        fontFamily: 'sans-serif',
+        fontFamily: 'FoxwhelpFont',
         fontSize:   size,
         fontStyle,
         color,
@@ -722,7 +722,7 @@ const isJump = this.session.mode === GameMode.Jump;
 
   private showJumpBonus(x: number, y: number): void {
     const pop = this.add.text(x, y, '+1', {
-      fontFamily: 'sans-serif',
+      fontFamily: 'FoxwhelpFont',
       fontSize:   '28px',
       fontStyle:  'bold',
       color:      COLORS.HUD_VALUE,
@@ -743,7 +743,7 @@ const isJump = this.session.mode === GameMode.Jump;
   private showYetiEvaded(): void {
     const y = PLAYER_SCREEN_Y - 10;
     const pop = this.add.text(this.player.x, y, '+1', {
-      fontFamily: 'sans-serif',
+      fontFamily: 'FoxwhelpFont',
       fontSize:   '28px',
       fontStyle:  'bold',
       color:      COLORS.HUD_VALUE,
@@ -766,7 +766,7 @@ const isJump = this.session.mode === GameMode.Jump;
     this.gameActive = false;
 
     const msg = this.add.text(WORLD_WIDTH / 2, GAME_HEIGHT / 2 - 40, 'COURSE COMPLETE', {
-      fontFamily: 'sans-serif',
+      fontFamily: 'FoxwhelpFont',
       fontSize:   '48px',
       fontStyle:  'bold',
       color:      COLORS.POPUP_GOLD,
@@ -841,7 +841,7 @@ const isJump = this.session.mode === GameMode.Jump;
   // ---------------------------------------------------------------------------
   private showYetiWarning(): void {
     const warn = this.add.text(WORLD_WIDTH / 2, GAME_HEIGHT / 2 - 70, '⚠  THE YETI IS COMING  ⚠', {
-      fontFamily: 'sans-serif',
+      fontFamily: 'FoxwhelpFont',
       fontSize:   '30px',
       fontStyle:  'bold',
       color:      COLORS.YETI_WARNING,

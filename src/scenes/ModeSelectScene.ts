@@ -22,14 +22,14 @@ export class ModeSelectScene extends Phaser.Scene {
     bg.fillRect(0, 0, WORLD_WIDTH, GAME_HEIGHT);
 
     this.add.text(WORLD_WIDTH / 2, 160, 'SELECT MODE', {
-      fontFamily: 'sans-serif',
+      fontFamily: 'FoxwhelpFont',
       fontSize: '40px',
       fontStyle: 'bold',
       color: COLORS.UI_TITLE,
     }).setOrigin(0.5);
 
     this.add.text(WORLD_WIDTH / 2, 202, `Total runs: ${HighScoreManager.getTotalRuns()}`, {
-      fontFamily: 'sans-serif',
+      fontFamily: 'FoxwhelpFont',
       fontSize: '16px',
       color: COLORS.UI_SUBTITLE,
     }).setOrigin(0.5);
@@ -55,7 +55,7 @@ export class ModeSelectScene extends Phaser.Scene {
 
     // Back button
     this.add.text(60, GAME_HEIGHT - 50, '← Back', {
-      fontFamily: 'sans-serif',
+      fontFamily: 'FoxwhelpFont',
       fontSize: '20px',
       color: COLORS.UI_TITLE,
     }).setInteractive({ useHandCursor: true })
@@ -90,14 +90,14 @@ export class ModeSelectScene extends Phaser.Scene {
     draw(false);
 
     this.add.text(cx, cy - h / 2 + 36, title, {
-      fontFamily: 'sans-serif',
+      fontFamily: 'FoxwhelpFont',
       fontSize: '20px',
       fontStyle: 'bold',
       color: COLORS.UI_TITLE,
     }).setOrigin(0.5);
 
     this.add.text(cx, cy - h / 2 + 68, desc, {
-      fontFamily: 'sans-serif',
+      fontFamily: 'FoxwhelpFont',
       fontSize: '14px',
       color: COLORS.UI_SUBTITLE,
       wordWrap: { width: w - 24 },
@@ -105,7 +105,7 @@ export class ModeSelectScene extends Phaser.Scene {
     }).setOrigin(0.5, 0);
 
     this.add.text(cx, cy + 4, this.bestLabel(mode), {
-      fontFamily: 'sans-serif',
+      fontFamily: 'FoxwhelpFont',
       fontSize: '13px',
       fontStyle: 'bold',
       color: COLORS.UI_TITLE,

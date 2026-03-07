@@ -31,7 +31,7 @@ export class PauseScene extends Phaser.Scene {
     cardGfx.fillRoundedRect(WORLD_WIDTH / 2 - cardW / 2, 180, cardW, cardH, 18);
 
     this.add.text(WORLD_WIDTH / 2, 240, 'PAUSED', {
-      fontFamily: 'sans-serif',
+      fontFamily: 'FoxwhelpFont',
       fontSize: '52px',
       fontStyle: 'bold',
       color: '#ffffff',
@@ -72,7 +72,7 @@ export class PauseScene extends Phaser.Scene {
     };
     draw(false);
     this.add.text(x, y, label, {
-      fontFamily: 'sans-serif',
+      fontFamily: 'FoxwhelpFont',
       fontSize: '20px',
       fontStyle: 'bold',
       color: '#ffffff',
