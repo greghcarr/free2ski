@@ -5,6 +5,7 @@ import {
   WORLD_WIDTH,
   GAME_HEIGHT,
   COLORS,
+  DEPTH,
   BASE_SCROLL_SPEED,
   MAX_SCROLL_SPEED,
   SPEED_ACCEL_RATE,
@@ -128,8 +129,7 @@ export class GameScene extends Phaser.Scene {
   create(): void {
     this.slopeGfx    = this.add.graphics();
     this.edgeShadows = this.add.graphics();
-    // Trail sits above the snow but below obstacles (depth 4) and player (depth 10)
-    this.trailGfx      = this.add.graphics().setDepth(2);
+    this.trailGfx      = this.add.graphics().setDepth(DEPTH.TRAIL);
 
     this.drawSlope(0);
     this.drawEdgeShadows();
@@ -271,7 +271,7 @@ export class GameScene extends Phaser.Scene {
     const modeCfg   = GAME_MODE_CONFIGS[this.session.mode];
     const yetiEvent = this.yetiSystem.update(
       this.distancePx, this.player.x, this.player.screenY, delta,
-      modeCfg.yetiEnabled,
+      modeCfg.yetiEnabled, this.player.state === PlayerState.Jumping,
     );
     if (yetiEvent === 'caught') {
       this.triggerCaughtByYeti();
@@ -350,7 +350,7 @@ export class GameScene extends Phaser.Scene {
       color:      '#ffd700',
       stroke:     '#000000',
       strokeThickness: 3,
-    }).setOrigin(0.5).setDepth(30);
+    }).setOrigin(0.5).setDepth(DEPTH.POPUP);
 
     this.tweens.add({
       targets:  msg,
@@ -372,7 +372,7 @@ export class GameScene extends Phaser.Scene {
       color:      '#ffd700',
       stroke:     '#000000',
       strokeThickness: 2,
-    }).setOrigin(0.5).setDepth(30);
+    }).setOrigin(0.5).setDepth(DEPTH.POPUP);
 
     this.tweens.add({
       targets:  pop,
@@ -393,7 +393,7 @@ export class GameScene extends Phaser.Scene {
       color:      '#ff4444',
       stroke:     '#000000',
       strokeThickness: 2,
-    }).setOrigin(0.5).setDepth(30);
+    }).setOrigin(0.5).setDepth(DEPTH.POPUP);
 
     this.tweens.add({
       targets:  pop,
@@ -532,14 +532,14 @@ export class GameScene extends Phaser.Scene {
     this.edgeShadows.fillStyle(COLORS.TREE_DARK, 0.25);
     this.edgeShadows.fillRect(0, 0, 12, GAME_HEIGHT);
     this.edgeShadows.fillRect(WORLD_WIDTH - 12, 0, 12, GAME_HEIGHT);
-    this.edgeShadows.setDepth(1);
+    this.edgeShadows.setDepth(DEPTH.TERRAIN);
   }
 
   // ---------------------------------------------------------------------------
   // HUD
   // ---------------------------------------------------------------------------
   private buildHUD(): void {
-    const hudBg = this.add.graphics().setDepth(20);
+    const hudBg = this.add.graphics().setDepth(DEPTH.HUD_BG);
     hudBg.fillStyle(COLORS.HUD_BG, 0.65);
     hudBg.fillRect(0, 0, WORLD_WIDTH, 46);
 
@@ -549,7 +549,7 @@ export class GameScene extends Phaser.Scene {
       fontSize:   '17px',
       fontStyle:  'bold',
       color:      '#aaaacc',
-    }).setDepth(21);
+    }).setDepth(DEPTH.HUD);
 
     const isFreeSki = this.session.mode === GameMode.FreeSki;
     this.distanceText = this.add.text(WORLD_WIDTH / 2, 13, '0 m', {
@@ -557,7 +557,7 @@ export class GameScene extends Phaser.Scene {
       fontSize:   '18px',
       fontStyle:  'bold',
       color:      '#ffcc00',
-    }).setOrigin(0.5, 0).setDepth(21).setVisible(isFreeSki);
+    }).setOrigin(0.5, 0).setDepth(DEPTH.HUD).setVisible(isFreeSki);
 
     const best    = HighScoreManager.getBest(this.session.mode);
     const bestStr = (() => {
@@ -572,7 +572,7 @@ export class GameScene extends Phaser.Scene {
       fontFamily: 'sans-serif',
       fontSize:   '12px',
       color:      '#aaaacc',
-    }).setOrigin(0.5, 0).setDepth(21);
+    }).setOrigin(0.5, 0).setDepth(DEPTH.HUD);
 
     const isTimeTrial = this.session.mode === GameMode.Slalom && this.totalGatesInCourse > 0;
 
@@ -581,7 +581,7 @@ export class GameScene extends Phaser.Scene {
       fontSize:   '18px',
       fontStyle:  'bold',
       color:      '#ffcc00',
-    }).setOrigin(0.5, 0).setDepth(21).setVisible(isTimeTrial);
+    }).setOrigin(0.5, 0).setDepth(DEPTH.HUD).setVisible(isTimeTrial);
 
 
 const isJump = this.session.mode === GameMode.Jump;
@@ -590,14 +590,14 @@ const isJump = this.session.mode === GameMode.Jump;
       fontSize:   '18px',
       fontStyle:  'bold',
       color:      '#ffcc00',
-    }).setOrigin(0.5, 0).setDepth(21).setVisible(isJump);
+    }).setOrigin(0.5, 0).setDepth(DEPTH.HUD).setVisible(isJump);
 
     this.yetiWarning = this.add.text(18, 13, '⚠ YETI', {
       fontFamily: 'sans-serif',
       fontSize:   '16px',
       fontStyle:  'bold',
       color:      '#c8ddf0',
-    }).setDepth(21).setVisible(false);
+    }).setDepth(DEPTH.HUD).setVisible(false);
 
     this.tweens.add({
       targets:  this.yetiWarning,
@@ -613,11 +613,11 @@ const isJump = this.session.mode === GameMode.Jump;
       fontFamily: 'sans-serif',
       fontSize:   '22px',
       color:      '#aaaacc',
-    }).setOrigin(1, 0).setDepth(21).setInteractive({ useHandCursor: true });
+    }).setOrigin(1, 0).setDepth(DEPTH.HUD).setInteractive({ useHandCursor: true });
 
     // Invisible hit area larger than the glyph for easy tapping
     const pauseHit = this.add.rectangle(WORLD_WIDTH - 18, 23, 56, 46, 0xffffff, 0)
-      .setOrigin(1, 0.5).setDepth(21).setInteractive();
+      .setOrigin(1, 0.5).setDepth(DEPTH.HUD).setInteractive();
 
     const openPause = () => this.triggerPause();
     pauseBtn.on('pointerdown', openPause);
@@ -637,7 +637,7 @@ const isJump = this.session.mode === GameMode.Jump;
       color:      '#ffdd44',
       stroke:     '#000000',
       strokeThickness: 2,
-    }).setOrigin(0.5).setDepth(30);
+    }).setOrigin(0.5).setDepth(DEPTH.POPUP);
 
     this.tweens.add({
       targets:  pop,
@@ -657,7 +657,7 @@ const isJump = this.session.mode === GameMode.Jump;
     const cols   = Math.ceil(WORLD_WIDTH / sqSize);
     const rows   = FINISH_LINE_H / sqSize; // = 2
 
-    this.finishLineGfx = this.add.graphics().setDepth(3);
+    this.finishLineGfx = this.add.graphics().setDepth(DEPTH.GROUND);
     for (let row = 0; row < rows; row++) {
       for (let col = 0; col < cols; col++) {
         const black = (row + col) % 2 === 0;
@@ -697,7 +697,7 @@ const isJump = this.session.mode === GameMode.Jump;
     this.announcementWorldY = 288;
     const initScreenY = PLAYER_SCREEN_Y + this.announcementWorldY;
 
-    this.announcementContainer = this.add.container(WORLD_WIDTH / 2, initScreenY).setDepth(3).setAlpha(0.8);
+    this.announcementContainer = this.add.container(WORLD_WIDTH / 2, initScreenY).setDepth(DEPTH.GROUND).setAlpha(0.8);
 
     lines.forEach(({ text, size, fontStyle, underline }, i) => {
       const t = this.add.text(0, i * lineH, text, {
@@ -728,7 +728,7 @@ const isJump = this.session.mode === GameMode.Jump;
       color:      '#ffcc00',
       stroke:     '#000000',
       strokeThickness: 2,
-    }).setOrigin(0.5).setDepth(30);
+    }).setOrigin(0.5).setDepth(DEPTH.POPUP);
 
     this.tweens.add({
       targets:  pop,
@@ -749,7 +749,7 @@ const isJump = this.session.mode === GameMode.Jump;
       color:      '#ffcc00',
       stroke:     '#000000',
       strokeThickness: 2,
-    }).setOrigin(0.5).setDepth(30);
+    }).setOrigin(0.5).setDepth(DEPTH.POPUP);
 
     this.tweens.add({
       targets:  pop,
@@ -772,7 +772,7 @@ const isJump = this.session.mode === GameMode.Jump;
       color:      '#ffd700',
       stroke:     '#000000',
       strokeThickness: 3,
-    }).setOrigin(0.5).setDepth(30);
+    }).setOrigin(0.5).setDepth(DEPTH.POPUP);
 
     this.tweens.add({
       targets:  msg,
@@ -847,7 +847,7 @@ const isJump = this.session.mode === GameMode.Jump;
       color:      '#c8ddf0',
       stroke:     '#000000',
       strokeThickness: 2,
-    }).setOrigin(0.5).setDepth(30);
+    }).setOrigin(0.5).setDepth(DEPTH.POPUP);
 
     this.tweens.add({
       targets:  warn,

@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { COLORS, WORLD_WIDTH, JUMP_DURATION, JUMP_VISUAL_HEIGHT } from '@/data/constants';
+import { COLORS, DEPTH, WORLD_WIDTH, JUMP_DURATION, JUMP_VISUAL_HEIGHT } from '@/data/constants';
 import type { InputState } from '@/systems/InputSystem';
 
 export enum PlayerState {
@@ -89,7 +89,7 @@ export class Player {
       this.body,
       this.helmet,
     ]);
-    this.container.setDepth(3.5);
+    this.container.setDepth(DEPTH.PLAYER);
   }
 
   // ---------------------------------------------------------------------------
@@ -141,6 +141,7 @@ export class Player {
         this.jumpElapsed   = 0;
         this.visualOffsetY = 0;
         this.container.setPosition(this.x, this.screenY);
+        this.container.setDepth(DEPTH.PLAYER);
         // Restore shadow to its default resting state
         this.shadow.setPosition(3, 16);
         this.shadow.setScale(1);
@@ -217,6 +218,7 @@ export class Player {
     this.state        = PlayerState.Jumping;
     this.jumpElapsed  = 0;
     this.airTime      = 0;
+    this.container.setDepth(DEPTH.PLAYER_AIR);
   }
 
   // ---------------------------------------------------------------------------

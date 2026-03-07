@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { COLORS } from '@/data/constants';
+import { COLORS, DEPTH } from '@/data/constants';
 import { ObstacleBase } from './ObstacleBase';
 
 // Two size variants — small trees appear more frequently for density
@@ -18,7 +18,7 @@ export class Tree extends ObstacleBase {
     this.drawTree(gfx, s);
 
     this.container = scene.add.container(worldX, 0, [gfx]);
-    this.container.setDepth(4);
+    this.container.setDepth(DEPTH.OBSTACLES);
   }
 
   private drawTree(gfx: Phaser.GameObjects.Graphics, s: number): void {

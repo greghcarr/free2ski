@@ -58,6 +58,20 @@ export const LEADERBOARDS = {
   JUMP_SCORE:        'Jump_Score',
 } as const;
 
+// Render depth layers — higher = drawn on top
+export const DEPTH = {
+  TERRAIN:     10,  // slope graphics, edge shadows
+  TRAIL:       20,  // ski grooves behind the player
+  GROUND:      30,  // ramps, gate banners, finish line, announcement text
+  PLAYER:      40,  // player during normal skiing (under trees/rocks)
+  OBSTACLES:   50,  // trees, rocks, slalom gate poles
+  YETI:        70,  // yeti chasing player
+  PLAYER_AIR:  80,  // player while airborne (over trees/rocks and yeti)
+  HUD_BG:     100,  // semi-transparent HUD panel
+  HUD:        110,  // HUD text elements and buttons
+  POPUP:      120,  // score pop-up text
+} as const;
+
 // Colors (flat 2D palette)
 export const COLORS = {
   SNOW_LIGHT:  0xf0f4f8,

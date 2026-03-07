@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { COLORS, YETI_INITIAL_WAVE_SPEED } from '@/data/constants';
+import { COLORS, DEPTH, YETI_INITIAL_WAVE_SPEED } from '@/data/constants';
 
 // How many additional px/s the yeti gains each second (escalating pressure)
 const CHASE_ACCELERATION = 1.8;
@@ -31,7 +31,7 @@ export class Yeti {
     this.drawYeti(gfx);
 
     this.container = scene.add.container(startX, startY, [gfx]);
-    this.container.setDepth(8); // in front of obstacles (4) but behind player (10)
+    this.container.setDepth(DEPTH.YETI);
   }
 
   // ---------------------------------------------------------------------------

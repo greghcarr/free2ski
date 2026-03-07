@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { ObstacleBase } from './ObstacleBase';
+import { DEPTH } from '@/data/constants';
 
 // Top-down dimensions: wider than deep (horizontal platform)
 const RAMP_W     = 70;   // px horizontal width
@@ -75,6 +76,6 @@ export class Ramp extends ObstacleBase {
     gfx.strokeRoundedRect(-hw, -hd, RAMP_W, RAMP_D, CORNER);
 
     this.container = scene.add.container(worldX, 9_999, [gfx]);
-    this.container.setDepth(3);
+    this.container.setDepth(DEPTH.GROUND);
   }
 }

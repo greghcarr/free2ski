@@ -51,6 +51,7 @@ export class YetiSystem {
     playerScreenY: number,
     delta:         number,
     yetiEnabled:   boolean,
+    playerAirborne = false,
   ): YetiEvent {
     const distanceM = distancePx / PX_PER_METER;
 
@@ -74,7 +75,7 @@ export class YetiSystem {
     const dy   = this.yeti.screenY - playerScreenY;
     const dist = Math.sqrt(dx * dx + dy * dy);
 
-    if (dist < PLAYER_HIT_RADIUS + this.yeti.hitRadius) {
+    if (!playerAirborne && dist < PLAYER_HIT_RADIUS + this.yeti.hitRadius) {
       return 'caught';
     }
 

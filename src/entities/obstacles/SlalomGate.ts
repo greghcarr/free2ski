@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { ObstacleBase } from './ObstacleBase';
-import { COLORS, GATE_GAP_WIDTH, GATE_POLE_RADIUS, GAME_HEIGHT } from '@/data/constants';
+import { COLORS, DEPTH, GATE_GAP_WIDTH, GATE_POLE_RADIUS, GAME_HEIGHT } from '@/data/constants';
 
 const POLE_H       = 64;   // visual height of each pole
 const BANNER_H     = 14;   // horizontal flag/banner thickness
@@ -51,7 +51,7 @@ export class SlalomGate extends ObstacleBase {
     }
 
     this.bannerContainer = scene.add.container(worldX, 9_999, [bannerGfx]);
-    this.bannerContainer.setDepth(3);
+    this.bannerContainer.setDepth(DEPTH.GROUND);
 
     // --- Poles layer (renders above the player) ---
     const poleGfx = scene.add.graphics();
@@ -92,7 +92,7 @@ export class SlalomGate extends ObstacleBase {
     }
 
     this.container = scene.add.container(worldX, 9_999, poleChildren);
-    this.container.setDepth(4);
+    this.container.setDepth(DEPTH.OBSTACLES);
   }
 
   override setScreenY(screenY: number): void {

@@ -12,6 +12,16 @@
     <!-- Colours the browser address bar on Android Chrome -->
     <meta name="theme-color" content="#1a2a3a" />
     <title>Free2Ski</title>
+    <script>
+      const _c = document.createElement('canvas');
+      _c.width = _c.height = 64;
+      const _x = _c.getContext('2d');
+      _x.font = '52px serif';
+      _x.fillText('⛷️', 4, 56);
+      const _l = document.createElement('link');
+      _l.rel = 'icon'; _l.href = _c.toDataURL();
+      document.head.appendChild(_l);
+    </script>
     <style>
       * {
         margin: 0;

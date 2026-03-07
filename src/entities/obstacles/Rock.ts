@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { COLORS } from '@/data/constants';
+import { COLORS, DEPTH } from '@/data/constants';
 import { ObstacleBase } from './ObstacleBase';
 
 export type RockVariant = 'normal' | 'small';
@@ -37,7 +37,7 @@ export class Rock extends ObstacleBase {
     this.drawRock(gfx, s);
 
     this.container = scene.add.container(worldX, 0, [gfx]);
-    this.container.setDepth(4);
+    this.container.setDepth(DEPTH.OBSTACLES);
   }
 
   private drawRock(gfx: Phaser.GameObjects.Graphics, s: number): void {
