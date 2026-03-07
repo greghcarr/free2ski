@@ -11,6 +11,24 @@ export function getDailySeed(): number {
 }
 
 /**
+ * Returns a human-readable string for time remaining until the next UTC midnight.
+ * Zero-valued parts are omitted. e.g. "5 hr, 3 min" or "45 min" or "30 sec"
+ */
+export function formatTimeUntilMidnightUTC(): string {
+  const now     = new Date();
+  const nextMid = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1));
+  const totalSec = Math.max(0, Math.floor((nextMid.getTime() - now.getTime()) / 1000));
+
+  const hr  = Math.floor(totalSec / 3600);
+  const min = Math.floor((totalSec % 3600) / 60);
+
+  const parts: string[] = [];
+  if (hr  > 0) parts.push(`${hr} hr`);
+  if (min > 0) parts.push(`${min} min`);
+  return parts.join(', ') || '< 1 min';
+}
+
+/**
  * Formats a duration in milliseconds as a race time string.
  * e.g. 83_400 ms → "1:23.4"
  */

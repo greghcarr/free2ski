@@ -21,7 +21,14 @@ export class PauseScene extends Phaser.Scene {
 
   create(): void {
     // Dim overlay
-    this.add.rectangle(WORLD_WIDTH / 2, GAME_HEIGHT / 2, WORLD_WIDTH, GAME_HEIGHT, 0x000020, 0.55);
+    this.add.rectangle(WORLD_WIDTH / 2, GAME_HEIGHT / 2, WORLD_WIDTH, GAME_HEIGHT, COLORS.OVERLAY, 0.55);
+
+    // Light blue card behind the menu
+    const cardW = 360;
+    const cardH = 380;
+    const cardGfx = this.add.graphics();
+    cardGfx.fillStyle(COLORS.PAUSE_CARD, 0.5);
+    cardGfx.fillRoundedRect(WORLD_WIDTH / 2 - cardW / 2, 180, cardW, cardH, 18);
 
     this.add.text(WORLD_WIDTH / 2, 240, 'PAUSED', {
       fontFamily: 'sans-serif',
@@ -51,7 +58,7 @@ export class PauseScene extends Phaser.Scene {
       this.input.keyboard.once('keydown-P', resume);
     }
 
-    addVersionLabel(this, '#8aaabb');
+    addVersionLabel(this, COLORS.VERSION_GAME);
   }
 
   private createButton(x: number, y: number, label: string, onClick: () => void, onHover?: () => void): MenuNavItem {
@@ -60,7 +67,7 @@ export class PauseScene extends Phaser.Scene {
     const bg = this.add.graphics();
     const draw = (hovered: boolean): void => {
       bg.clear();
-      bg.fillStyle(hovered ? 0x3a6ae8 : 0x2a5ab8, 1);
+      bg.fillStyle(hovered ? COLORS.BTN_HOVER : COLORS.BTN, 1);
       bg.fillRoundedRect(x - btnW / 2, y - btnH / 2, btnW, btnH, 10);
     };
     draw(false);

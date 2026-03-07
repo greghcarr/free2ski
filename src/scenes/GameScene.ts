@@ -24,7 +24,7 @@ import { InputSystem } from '@/systems/InputSystem';
 import { ChunkManager } from '@/world/ChunkManager';
 import { YetiSystem } from '@/systems/YetiSystem';
 import type { GameOverData } from '@/scenes/GameOverScene';
-import { formatRaceTime, getDailySeed } from '@/utils/MathUtils';
+import { formatRaceTime, getDailySeed, formatTimeUntilMidnightUTC } from '@/utils/MathUtils';
 import { HighScoreManager } from '@/data/HighScoreManager';
 
 // Screen Y where the player is positioned (upper-centre area)
@@ -347,7 +347,7 @@ export class GameScene extends Phaser.Scene {
       fontFamily: 'sans-serif',
       fontSize:   '52px',
       fontStyle:  'bold',
-      color:      '#ffd700',
+      color:      COLORS.POPUP_GOLD,
       stroke:     '#000000',
       strokeThickness: 3,
     }).setOrigin(0.5).setDepth(DEPTH.POPUP);
@@ -369,7 +369,7 @@ export class GameScene extends Phaser.Scene {
       fontFamily: 'sans-serif',
       fontSize:   '28px',
       fontStyle:  'bold',
-      color:      '#ffd700',
+      color:      COLORS.POPUP_GOLD,
       stroke:     '#000000',
       strokeThickness: 2,
     }).setOrigin(0.5).setDepth(DEPTH.POPUP);
@@ -390,7 +390,7 @@ export class GameScene extends Phaser.Scene {
       fontFamily: 'sans-serif',
       fontSize:   '26px',
       fontStyle:  'bold',
-      color:      '#ff4444',
+      color:      COLORS.POPUP_PENALTY,
       stroke:     '#000000',
       strokeThickness: 2,
     }).setOrigin(0.5).setDepth(DEPTH.POPUP);
@@ -450,14 +450,14 @@ export class GameScene extends Phaser.Scene {
       const rightAlpha = curr.lean >= 0 ? insideAlpha  : outsideAlpha;
 
       // Left groove
-      this.trailGfx.lineStyle(1.5, 0x7aaabf, leftAlpha);
+      this.trailGfx.lineStyle(1.5, COLORS.TRAIL, leftAlpha);
       this.trailGfx.beginPath();
       this.trailGfx.moveTo(curr.x - px, currScreenY - py);
       this.trailGfx.lineTo(next.x - px, nextScreenY - py);
       this.trailGfx.strokePath();
 
       // Right groove
-      this.trailGfx.lineStyle(1.5, 0x7aaabf, rightAlpha);
+      this.trailGfx.lineStyle(1.5, COLORS.TRAIL, rightAlpha);
       this.trailGfx.beginPath();
       this.trailGfx.moveTo(curr.x + px, currScreenY + py);
       this.trailGfx.lineTo(next.x + px, nextScreenY + py);
@@ -499,7 +499,7 @@ export class GameScene extends Phaser.Scene {
     const dashPhase   = offsetY % period;
     const dashCount   = Math.ceil(GAME_HEIGHT / period) + 2;
 
-    this.slopeGfx.lineStyle(4, 0xffdd00, 0.75);
+    this.slopeGfx.lineStyle(4, COLORS.BOUNDARY, 0.75);
     for (const bx of boundaryXs) {
       for (let i = 0; i < dashCount; i++) {
         const y0 = i * period - dashPhase;
@@ -515,7 +515,7 @@ export class GameScene extends Phaser.Scene {
     const dangerOffset = Math.round(edgeX * 0.85);
     const dangerXs     = [dangerOffset, WORLD_WIDTH - dangerOffset];
 
-    this.slopeGfx.lineStyle(9, 0xff2200, 0.65);
+    this.slopeGfx.lineStyle(9, COLORS.HAZARD, 0.65);
     for (const dx of dangerXs) {
       this.slopeGfx.beginPath();
       this.slopeGfx.moveTo(dx, 0);
@@ -548,7 +548,7 @@ export class GameScene extends Phaser.Scene {
       fontFamily: 'sans-serif',
       fontSize:   '17px',
       fontStyle:  'bold',
-      color:      '#aaaacc',
+      color:      COLORS.HUD_LABEL,
     }).setDepth(DEPTH.HUD);
 
     const isFreeSki = this.session.mode === GameMode.FreeSki;
@@ -556,7 +556,7 @@ export class GameScene extends Phaser.Scene {
       fontFamily: 'sans-serif',
       fontSize:   '18px',
       fontStyle:  'bold',
-      color:      '#ffcc00',
+      color:      COLORS.HUD_VALUE,
     }).setOrigin(0.5, 0).setDepth(DEPTH.HUD).setVisible(isFreeSki);
 
     const best    = HighScoreManager.getBest(this.session.mode);
@@ -571,7 +571,7 @@ export class GameScene extends Phaser.Scene {
     this.add.text(WORLD_WIDTH / 2, 30, `Best: ${bestStr}`, {
       fontFamily: 'sans-serif',
       fontSize:   '12px',
-      color:      '#aaaacc',
+      color:      COLORS.HUD_LABEL,
     }).setOrigin(0.5, 0).setDepth(DEPTH.HUD);
 
     const isTimeTrial = this.session.mode === GameMode.Slalom && this.totalGatesInCourse > 0;
@@ -580,7 +580,7 @@ export class GameScene extends Phaser.Scene {
       fontFamily: 'sans-serif',
       fontSize:   '18px',
       fontStyle:  'bold',
-      color:      '#ffcc00',
+      color:      COLORS.HUD_VALUE,
     }).setOrigin(0.5, 0).setDepth(DEPTH.HUD).setVisible(isTimeTrial);
 
 
@@ -589,14 +589,14 @@ const isJump = this.session.mode === GameMode.Jump;
       fontFamily: 'sans-serif',
       fontSize:   '18px',
       fontStyle:  'bold',
-      color:      '#ffcc00',
+      color:      COLORS.HUD_VALUE,
     }).setOrigin(0.5, 0).setDepth(DEPTH.HUD).setVisible(isJump);
 
     this.yetiWarning = this.add.text(18, 13, '⚠ YETI', {
       fontFamily: 'sans-serif',
       fontSize:   '16px',
       fontStyle:  'bold',
-      color:      '#c8ddf0',
+      color:      COLORS.YETI_WARNING,
     }).setDepth(DEPTH.HUD).setVisible(false);
 
     this.tweens.add({
@@ -612,7 +612,7 @@ const isJump = this.session.mode === GameMode.Jump;
     const pauseBtn = this.add.text(WORLD_WIDTH - 18, 13, '⏸', {
       fontFamily: 'sans-serif',
       fontSize:   '22px',
-      color:      '#aaaacc',
+      color:      COLORS.HUD_LABEL,
     }).setOrigin(1, 0).setDepth(DEPTH.HUD).setInteractive({ useHandCursor: true });
 
     // Invisible hit area larger than the glyph for easy tapping
@@ -623,7 +623,7 @@ const isJump = this.session.mode === GameMode.Jump;
     pauseBtn.on('pointerdown', openPause);
     pauseHit.on('pointerdown', openPause);
 
-    addVersionLabel(this, '#8aaabb');
+    addVersionLabel(this, COLORS.VERSION_GAME);
   }
 
   // ---------------------------------------------------------------------------
@@ -634,7 +634,7 @@ const isJump = this.session.mode === GameMode.Jump;
       fontFamily: 'sans-serif',
       fontSize:   '22px',
       fontStyle:  'bold',
-      color:      '#ffdd44',
+      color:      COLORS.POPUP_BONUS,
       stroke:     '#000000',
       strokeThickness: 2,
     }).setOrigin(0.5).setDepth(DEPTH.POPUP);
@@ -684,12 +684,12 @@ const isJump = this.session.mode === GameMode.Jump;
     const lines = [
       { text: `Course: ${cfg.displayName}`, size: '26px', fontStyle: 'bold',   underline: true  },
       { text: `Personal best: ${bestStr}`,  size: '22px', fontStyle: 'normal', underline: false },
-      { text: `Seed: ${seed}`,              size: '18px', fontStyle: 'normal', underline: false },
+      { text: `Seed: ${seed} (resets in ${formatTimeUntilMidnightUTC()})`, size: '18px', fontStyle: 'normal', underline: false },
     ];
     // lineH matches the marking-line spacing exactly so each text line stays
     // centred in one gap as the world scrolls.
     const lineH = 64;
-    const color = '#222222';
+    const color = COLORS.ANNOUNCEMENT;
 
     // announcementWorldY % 64 must equal 32 so the first line's centre lands
     // in the middle of a gap (gaps are centred at n*64 + 32 in world space).
@@ -710,7 +710,7 @@ const isJump = this.session.mode === GameMode.Jump;
 
       if (underline) {
         const g = this.add.graphics();
-        g.lineStyle(2, 0x222222, 1);
+        g.lineStyle(2, 0x222222, 1);  // matches COLORS.ANNOUNCEMENT
         g.beginPath();
         g.moveTo(-t.width / 2, i * lineH + t.height / 2 + 2);
         g.lineTo( t.width / 2, i * lineH + t.height / 2 + 2);
@@ -725,7 +725,7 @@ const isJump = this.session.mode === GameMode.Jump;
       fontFamily: 'sans-serif',
       fontSize:   '28px',
       fontStyle:  'bold',
-      color:      '#ffcc00',
+      color:      COLORS.HUD_VALUE,
       stroke:     '#000000',
       strokeThickness: 2,
     }).setOrigin(0.5).setDepth(DEPTH.POPUP);
@@ -746,7 +746,7 @@ const isJump = this.session.mode === GameMode.Jump;
       fontFamily: 'sans-serif',
       fontSize:   '28px',
       fontStyle:  'bold',
-      color:      '#ffcc00',
+      color:      COLORS.HUD_VALUE,
       stroke:     '#000000',
       strokeThickness: 2,
     }).setOrigin(0.5).setDepth(DEPTH.POPUP);
@@ -769,7 +769,7 @@ const isJump = this.session.mode === GameMode.Jump;
       fontFamily: 'sans-serif',
       fontSize:   '48px',
       fontStyle:  'bold',
-      color:      '#ffd700',
+      color:      COLORS.POPUP_GOLD,
       stroke:     '#000000',
       strokeThickness: 3,
     }).setOrigin(0.5).setDepth(DEPTH.POPUP);
@@ -844,7 +844,7 @@ const isJump = this.session.mode === GameMode.Jump;
       fontFamily: 'sans-serif',
       fontSize:   '30px',
       fontStyle:  'bold',
-      color:      '#c8ddf0',
+      color:      COLORS.YETI_WARNING,
       stroke:     '#000000',
       strokeThickness: 2,
     }).setOrigin(0.5).setDepth(DEPTH.POPUP);

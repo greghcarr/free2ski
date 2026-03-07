@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { ObstacleBase } from './ObstacleBase';
-import { DEPTH } from '@/data/constants';
+import { COLORS, DEPTH } from '@/data/constants';
 
 // Top-down dimensions: wider than deep (horizontal platform)
 const RAMP_W     = 70;   // px horizontal width
@@ -26,16 +26,16 @@ export class Ramp extends ObstacleBase {
     gfx.fillRoundedRect(-hw + 4, hd - 2, RAMP_W, 10, 4);
 
     // --- Main ramp platform (packed snow surface, viewed from above) ---
-    gfx.fillStyle(0xd0dce8, 1);
+    gfx.fillStyle(COLORS.RAMP_SURFACE, 1);
     gfx.fillRoundedRect(-hw, -hd, RAMP_W, RAMP_D, CORNER);
 
     // --- Upper highlight — entry side looks lighter (gradual approach) ---
-    gfx.fillStyle(0xeaf4ff, 0.70);
+    gfx.fillStyle(COLORS.RAMP_HIGHLIGHT, 0.70);
     gfx.fillRoundedRect(-hw + 4, -hd + 2, RAMP_W - 8, RAMP_D * 0.45, CORNER - 2);
 
     // --- Front launch lip — dark bar at the bottom edge ---
     // This is the raised edge the skier's skis catch to launch them
-    gfx.fillStyle(0x6888a8, 1);
+    gfx.fillStyle(COLORS.RAMP_LIP, 1);
     gfx.fillRoundedRect(
       -hw, hd - lipH,
       RAMP_W, lipH,
@@ -63,7 +63,7 @@ export class Ramp extends ObstacleBase {
       gfx.closePath();
     };
 
-    gfx.fillStyle(0xffee00, 0.92);
+    gfx.fillStyle(COLORS.RAMP_ARROW, 0.92);
     drawArrow();
     gfx.fillPath();
 
@@ -72,7 +72,7 @@ export class Ramp extends ObstacleBase {
     gfx.strokePath();
 
     // --- Outline to define the platform boundary ---
-    gfx.lineStyle(1.5, 0x8aaccc, 0.8);
+    gfx.lineStyle(1.5, COLORS.RAMP_OUTLINE, 0.8);
     gfx.strokeRoundedRect(-hw, -hd, RAMP_W, RAMP_D, CORNER);
 
     this.container = scene.add.container(worldX, 9_999, [gfx]);

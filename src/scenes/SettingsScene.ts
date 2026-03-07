@@ -19,13 +19,13 @@ export class SettingsScene extends Phaser.Scene {
       fontFamily: 'sans-serif',
       fontSize: '40px',
       fontStyle: 'bold',
-      color: '#1a3a8a',
+      color: COLORS.UI_TITLE,
     }).setOrigin(0.5);
 
     this.add.text(WORLD_WIDTH / 2, GAME_HEIGHT / 2, 'Settings — coming soon.', {
       fontFamily: 'sans-serif',
       fontSize: '22px',
-      color: '#3a5a9a',
+      color: COLORS.UI_SUBTITLE,
     }).setOrigin(0.5);
 
     const resetItem = this.createDebugButton(WORLD_WIDTH / 2, GAME_HEIGHT / 2 + 60, 'DEBUG: Reset All Stats', () => {
@@ -37,7 +37,7 @@ export class SettingsScene extends Phaser.Scene {
     this.add.text(60, GAME_HEIGHT - 50, '← Back', {
       fontFamily: 'sans-serif',
       fontSize: '20px',
-      color: '#1a3a8a',
+      color: COLORS.UI_TITLE,
     }).setInteractive({ useHandCursor: true })
       .on('pointerdown', () => this.scene.start(SceneKey.MainMenu));
 
@@ -57,9 +57,9 @@ export class SettingsScene extends Phaser.Scene {
     const draw = (hovered: boolean): void => {
       bg.clear();
       if (pending) {
-        bg.fillStyle(0xff2222, 1);
+        bg.fillStyle(COLORS.DESTRUCT_CONFIRM, 1);
       } else {
-        bg.fillStyle(hovered ? 0x884444 : 0x663333, 1);
+        bg.fillStyle(hovered ? COLORS.DESTRUCT_HOVER : COLORS.DESTRUCT_BTN, 1);
       }
       bg.fillRoundedRect(x - btnW / 2, y - btnH / 2, btnW, btnH, 8);
     };
@@ -68,7 +68,7 @@ export class SettingsScene extends Phaser.Scene {
     const txt = this.add.text(x, y, label, {
       fontFamily: 'sans-serif',
       fontSize:   '15px',
-      color:      '#ffcccc',
+      color:      COLORS.DESTRUCT_TEXT,
     }).setOrigin(0.5);
 
     const activate = (): void => {

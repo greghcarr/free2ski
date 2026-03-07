@@ -7,6 +7,28 @@ Newest entries at the top.
 
 ## 2026-03-07
 
+### Session: Color extraction, polish, and depth system
+
+Second session of the day. Completed several features that had been in progress:
+
+**Favicon:** Added a skier emoji (⛷️) favicon using a canvas-based approach — SVG data URIs don't work in Safari, so we draw the emoji to an off-screen canvas and call `toDataURL()` to get a cross-browser PNG.
+
+**Render depth system:** Replaced every raw `setDepth()` magic number with a named `DEPTH` constant object (TERRAIN=10, TRAIL=20, GROUND=30, PLAYER=40, OBSTACLES=50, YETI=70, PLAYER_AIR=80, HUD_BG=100, HUD=110, POPUP=120). Integer spacing of 10 leaves room for future layers anywhere in the stack.
+
+**Skier z-ordering:** Skier now renders under trees/rocks normally (`DEPTH.PLAYER=40 < DEPTH.OBSTACLES=50`) but jumps above everything including the yeti while airborne (`DEPTH.PLAYER_AIR=80 > DEPTH.YETI=70`). Achieved by calling `container.setDepth(DEPTH.PLAYER_AIR)` in `hitRamp()` and restoring to `DEPTH.PLAYER` on landing.
+
+**Yeti jump mechanic:** Player can physically jump over the yeti — catch detection in `YetiSystem` now skips while `playerAirborne` is true. The `update()` signature gained a `playerAirborne = false` parameter.
+
+**Seed countdown:** The course announcement text now shows how long until the daily seed resets — uses `formatTimeUntilMidnightUTC()` added to `MathUtils`. Zero-valued parts (hours, minutes) are omitted.
+
+**Pause card:** Light blue (`COLORS.PAUSE_CARD`) semi-transparent rounded-rect backdrop added behind the pause menu items for readability against the snow.
+
+**Color extraction:** Audited every source file for inline color literals. Expanded `COLORS` in `constants.ts` from 18 to 50+ named entries covering entity colors (tree trunk, tree top, rock highlight, skis, ski poles, yeti eyes), obstacle colors (ramp surface/highlight/lip/arrow/outline), world colors (trail, boundary, hazard), UI backgrounds (overlay, pause card, game-over gradient, dividers), button and card states (BTN, BTN\_HOVER, CARD, CARD\_HOVER), text colors (HUD\_LABEL, HUD\_VALUE, YETI\_WARNING, POPUP\_GOLD/BONUS/PENALTY, SCORE\_BETTER/WORSE, DANGER, UI\_TITLE/SUBTITLE/SECONDARY/DETAIL/MUTED/COUNT, ANNOUNCEMENT), and version label colors per background context. Remaining inline literals are only `#000000`/`#ffffff` strokes and shadows, which are self-documenting.
+
+As a side effect, the MainMenu button hover inconsistency was fixed — it was using `0x1a3a8a` (darker) while GameOver/Pause used `0x3a6ae8` (brighter). All buttons now consistently use `COLORS.BTN_HOVER`.
+
+---
+
 ### Session: Mobile polish, tooling, and documentation
 
 Started the day noticing the game wasn't great on phone browsers — the URL bar was covering content, touch inputs were fighting the browser, and there was no way to pause without a keyboard.

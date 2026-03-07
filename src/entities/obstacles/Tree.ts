@@ -27,7 +27,7 @@ export class Tree extends ObstacleBase {
     gfx.fillEllipse(4 * s, 10 * s, 28 * s, 10 * s);
 
     // --- Trunk ---
-    gfx.fillStyle(0x5c3a1e, 1);
+    gfx.fillStyle(COLORS.TREE_TRUNK, 1);
     gfx.fillRect(-3 * s, 4 * s, 6 * s, 10 * s);
 
     // --- Base layer (widest, darkest green) ---
@@ -39,7 +39,7 @@ export class Tree extends ObstacleBase {
     gfx.fillTriangle(-11 * s, 1 * s, 11 * s, 1 * s, 0, -16 * s);
 
     // --- Top layer (narrowest, lighter) ---
-    gfx.fillStyle(0x4c9040, 1);
+    gfx.fillStyle(COLORS.TREE_TOP, 1);
     gfx.fillTriangle(-7 * s, -7 * s, 7 * s, -7 * s, 0, -22 * s);
 
     // --- Snow cap ---

@@ -17,20 +17,20 @@ export class LeaderboardScene extends Phaser.Scene {
       fontFamily: 'sans-serif',
       fontSize: '40px',
       fontStyle: 'bold',
-      color: '#1a3a8a',
+      color: COLORS.UI_TITLE,
     }).setOrigin(0.5);
 
     this.add.text(WORLD_WIDTH / 2, GAME_HEIGHT / 2, 'Steam leaderboards — coming soon.\nPlay some runs first!', {
       fontFamily: 'sans-serif',
       fontSize: '22px',
-      color: '#3a5a9a',
+      color: COLORS.UI_SUBTITLE,
       align: 'center',
     }).setOrigin(0.5);
 
     this.add.text(60, GAME_HEIGHT - 50, '← Back', {
       fontFamily: 'sans-serif',
       fontSize: '20px',
-      color: '#1a3a8a',
+      color: COLORS.UI_TITLE,
     }).setInteractive({ useHandCursor: true })
       .on('pointerdown', () => this.scene.start(SceneKey.MainMenu));
 

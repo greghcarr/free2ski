@@ -13,6 +13,13 @@ Format: newest first, grouped by version/date.
 - `DEVELOPMENT.md` — branching workflow, versioning rules, feature branch guide
 - `CLAUDE.md` — project context file auto-loaded by Claude Code each session
 - `docs/` folder with CHANGELOG, DECISIONS, DEVLOG
+- Skier emoji (⛷️) favicon — canvas-based PNG data URI for Safari compatibility
+- Named render depth layer system: `DEPTH` constant with TERRAIN, TRAIL, GROUND, PLAYER, OBSTACLES, YETI, PLAYER\_AIR, HUD\_BG, HUD, POPUP — replaces all raw `setDepth()` numbers
+- Skier renders under trees/rocks normally; rises above them (and the yeti) while airborne
+- Player can now jump over the yeti — collision detection skipped while `PlayerState.Jumping`
+- Course announcement includes seed reset countdown: "Seed: XXXXXXXX (resets in X hr, Y min)"
+- Light blue semi-transparent card backdrop behind the pause menu
+- Full color extraction: all inline hex/CSS color literals across the codebase moved to named entries in `COLORS` in `constants.ts` (50+ named constants, covering entities, slope, HUD, popups, menus, UI text, and version label)
 
 ### Changed
 - Mobile browser compatibility overhaul (`index.html`):

@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { SceneKey } from '@/config/SceneKeys';
-import { WORLD_WIDTH, GAME_HEIGHT, PX_PER_METER, JUMP_COURSE_DISTANCE_M } from '@/data/constants';
+import { WORLD_WIDTH, GAME_HEIGHT, PX_PER_METER, JUMP_COURSE_DISTANCE_M, COLORS } from '@/data/constants';
 import { addVersionLabel } from '@/ui/versionLabel';
 import { HighScoreManager, type SubmitResult } from '@/data/HighScoreManager';
 import type { SessionConfig } from '@/config/GameConfig';
@@ -82,7 +82,7 @@ export class GameOverScene extends Phaser.Scene {
     this.buildHeadline();
     this.buildStats(result);
     this.buildButtons();
-    addVersionLabel(this, '#4a6a8a');
+    addVersionLabel(this, COLORS.VERSION_GAMEOVER);
   }
 
   // ---------------------------------------------------------------------------
@@ -91,7 +91,7 @@ export class GameOverScene extends Phaser.Scene {
 
   private buildBackground(): void {
     const bg = this.add.graphics();
-    bg.fillGradientStyle(0x0a1520, 0x0a1520, 0x162535, 0x162535, 1);
+    bg.fillGradientStyle(COLORS.GAME_OVER_BG_TOP, COLORS.GAME_OVER_BG_TOP, COLORS.GAME_OVER_BG_BOT, COLORS.GAME_OVER_BG_BOT, 1);
     bg.fillRect(0, 0, WORLD_WIDTH, GAME_HEIGHT);
   }
 
@@ -101,7 +101,7 @@ export class GameOverScene extends Phaser.Scene {
     this.add.text(WORLD_WIDTH / 2, 58, session.mode.replace(/_/g, ' ').toUpperCase(), {
       fontFamily: 'sans-serif',
       fontSize: '14px',
-      color: '#445566',
+      color: COLORS.UI_MUTED,
       letterSpacing: 3,
     }).setOrigin(0.5);
 
@@ -109,11 +109,11 @@ export class GameOverScene extends Phaser.Scene {
     let color: string;
     let fontSize: string;
     if (courseComplete || finishTimeMs !== undefined) {
-      headline = 'COURSE COMPLETE'; color = '#ffd700'; fontSize = '50px';
+      headline = 'COURSE COMPLETE'; color = COLORS.POPUP_GOLD; fontSize = '50px';
     } else if (caughtByYeti) {
-      headline = 'THE YETI GOT YOU'; color = '#e63030'; fontSize = '50px';
+      headline = 'THE YETI GOT YOU'; color = COLORS.DANGER; fontSize = '50px';
     } else {
-      headline = 'WIPEOUT'; color = '#e63030'; fontSize = '62px';
+      headline = 'WIPEOUT'; color = COLORS.DANGER; fontSize = '62px';
     }
 
     this.add.text(WORLD_WIDTH / 2, 120, headline, {
@@ -141,7 +141,7 @@ export class GameOverScene extends Phaser.Scene {
     this.add.text(WORLD_WIDTH / 2, GAME_HEIGHT - 28, `Run #${total}`, {
       fontFamily: 'sans-serif',
       fontSize: '18px',
-      color: '#5577aa',
+      color: COLORS.UI_COUNT,
     }).setOrigin(0.5);
   }
 
@@ -162,11 +162,11 @@ export class GameOverScene extends Phaser.Scene {
     this.add.text(WORLD_WIDTH / 2, 292, `${passed} / ${total} gates passed`, {
       fontFamily: 'sans-serif',
       fontSize:   '16px',
-      color:      '#6688aa',
+      color:      COLORS.UI_SECONDARY,
     }).setOrigin(0.5);
 
     const div = this.add.graphics();
-    div.lineStyle(1, 0x223344, 1);
+    div.lineStyle(1, COLORS.UI_DIVIDER, 1);
     div.beginPath();
     div.moveTo(WORLD_WIDTH / 2 - 220, 328);
     div.lineTo(WORLD_WIDTH / 2 + 220, 328);
@@ -177,14 +177,14 @@ export class GameOverScene extends Phaser.Scene {
       this.add.text(WORLD_WIDTH / 2, 358, `Personal best: ${formatRaceTime(bestMs)}`, {
         fontFamily: 'sans-serif',
         fontSize:   '19px',
-        color:      '#6688aa',
+        color:      COLORS.UI_SECONDARY,
       }).setOrigin(0.5);
 
     } else {
       this.add.text(WORLD_WIDTH / 2, 358, 'No completed runs on record', {
         fontFamily: 'sans-serif',
         fontSize:   '16px',
-        color:      '#6688aa',
+        color:      COLORS.UI_SECONDARY,
       }).setOrigin(0.5);
     }
   }
@@ -210,11 +210,11 @@ export class GameOverScene extends Phaser.Scene {
     this.add.text(WORLD_WIDTH / 2, 292, subtitle, {
       fontFamily: 'sans-serif',
       fontSize: '16px',
-      color: missed > 0 ? '#cc7777' : '#78bb78',
+      color: missed > 0 ? COLORS.SCORE_WORSE : COLORS.SCORE_BETTER,
     }).setOrigin(0.5);
 
     const div = this.add.graphics();
-    div.lineStyle(1, 0x223344, 1);
+    div.lineStyle(1, COLORS.UI_DIVIDER, 1);
     div.beginPath();
     div.moveTo(WORLD_WIDTH / 2 - 220, 328);
     div.lineTo(WORLD_WIDTH / 2 + 220, 328);
@@ -232,7 +232,7 @@ export class GameOverScene extends Phaser.Scene {
       fontFamily: 'sans-serif',
       fontSize: '24px',
       fontStyle: 'bold',
-      color: '#ffd700',
+      color: COLORS.POPUP_GOLD,
       stroke: '#000000',
       strokeThickness: 1,
     }).setOrigin(0.5);
@@ -253,7 +253,7 @@ export class GameOverScene extends Phaser.Scene {
     this.add.text(WORLD_WIDTH / 2, 398, sub, {
       fontFamily: 'sans-serif',
       fontSize: '15px',
-      color: '#88aacc',
+      color: COLORS.UI_DETAIL,
     }).setOrigin(0.5);
   }
 
@@ -262,14 +262,14 @@ export class GameOverScene extends Phaser.Scene {
     this.add.text(WORLD_WIDTH / 2, 358, `Personal best: ${formatRaceTime(best)}`, {
       fontFamily: 'sans-serif',
       fontSize: '19px',
-      color: '#6688aa',
+      color: COLORS.UI_SECONDARY,
     }).setOrigin(0.5);
 
     if (bestMs !== null) {
       const deltaMs = timeMs - bestMs;
       const label   = deltaMs === 0 ? 'Same as this run'
                     : `${deltaMs > 0 ? '+' : '-'}${formatRaceTime(Math.abs(deltaMs))} this run`;
-      const color   = deltaMs === 0 ? '#ffcc00' : deltaMs < 0 ? '#78bb78' : '#cc7777';
+      const color   = deltaMs === 0 ? COLORS.HUD_VALUE : deltaMs < 0 ? COLORS.SCORE_BETTER : COLORS.SCORE_WORSE;
       this.add.text(WORLD_WIDTH / 2, 390, label, {
         fontFamily: 'sans-serif',
         fontSize: '15px',
@@ -297,11 +297,11 @@ export class GameOverScene extends Phaser.Scene {
     this.add.text(WORLD_WIDTH / 2, 290, subLabel, {
       fontFamily: 'sans-serif',
       fontSize: '20px',
-      color: '#6688aa',
+      color: COLORS.UI_SECONDARY,
     }).setOrigin(0.5);
 
     const div = this.add.graphics();
-    div.lineStyle(1, 0x223344, 1);
+    div.lineStyle(1, COLORS.UI_DIVIDER, 1);
     div.beginPath();
     div.moveTo(WORLD_WIDTH / 2 - 220, 328);
     div.lineTo(WORLD_WIDTH / 2 + 220, 328);
@@ -319,7 +319,7 @@ export class GameOverScene extends Phaser.Scene {
       fontFamily: 'sans-serif',
       fontSize: '24px',
       fontStyle: 'bold',
-      color: '#ffd700',
+      color: COLORS.POPUP_GOLD,
       stroke: '#000000',
       strokeThickness: 1,
     }).setOrigin(0.5);
@@ -340,7 +340,7 @@ export class GameOverScene extends Phaser.Scene {
     this.add.text(WORLD_WIDTH / 2, 398, sub, {
       fontFamily: 'sans-serif',
       fontSize: '15px',
-      color: '#88aacc',
+      color: COLORS.UI_DETAIL,
     }).setOrigin(0.5);
   }
 
@@ -349,14 +349,14 @@ export class GameOverScene extends Phaser.Scene {
     this.add.text(WORLD_WIDTH / 2, 358, `Personal best: ${best.toLocaleString()} m`, {
       fontFamily: 'sans-serif',
       fontSize: '19px',
-      color: '#6688aa',
+      color: COLORS.UI_SECONDARY,
     }).setOrigin(0.5);
 
     if (bestM !== null) {
       const delta = distanceM - bestM;
       const label = delta === 0 ? 'Same as this run'
                   : `${delta > 0 ? '+' : '-'}${Math.abs(delta).toLocaleString()} m this run`;
-      const color = delta === 0 ? '#ffcc00' : delta > 0 ? '#78bb78' : '#cc7777';
+      const color = delta === 0 ? COLORS.HUD_VALUE : delta > 0 ? COLORS.SCORE_BETTER : COLORS.SCORE_WORSE;
       this.add.text(WORLD_WIDTH / 2, 390, label, {
         fontFamily: 'sans-serif',
         fontSize: '15px',
@@ -383,12 +383,12 @@ export class GameOverScene extends Phaser.Scene {
       this.add.text(WORLD_WIDTH / 2, 290, `${distanceM.toLocaleString()} / ${courseM.toLocaleString()} m`, {
         fontFamily: 'sans-serif',
         fontSize:   '20px',
-        color:      '#6688aa',
+        color:      COLORS.UI_SECONDARY,
       }).setOrigin(0.5);
     }
 
     const div = this.add.graphics();
-    div.lineStyle(1, 0x223344, 1);
+    div.lineStyle(1, COLORS.UI_DIVIDER, 1);
     div.beginPath();
     div.moveTo(WORLD_WIDTH / 2 - 220, 328);
     div.lineTo(WORLD_WIDTH / 2 + 220, 328);
@@ -406,7 +406,7 @@ export class GameOverScene extends Phaser.Scene {
       fontFamily: 'sans-serif',
       fontSize:   '24px',
       fontStyle:  'bold',
-      color:      '#ffd700',
+      color:      COLORS.POPUP_GOLD,
       stroke:     '#000000',
       strokeThickness: 1,
     }).setOrigin(0.5);
@@ -427,7 +427,7 @@ export class GameOverScene extends Phaser.Scene {
     this.add.text(WORLD_WIDTH / 2, 398, sub, {
       fontFamily: 'sans-serif',
       fontSize:   '15px',
-      color:      '#88aacc',
+      color:      COLORS.UI_DETAIL,
     }).setOrigin(0.5);
   }
 
@@ -436,14 +436,14 @@ export class GameOverScene extends Phaser.Scene {
     this.add.text(WORLD_WIDTH / 2, 358, `Personal best: ${best}`, {
       fontFamily: 'sans-serif',
       fontSize:   '19px',
-      color:      '#6688aa',
+      color:      COLORS.UI_SECONDARY,
     }).setOrigin(0.5);
 
     if (bestScore !== null) {
       const delta = score - bestScore;
       const label = delta === 0 ? 'Same as this run'
                   : `${delta > 0 ? '+' : ''}${delta} this run`;
-      const color = delta === 0 ? '#ffcc00' : delta > 0 ? '#78bb78' : '#cc7777';
+      const color = delta === 0 ? COLORS.HUD_VALUE : delta > 0 ? COLORS.SCORE_BETTER : COLORS.SCORE_WORSE;
       this.add.text(WORLD_WIDTH / 2, 390, label, {
         fontFamily: 'sans-serif',
         fontSize:   '15px',
@@ -470,7 +470,7 @@ export class GameOverScene extends Phaser.Scene {
 
     const draw = (hovered: boolean): void => {
       bg.clear();
-      bg.fillStyle(hovered ? 0x3a6ae8 : 0x2a5ab8, 1);
+      bg.fillStyle(hovered ? COLORS.BTN_HOVER : COLORS.BTN, 1);
       bg.fillRoundedRect(x - btnW / 2, y - btnH / 2, btnW, btnH, 10);
     };
     draw(false);

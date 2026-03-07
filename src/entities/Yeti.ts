@@ -119,12 +119,12 @@ export class Yeti {
     gfx.fillCircle(5, -28, 15);
 
     // --- Eyes — large, dark, menacing ---
-    gfx.fillStyle(0x0a1828, 1);
+    gfx.fillStyle(COLORS.YETI_EYE, 1);
     gfx.fillCircle(-8, -30, 6);
     gfx.fillCircle(9, -29, 6);
 
     // Angry eyebrow wedges (give it an aggressive look)
-    gfx.fillStyle(0x0a1828, 1);
+    gfx.fillStyle(COLORS.YETI_EYE, 1);
     gfx.fillTriangle(-14, -38, -2, -36, -6, -32);  // left brow
     gfx.fillTriangle(15, -38, 3, -36, 7, -31);      // right brow
 
@@ -134,7 +134,7 @@ export class Yeti {
     gfx.fillCircle(11, -32, 2);
 
     // --- Mouth: open, showing fangs ---
-    gfx.fillStyle(0x0a1828, 0.95);
+    gfx.fillStyle(COLORS.YETI_EYE, 0.95);
     gfx.fillRect(-9, -20, 18, 7);   // mouth gap
 
     // Fangs

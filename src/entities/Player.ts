@@ -72,8 +72,8 @@ export class Player {
     this.drawPoles(0);
 
     // Skis — dark, thin, slightly fanned
-    this.leftSki  = scene.add.rectangle(-8, 8, 5, 30, 0x111111).setAngle(-10);
-    this.rightSki = scene.add.rectangle( 8, 8, 5, 30, 0x111111).setAngle( 10);
+    this.leftSki  = scene.add.rectangle(-8, 8, 5, 30, COLORS.SKI).setAngle(-10);
+    this.rightSki = scene.add.rectangle( 8, 8, 5, 30, COLORS.SKI).setAngle( 10);
 
     // Jacket / suit body
     this.body = scene.add.ellipse(0, -3, 17, 21, COLORS.PLAYER_SUIT);
@@ -266,7 +266,7 @@ export class Player {
   // ---------------------------------------------------------------------------
   private drawPoles(lean: number): void {
     this.poles.clear();
-    this.poles.lineStyle(2, 0x888899, 0.85);
+    this.poles.lineStyle(2, COLORS.SKI_POLE, 0.85);
 
     // Left pole: body left side → lower-left
     this.poles.beginPath();

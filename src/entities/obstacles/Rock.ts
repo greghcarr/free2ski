@@ -57,7 +57,7 @@ export class Rock extends ObstacleBase {
     gfx.fillRect(-8 * s, 4 * s, 16 * s, 6 * s);
 
     // Highlight (top-left catch light)
-    gfx.fillStyle(0xb0b0c8, 0.75);
+    gfx.fillStyle(COLORS.ROCK_HIGHLIGHT, 0.75);
     gfx.fillPoints(scale(ROCK_HIGHLIGHT), true);
   }
 }

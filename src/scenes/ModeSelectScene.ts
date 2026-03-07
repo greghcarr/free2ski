@@ -25,13 +25,13 @@ export class ModeSelectScene extends Phaser.Scene {
       fontFamily: 'sans-serif',
       fontSize: '40px',
       fontStyle: 'bold',
-      color: '#1a3a8a',
+      color: COLORS.UI_TITLE,
     }).setOrigin(0.5);
 
     this.add.text(WORLD_WIDTH / 2, 202, `Total runs: ${HighScoreManager.getTotalRuns()}`, {
       fontFamily: 'sans-serif',
       fontSize: '16px',
-      color: '#3a5a9a',
+      color: COLORS.UI_SUBTITLE,
     }).setOrigin(0.5);
 
     const cardW = 240;
@@ -57,7 +57,7 @@ export class ModeSelectScene extends Phaser.Scene {
     this.add.text(60, GAME_HEIGHT - 50, '← Back', {
       fontFamily: 'sans-serif',
       fontSize: '20px',
-      color: '#1a3a8a',
+      color: COLORS.UI_TITLE,
     }).setInteractive({ useHandCursor: true })
       .on('pointerdown', () => this.scene.start(SceneKey.MainMenu));
 
@@ -82,8 +82,8 @@ export class ModeSelectScene extends Phaser.Scene {
     const bg = this.add.graphics();
     const draw = (hovered: boolean): void => {
       bg.clear();
-      bg.fillStyle(hovered ? 0xd0dcec : 0xe8f0f8, 1);
-      bg.lineStyle(2, 0x2a5ab8, 1);
+      bg.fillStyle(hovered ? COLORS.CARD_HOVER : COLORS.CARD, 1);
+      bg.lineStyle(2, COLORS.BTN, 1);
       bg.fillRoundedRect(cx - w / 2, cy - h / 2, w, h, 12);
       bg.strokeRoundedRect(cx - w / 2, cy - h / 2, w, h, 12);
     };
@@ -93,13 +93,13 @@ export class ModeSelectScene extends Phaser.Scene {
       fontFamily: 'sans-serif',
       fontSize: '20px',
       fontStyle: 'bold',
-      color: '#1a3a8a',
+      color: COLORS.UI_TITLE,
     }).setOrigin(0.5);
 
     this.add.text(cx, cy - h / 2 + 68, desc, {
       fontFamily: 'sans-serif',
       fontSize: '14px',
-      color: '#3a5a9a',
+      color: COLORS.UI_SUBTITLE,
       wordWrap: { width: w - 24 },
       align: 'center',
     }).setOrigin(0.5, 0);
@@ -108,7 +108,7 @@ export class ModeSelectScene extends Phaser.Scene {
       fontFamily: 'sans-serif',
       fontSize: '13px',
       fontStyle: 'bold',
-      color: '#1a3a8a',
+      color: COLORS.UI_TITLE,
       align: 'center',
     }).setOrigin(0.5, 1);
 
@@ -166,7 +166,7 @@ export class ModeSelectScene extends Phaser.Scene {
     g.fillEllipse(cx + 4 * s, oy + 10 * s, 28 * s, 10 * s);
 
     // Trunk
-    g.fillStyle(0x5c3a1e, 1);
+    g.fillStyle(COLORS.TREE_TRUNK, 1);
     g.fillRect(cx - 3 * s, oy + 4 * s, 6 * s, 10 * s);
 
     // Base layer (widest, darkest green)
@@ -178,7 +178,7 @@ export class ModeSelectScene extends Phaser.Scene {
     g.fillTriangle(cx - 11 * s, oy + 1 * s, cx + 11 * s, oy + 1 * s, cx, oy - 16 * s);
 
     // Top layer
-    g.fillStyle(0x4c9040, 1);
+    g.fillStyle(COLORS.TREE_TOP, 1);
     g.fillTriangle(cx - 7 * s, oy - 7 * s, cx + 7 * s, oy - 7 * s, cx, oy - 22 * s);
 
   }
@@ -244,15 +244,15 @@ export class ModeSelectScene extends Phaser.Scene {
     g.fillRoundedRect(cx - hw + 4 * s, oy + hd - 2 * s, RAMP_W * s, 10 * s, 4);
 
     // Main ramp platform
-    g.fillStyle(0xd0dce8, 1);
+    g.fillStyle(COLORS.RAMP_SURFACE, 1);
     g.fillRoundedRect(cx - hw, oy - hd, RAMP_W * s, RAMP_D * s, CORNER * s);
 
     // Upper highlight
-    g.fillStyle(0xeaf4ff, 0.70);
+    g.fillStyle(COLORS.RAMP_HIGHLIGHT, 0.70);
     g.fillRoundedRect(cx - hw + 4 * s, oy - hd + 2 * s, (RAMP_W - 8) * s, RAMP_D * 0.45 * s, (CORNER - 2) * s);
 
     // Front launch lip
-    g.fillStyle(0x6888a8, 1);
+    g.fillStyle(COLORS.RAMP_LIP, 1);
     g.fillRoundedRect(cx - hw, oy + hd - lipH, RAMP_W * s, lipH, { tl: 0, tr: 0, bl: CORNER * s, br: CORNER * s });
 
     // Yellow direction arrow (same path as Ramp.ts)
@@ -274,7 +274,7 @@ export class ModeSelectScene extends Phaser.Scene {
       g.closePath();
     };
 
-    g.fillStyle(0xffee00, 0.92);
+    g.fillStyle(COLORS.RAMP_ARROW, 0.92);
     drawArrow();
     g.fillPath();
 
@@ -283,7 +283,7 @@ export class ModeSelectScene extends Phaser.Scene {
     g.strokePath();
 
     // Platform outline
-    g.lineStyle(1.5, 0x8aaccc, 0.8);
+    g.lineStyle(1.5, COLORS.RAMP_OUTLINE, 0.8);
     g.strokeRoundedRect(cx - hw, oy - hd, RAMP_W * s, RAMP_D * s, CORNER * s);
   }
 }

@@ -20,7 +20,7 @@ export class MainMenuScene extends Phaser.Scene {
       fontFamily: 'sans-serif',
       fontSize: '72px',
       fontStyle: 'bold',
-      color: '#1a3a8a',
+      color: COLORS.UI_TITLE,
       stroke: '#ffffff',
       strokeThickness: 4,
     }).setOrigin(0.5);
@@ -28,7 +28,7 @@ export class MainMenuScene extends Phaser.Scene {
     this.add.text(WORLD_WIDTH / 2, 240, 'An endless skiing adventure', {
       fontFamily: 'sans-serif',
       fontSize: '22px',
-      color: '#3a5a9a',
+      color: COLORS.UI_SUBTITLE,
     }).setOrigin(0.5);
 
     // Menu buttons
@@ -48,7 +48,7 @@ export class MainMenuScene extends Phaser.Scene {
     const bg = this.add.graphics();
     const drawBg = (hovered: boolean): void => {
       bg.clear();
-      bg.fillStyle(hovered ? 0x1a3a8a : 0x2a5ab8, 1);
+      bg.fillStyle(hovered ? COLORS.BTN_HOVER : COLORS.BTN, 1);
       bg.fillRoundedRect(x - btnW / 2, y - btnH / 2, btnW, btnH, 10);
     };
     drawBg(false);
