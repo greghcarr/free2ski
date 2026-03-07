@@ -12,9 +12,6 @@ export const SPEED_ACCEL_RATE  = 10;    // px/s² passive acceleration
 export const PLAYER_TURN_SPEED = 120;   // degrees per second
 
 // Yeti
-export const YETI_SPAWN_DISTANCE = 1500;  // meters (Free Ski default; per-mode values are in GameModes.ts)
-export const YETI_CHASE_SPEED    = 1.15;  // multiplier over player speed
-
 // Yeti wave system (FreeSki)
 export const YETI_WAVE_INTERVAL_M    = 2000;  // meters between waves
 export const YETI_INITIAL_WAVE_SPEED = 85;    // chase px/s for wave 1       (tunable)

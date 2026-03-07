@@ -10,7 +10,7 @@ An endless skiing game inspired by the classic SkiFree. Built with Phaser 3, Typ
 
 | Mode | Description |
 |------|-------------|
-| **Free Ski** | Ski as far as you can. The yeti appears at 1500m and gets faster with every wave. |
+| **Free Ski** | Ski as far as you can. The yeti appears at 2000m and gets faster with every wave. |
 | **Slalom** | Race through 25 gates as fast as possible. Missed gates add a 5-second penalty. |
 | **Jump** | Hit ramps and score big air. |
 
