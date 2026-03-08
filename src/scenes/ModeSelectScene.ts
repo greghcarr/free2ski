@@ -21,21 +21,21 @@ export class ModeSelectScene extends Phaser.Scene {
     bg.fillGradientStyle(COLORS.SNOW_LIGHT, COLORS.SNOW_LIGHT, COLORS.SNOW_SHADOW, COLORS.SNOW_SHADOW, 1);
     bg.fillRect(0, 0, WORLD_WIDTH, GAME_HEIGHT);
 
-    this.add.text(WORLD_WIDTH / 2, 160, 'SELECT MODE', {
+    this.add.text(WORLD_WIDTH / 2, 240, 'SELECT MODE', {
       fontFamily: 'FoxwhelpFont',
       fontSize: '40px',
       fontStyle: 'bold',
       color: COLORS.UI_TITLE,
     }).setOrigin(0.5);
 
-    this.add.text(WORLD_WIDTH / 2, 202, `Total runs: ${HighScoreManager.getTotalRuns()}`, {
+    this.add.text(WORLD_WIDTH / 2, 303, `Total runs: ${HighScoreManager.getTotalRuns()}`, {
       fontFamily: 'FoxwhelpFont',
       fontSize: '16px',
       color: COLORS.UI_SUBTITLE,
     }).setOrigin(0.5);
 
-    const cardW = 240;
-    const cardH = 260;
+    const cardW = 360;
+    const cardH = 390;
     const spacing = 20;
     const totalW = MODES.length * cardW + (MODES.length - 1) * spacing;
     const startX = (WORLD_WIDTH - totalW) / 2 + cardW / 2;

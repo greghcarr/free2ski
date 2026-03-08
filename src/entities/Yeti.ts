@@ -32,6 +32,7 @@ export class Yeti {
 
     this.container = scene.add.container(startX, startY, [gfx]);
     this.container.setDepth(DEPTH.YETI);
+    this.container.setScale(1.5);
   }
 
   // ---------------------------------------------------------------------------
@@ -58,7 +59,7 @@ export class Yeti {
 
   /** Approximate radius for catch detection (yeti is large) */
   get hitRadius(): number {
-    return 32;
+    return 48;
   }
 
   destroy(): void {

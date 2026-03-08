@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { GAME_HEIGHT } from '@/data/constants';
 
 // Vertical padding beyond screen edges before hiding the visual
-const CULL_PADDING = 80;
+const CULL_PADDING = 120;
 
 export abstract class ObstacleBase {
   /** Fixed world-space X (equals screen X — no horizontal camera pan) */

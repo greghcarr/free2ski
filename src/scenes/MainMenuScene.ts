@@ -16,7 +16,7 @@ export class MainMenuScene extends Phaser.Scene {
     bg.fillRect(0, 0, WORLD_WIDTH, GAME_HEIGHT);
 
     // Title
-    this.add.text(WORLD_WIDTH / 2, 160, 'free2ski', {
+    this.add.text(WORLD_WIDTH / 2, 240, 'free2ski', {
       fontFamily: 'FoxwhelpFont',
       fontSize: '72px',
       fontStyle: 'bold',
@@ -25,7 +25,7 @@ export class MainMenuScene extends Phaser.Scene {
       strokeThickness: 4,
     }).setOrigin(0.5);
 
-    this.add.text(WORLD_WIDTH / 2, 240, 'a skiing adventure', {
+    this.add.text(WORLD_WIDTH / 2, 360, 'a skiing adventure', {
       fontFamily: 'FoxwhelpFont',
       fontSize: '22px',
       color: COLORS.UI_SUBTITLE,
@@ -33,9 +33,9 @@ export class MainMenuScene extends Phaser.Scene {
 
     // Menu buttons
     let nav: MenuNav | undefined;
-    const playItem        = this.createButton(WORLD_WIDTH / 2, 340, 'play',        () => { this.scene.start(SceneKey.ModeSelect); },   () => nav?.hoverAt(0));
-    const leaderboardItem = this.createButton(WORLD_WIDTH / 2, 420, 'leaderboard', () => { this.scene.start(SceneKey.Leaderboard); }, () => nav?.hoverAt(1));
-    const settingsItem    = this.createButton(WORLD_WIDTH / 2, 500, 'settings',    () => { this.scene.start(SceneKey.Settings); },    () => nav?.hoverAt(2));
+    const playItem        = this.createButton(WORLD_WIDTH / 2, 510, 'play',        () => { this.scene.start(SceneKey.ModeSelect); },   () => nav?.hoverAt(0));
+    const leaderboardItem = this.createButton(WORLD_WIDTH / 2, 630, 'leaderboard', () => { this.scene.start(SceneKey.Leaderboard); }, () => nav?.hoverAt(1));
+    const settingsItem    = this.createButton(WORLD_WIDTH / 2, 750, 'settings',    () => { this.scene.start(SceneKey.Settings); },    () => nav?.hoverAt(2));
     nav = new MenuNav(this, [playItem, leaderboardItem, settingsItem]);
 
     addVersionLabel(this);

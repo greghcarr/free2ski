@@ -24,13 +24,13 @@ export class PauseScene extends Phaser.Scene {
     this.add.rectangle(WORLD_WIDTH / 2, GAME_HEIGHT / 2, WORLD_WIDTH, GAME_HEIGHT, COLORS.OVERLAY, 0.55);
 
     // Light blue card behind the menu
-    const cardW = 360;
-    const cardH = 380;
+    const cardW = 540;
+    const cardH = 570;
     const cardGfx = this.add.graphics();
     cardGfx.fillStyle(COLORS.PAUSE_CARD, 0.5);
-    cardGfx.fillRoundedRect(WORLD_WIDTH / 2 - cardW / 2, 180, cardW, cardH, 18);
+    cardGfx.fillRoundedRect(WORLD_WIDTH / 2 - cardW / 2, 270, cardW, cardH, 18);
 
-    this.add.text(WORLD_WIDTH / 2, 240, 'PAUSED', {
+    this.add.text(WORLD_WIDTH / 2, 360, 'PAUSED', {
       fontFamily: 'FoxwhelpFont',
       fontSize: '52px',
       fontStyle: 'bold',
@@ -40,13 +40,13 @@ export class PauseScene extends Phaser.Scene {
     const resume = (): void => { this.scene.stop(); this.scene.resume(this.callerKey); };
 
     let nav: MenuNav | undefined;
-    const resumeItem  = this.createButton(WORLD_WIDTH / 2, 340, 'RESUME',       resume, () => nav?.hoverAt(0));
-    const restartItem = this.createButton(WORLD_WIDTH / 2, 420, 'RESTART', () => {
+    const resumeItem  = this.createButton(WORLD_WIDTH / 2, 510, 'RESUME',       resume, () => nav?.hoverAt(0));
+    const restartItem = this.createButton(WORLD_WIDTH / 2, 630, 'RESTART', () => {
       this.scene.stop(this.callerKey);
       this.scene.stop();
       this.scene.start(SceneKey.Game, { session: this.session });
     }, () => nav?.hoverAt(1));
-    const quitItem    = this.createButton(WORLD_WIDTH / 2, 500, 'QUIT TO MENU', () => {
+    const quitItem    = this.createButton(WORLD_WIDTH / 2, 750, 'QUIT TO MENU', () => {
       this.scene.stop(this.callerKey);
       this.scene.stop();
       this.scene.start(SceneKey.MainMenu);

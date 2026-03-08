@@ -15,7 +15,7 @@ export class SettingsScene extends Phaser.Scene {
     bg.fillGradientStyle(COLORS.SNOW_LIGHT, COLORS.SNOW_LIGHT, COLORS.SNOW_SHADOW, COLORS.SNOW_SHADOW, 1);
     bg.fillRect(0, 0, WORLD_WIDTH, GAME_HEIGHT);
 
-    this.add.text(WORLD_WIDTH / 2, 80, 'SETTINGS', {
+    this.add.text(WORLD_WIDTH / 2, 120, 'SETTINGS', {
       fontFamily: 'FoxwhelpFont',
       fontSize: '40px',
       fontStyle: 'bold',

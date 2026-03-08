@@ -312,7 +312,7 @@ export class GameScene extends Phaser.Scene {
     if (this.announcementContainer) {
       const screenY = PLAYER_SCREEN_Y + (this.announcementWorldY - this.worldOffsetY);
       this.announcementContainer.setY(screenY);
-      if (screenY < -160) {
+      if (screenY < -240) {
         this.announcementContainer.destroy();
         this.announcementContainer = undefined;
       }

@@ -98,7 +98,7 @@ export class GameOverScene extends Phaser.Scene {
   private buildHeadline(): void {
     const { caughtByYeti, courseComplete, session, finishTimeMs } = this.summary;
 
-    this.add.text(WORLD_WIDTH / 2, 58, session.mode.replace(/_/g, ' ').toUpperCase(), {
+    this.add.text(WORLD_WIDTH / 2, 87, session.mode.replace(/_/g, ' ').toUpperCase(), {
       fontFamily: 'FoxwhelpFont',
       fontSize: '14px',
       color: COLORS.UI_MUTED,
@@ -116,7 +116,7 @@ export class GameOverScene extends Phaser.Scene {
       headline = 'WIPEOUT'; color = COLORS.DANGER; fontSize = '62px';
     }
 
-    this.add.text(WORLD_WIDTH / 2, 120, headline, {
+    this.add.text(WORLD_WIDTH / 2, 180, headline, {
       fontFamily: 'FoxwhelpFont',
       fontSize,
       fontStyle:  'bold',
@@ -152,14 +152,14 @@ export class GameOverScene extends Phaser.Scene {
     const passed  = this.summary.gatesPassed   ?? 0;
     const total   = this.summary.totalGatesInCourse ?? 0;
 
-    this.add.text(WORLD_WIDTH / 2, 226, formatRaceTime(elapsed), {
+    this.add.text(WORLD_WIDTH / 2, 339, formatRaceTime(elapsed), {
       fontFamily: 'FoxwhelpFont',
       fontSize:   '58px',
       fontStyle:  'bold',
       color:      '#ffffff',
     }).setOrigin(0.5);
 
-    this.add.text(WORLD_WIDTH / 2, 292, `${passed} / ${total} gates passed`, {
+    this.add.text(WORLD_WIDTH / 2, 438, `${passed} / ${total} gates passed`, {
       fontFamily: 'FoxwhelpFont',
       fontSize:   '16px',
       color:      COLORS.UI_SECONDARY,
@@ -168,20 +168,20 @@ export class GameOverScene extends Phaser.Scene {
     const div = this.add.graphics();
     div.lineStyle(1, COLORS.UI_DIVIDER, 1);
     div.beginPath();
-    div.moveTo(WORLD_WIDTH / 2 - 220, 328);
-    div.lineTo(WORLD_WIDTH / 2 + 220, 328);
+    div.moveTo(WORLD_WIDTH / 2 - 330, 492);
+    div.lineTo(WORLD_WIDTH / 2 + 330, 492);
     div.strokePath();
 
     const bestMs = HighScoreManager.getBest(GameMode.Slalom)?.timeMs ?? null;
     if (bestMs !== null) {
-      this.add.text(WORLD_WIDTH / 2, 358, `Personal best: ${formatRaceTime(bestMs)}`, {
+      this.add.text(WORLD_WIDTH / 2, 537, `Personal best: ${formatRaceTime(bestMs)}`, {
         fontFamily: 'FoxwhelpFont',
         fontSize:   '19px',
         color:      COLORS.UI_SECONDARY,
       }).setOrigin(0.5);
 
     } else {
-      this.add.text(WORLD_WIDTH / 2, 358, 'No completed runs on record', {
+      this.add.text(WORLD_WIDTH / 2, 537, 'No completed runs on record', {
         fontFamily: 'FoxwhelpFont',
         fontSize:   '16px',
         color:      COLORS.UI_SECONDARY,
@@ -197,7 +197,7 @@ export class GameOverScene extends Phaser.Scene {
     const missed  = gatesMissed ?? 0;
     const penalty = penaltyMs  ?? 0;
 
-    this.add.text(WORLD_WIDTH / 2, 220, formatRaceTime(finishTimeMs!), {
+    this.add.text(WORLD_WIDTH / 2, 330, formatRaceTime(finishTimeMs!), {
       fontFamily: 'FoxwhelpFont',
       fontSize: '58px',
       fontStyle: 'bold',
@@ -207,7 +207,7 @@ export class GameOverScene extends Phaser.Scene {
     const subtitle = missed > 0
       ? `${missed} gate${missed > 1 ? 's' : ''} missed  ·  +${penalty / 1000}s penalty`
       : `${(gatesPassed ?? 0)} / ${(gatesPassed ?? 0) + missed} gates  ·  no penalties`;
-    this.add.text(WORLD_WIDTH / 2, 292, subtitle, {
+    this.add.text(WORLD_WIDTH / 2, 438, subtitle, {
       fontFamily: 'FoxwhelpFont',
       fontSize: '16px',
       color: missed > 0 ? COLORS.SCORE_WORSE : COLORS.SCORE_BETTER,
@@ -216,8 +216,8 @@ export class GameOverScene extends Phaser.Scene {
     const div = this.add.graphics();
     div.lineStyle(1, COLORS.UI_DIVIDER, 1);
     div.beginPath();
-    div.moveTo(WORLD_WIDTH / 2 - 220, 328);
-    div.lineTo(WORLD_WIDTH / 2 + 220, 328);
+    div.moveTo(WORLD_WIDTH / 2 - 330, 492);
+    div.lineTo(WORLD_WIDTH / 2 + 330, 492);
     div.strokePath();
 
     if (isNewBest) {
@@ -228,7 +228,7 @@ export class GameOverScene extends Phaser.Scene {
   }
 
   private buildNewBestTimeBadge(timeMs: number, prevMs: number | null): void {
-    const badge = this.add.text(WORLD_WIDTH / 2, 360, '★  NEW PERSONAL BEST  ★', {
+    const badge = this.add.text(WORLD_WIDTH / 2, 540, '★  NEW PERSONAL BEST  ★', {
       fontFamily: 'FoxwhelpFont',
       fontSize: '24px',
       fontStyle: 'bold',
@@ -250,7 +250,7 @@ export class GameOverScene extends Phaser.Scene {
     const sub = prevMs !== null
       ? `${formatRaceTime(prevMs)}  →  ${formatRaceTime(timeMs)}`
       : 'First run on record!';
-    this.add.text(WORLD_WIDTH / 2, 398, sub, {
+    this.add.text(WORLD_WIDTH / 2, 597, sub, {
       fontFamily: 'FoxwhelpFont',
       fontSize: '15px',
       color: COLORS.UI_DETAIL,
@@ -259,7 +259,7 @@ export class GameOverScene extends Phaser.Scene {
 
   private buildExistingBestTimeRow(timeMs: number, bestMs: number | null): void {
     const best = bestMs ?? timeMs;
-    this.add.text(WORLD_WIDTH / 2, 358, `Personal best: ${formatRaceTime(best)}`, {
+    this.add.text(WORLD_WIDTH / 2, 537, `Personal best: ${formatRaceTime(best)}`, {
       fontFamily: 'FoxwhelpFont',
       fontSize: '19px',
       color: COLORS.UI_SECONDARY,
@@ -270,7 +270,7 @@ export class GameOverScene extends Phaser.Scene {
       const label   = deltaMs === 0 ? 'Same as this run'
                     : `${deltaMs > 0 ? '+' : '-'}${formatRaceTime(Math.abs(deltaMs))} this run`;
       const color   = deltaMs === 0 ? COLORS.HUD_VALUE : deltaMs < 0 ? COLORS.SCORE_BETTER : COLORS.SCORE_WORSE;
-      this.add.text(WORLD_WIDTH / 2, 390, label, {
+      this.add.text(WORLD_WIDTH / 2, 585, label, {
         fontFamily: 'FoxwhelpFont',
         fontSize: '15px',
         color,
@@ -284,7 +284,7 @@ export class GameOverScene extends Phaser.Scene {
     const { distanceM, score, session, yetisEvaded } = this.summary;
     const { isNewBest, prevBest } = result;
 
-    this.add.text(WORLD_WIDTH / 2, 226, `${distanceM.toLocaleString()} m`, {
+    this.add.text(WORLD_WIDTH / 2, 339, `${distanceM.toLocaleString()} m`, {
       fontFamily: 'FoxwhelpFont',
       fontSize: '52px',
       fontStyle: 'bold',
@@ -294,7 +294,7 @@ export class GameOverScene extends Phaser.Scene {
     const subLabel = session.mode === GameMode.FreeSki
       ? `Yetis evaded: ${yetisEvaded ?? 0}`
       : `Score: ${score.toLocaleString()}`;
-    this.add.text(WORLD_WIDTH / 2, 290, subLabel, {
+    this.add.text(WORLD_WIDTH / 2, 435, subLabel, {
       fontFamily: 'FoxwhelpFont',
       fontSize: '20px',
       color: COLORS.UI_SECONDARY,
@@ -303,8 +303,8 @@ export class GameOverScene extends Phaser.Scene {
     const div = this.add.graphics();
     div.lineStyle(1, COLORS.UI_DIVIDER, 1);
     div.beginPath();
-    div.moveTo(WORLD_WIDTH / 2 - 220, 328);
-    div.lineTo(WORLD_WIDTH / 2 + 220, 328);
+    div.moveTo(WORLD_WIDTH / 2 - 330, 492);
+    div.lineTo(WORLD_WIDTH / 2 + 330, 492);
     div.strokePath();
 
     if (isNewBest) {
@@ -315,7 +315,7 @@ export class GameOverScene extends Phaser.Scene {
   }
 
   private buildNewBestDistanceBadge(distanceM: number, prevM: number | null): void {
-    const badge = this.add.text(WORLD_WIDTH / 2, 360, '★  NEW PERSONAL BEST  ★', {
+    const badge = this.add.text(WORLD_WIDTH / 2, 540, '★  NEW PERSONAL BEST  ★', {
       fontFamily: 'FoxwhelpFont',
       fontSize: '24px',
       fontStyle: 'bold',
@@ -337,7 +337,7 @@ export class GameOverScene extends Phaser.Scene {
     const sub = prevM !== null
       ? `+${(distanceM - prevM).toLocaleString()} m over previous  (${prevM.toLocaleString()} m)`
       : 'First run on record!';
-    this.add.text(WORLD_WIDTH / 2, 398, sub, {
+    this.add.text(WORLD_WIDTH / 2, 597, sub, {
       fontFamily: 'FoxwhelpFont',
       fontSize: '15px',
       color: COLORS.UI_DETAIL,
@@ -346,7 +346,7 @@ export class GameOverScene extends Phaser.Scene {
 
   private buildExistingBestDistanceRow(distanceM: number, bestM: number | null): void {
     const best = bestM ?? distanceM;
-    this.add.text(WORLD_WIDTH / 2, 358, `Personal best: ${best.toLocaleString()} m`, {
+    this.add.text(WORLD_WIDTH / 2, 537, `Personal best: ${best.toLocaleString()} m`, {
       fontFamily: 'FoxwhelpFont',
       fontSize: '19px',
       color: COLORS.UI_SECONDARY,
@@ -357,7 +357,7 @@ export class GameOverScene extends Phaser.Scene {
       const label = delta === 0 ? 'Same as this run'
                   : `${delta > 0 ? '+' : '-'}${Math.abs(delta).toLocaleString()} m this run`;
       const color = delta === 0 ? COLORS.HUD_VALUE : delta > 0 ? COLORS.SCORE_BETTER : COLORS.SCORE_WORSE;
-      this.add.text(WORLD_WIDTH / 2, 390, label, {
+      this.add.text(WORLD_WIDTH / 2, 585, label, {
         fontFamily: 'FoxwhelpFont',
         fontSize: '15px',
         color,
@@ -371,7 +371,7 @@ export class GameOverScene extends Phaser.Scene {
     const { score, distanceM, courseComplete } = this.summary;
     const { isNewBest, prevBest } = result;
 
-    this.add.text(WORLD_WIDTH / 2, 226, `Score: ${score}`, {
+    this.add.text(WORLD_WIDTH / 2, 339, `Score: ${score}`, {
       fontFamily: 'FoxwhelpFont',
       fontSize:   '52px',
       fontStyle:  'bold',
@@ -380,7 +380,7 @@ export class GameOverScene extends Phaser.Scene {
 
     if (!courseComplete) {
       const courseM = JUMP_COURSE_DISTANCE_M;
-      this.add.text(WORLD_WIDTH / 2, 290, `${distanceM.toLocaleString()} / ${courseM.toLocaleString()} m`, {
+      this.add.text(WORLD_WIDTH / 2, 435, `${distanceM.toLocaleString()} / ${courseM.toLocaleString()} m`, {
         fontFamily: 'FoxwhelpFont',
         fontSize:   '20px',
         color:      COLORS.UI_SECONDARY,
@@ -390,8 +390,8 @@ export class GameOverScene extends Phaser.Scene {
     const div = this.add.graphics();
     div.lineStyle(1, COLORS.UI_DIVIDER, 1);
     div.beginPath();
-    div.moveTo(WORLD_WIDTH / 2 - 220, 328);
-    div.lineTo(WORLD_WIDTH / 2 + 220, 328);
+    div.moveTo(WORLD_WIDTH / 2 - 330, 492);
+    div.lineTo(WORLD_WIDTH / 2 + 330, 492);
     div.strokePath();
 
     if (isNewBest) {
@@ -402,7 +402,7 @@ export class GameOverScene extends Phaser.Scene {
   }
 
   private buildNewBestJumpBadge(score: number, prevScore: number | null): void {
-    const badge = this.add.text(WORLD_WIDTH / 2, 360, '★  NEW PERSONAL BEST  ★', {
+    const badge = this.add.text(WORLD_WIDTH / 2, 540, '★  NEW PERSONAL BEST  ★', {
       fontFamily: 'FoxwhelpFont',
       fontSize:   '24px',
       fontStyle:  'bold',
@@ -424,7 +424,7 @@ export class GameOverScene extends Phaser.Scene {
     const sub = prevScore !== null
       ? `+${score - prevScore} over previous  (best: ${prevScore})`
       : 'First run on record!';
-    this.add.text(WORLD_WIDTH / 2, 398, sub, {
+    this.add.text(WORLD_WIDTH / 2, 597, sub, {
       fontFamily: 'FoxwhelpFont',
       fontSize:   '15px',
       color:      COLORS.UI_DETAIL,
@@ -433,7 +433,7 @@ export class GameOverScene extends Phaser.Scene {
 
   private buildExistingBestJumpRow(score: number, bestScore: number | null): void {
     const best = bestScore ?? score;
-    this.add.text(WORLD_WIDTH / 2, 358, `Personal best: ${best}`, {
+    this.add.text(WORLD_WIDTH / 2, 537, `Personal best: ${best}`, {
       fontFamily: 'FoxwhelpFont',
       fontSize:   '19px',
       color:      COLORS.UI_SECONDARY,
@@ -444,7 +444,7 @@ export class GameOverScene extends Phaser.Scene {
       const label = delta === 0 ? 'Same as this run'
                   : `${delta > 0 ? '+' : ''}${delta} this run`;
       const color = delta === 0 ? COLORS.HUD_VALUE : delta > 0 ? COLORS.SCORE_BETTER : COLORS.SCORE_WORSE;
-      this.add.text(WORLD_WIDTH / 2, 390, label, {
+      this.add.text(WORLD_WIDTH / 2, 585, label, {
         fontFamily: 'FoxwhelpFont',
         fontSize:   '15px',
         color,
@@ -454,10 +454,10 @@ export class GameOverScene extends Phaser.Scene {
 
   private buildButtons(): void {
     let nav: MenuNav | undefined;
-    const playAgain = this.createButton(WORLD_WIDTH / 2, 464, 'PLAY AGAIN', () => {
+    const playAgain = this.createButton(WORLD_WIDTH / 2, 696, 'PLAY AGAIN', () => {
       this.scene.start(SceneKey.Game, { session: this.summary.session });
     }, () => nav?.hoverAt(0));
-    const mainMenu = this.createButton(WORLD_WIDTH / 2, 538, 'MAIN MENU', () => {
+    const mainMenu = this.createButton(WORLD_WIDTH / 2, 807, 'MAIN MENU', () => {
       this.scene.start(SceneKey.MainMenu);
     }, () => nav?.hoverAt(1));
     nav = new MenuNav(this, [playAgain, mainMenu]);
