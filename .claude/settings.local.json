@@ -6,7 +6,8 @@
       "Bash(npx vite build --config vite.web.config.ts)",
       "Bash(npm run build:web)",
       "Bash(npx tsc -p tsconfig.web.json --noEmit)",
-      "Bash(gh repo rename free2ski --repo greghcarr/skifree-js --yes)"
+      "Bash(gh repo rename free2ski --repo greghcarr/skifree-js --yes)",
+      "Bash(grep '\"\"phaser\"\"' package.json)"
     ]
   }
 }

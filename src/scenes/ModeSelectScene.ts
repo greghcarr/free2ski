@@ -83,7 +83,7 @@ export class ModeSelectScene extends Phaser.Scene {
     const draw = (hovered: boolean): void => {
       bg.clear();
       bg.fillStyle(hovered ? COLORS.CARD_HOVER : COLORS.CARD, 1);
-      bg.lineStyle(2, COLORS.BTN, 1);
+      bg.lineStyle(3, COLORS.BTN, 1);
       bg.fillRoundedRect(cx - w / 2, cy - h / 2, w, h, 12);
       bg.strokeRoundedRect(cx - w / 2, cy - h / 2, w, h, 12);
     };

@@ -11,10 +11,10 @@ import {
 } from '@/data/constants';
 
 // Player hit radius for catch detection (must match Player.ts)
-const PLAYER_HIT_RADIUS = 18;
+const PLAYER_HIT_RADIUS = 27;
 
 // Yeti is considered evaded when its centre clears the top of the screen
-const EVADE_SCREEN_TOP = -150;
+const EVADE_SCREEN_TOP = -225;
 
 export type YetiEvent = 'none' | 'spawned' | 'caught' | 'evaded';
 
@@ -101,8 +101,8 @@ export class YetiSystem {
   // ---------------------------------------------------------------------------
 
   private spawn(playerX: number, _playerScreenY: number, initialSpeed: number): void {
-    const startX = Phaser.Math.Clamp(playerX + Phaser.Math.Between(-120, 120), 150, WORLD_WIDTH - 150);
-    const startY = GAME_HEIGHT + 135;
+    const startX = Phaser.Math.Clamp(playerX + Phaser.Math.Between(-180, 180), 225, WORLD_WIDTH - 225);
+    const startY = GAME_HEIGHT + 202;
     this.yeti = new Yeti(this.scene, startX, startY, initialSpeed);
   }
 }

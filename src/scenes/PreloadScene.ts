@@ -9,8 +9,8 @@ export class PreloadScene extends Phaser.Scene {
 
   preload(): void {
     // Draw a loading bar using the Graphics API
-    const barW = 400;
-    const barH = 20;
+    const barW = 600;
+    const barH = 30;
     const barX = (WORLD_WIDTH - barW) / 2;
     const barY = GAME_HEIGHT / 2 - barH / 2;
 
@@ -20,9 +20,9 @@ export class PreloadScene extends Phaser.Scene {
 
     const bar = this.add.graphics();
 
-    const label = this.add.text(WORLD_WIDTH / 2, barY - 24, 'Loading…', {
+    const label = this.add.text(WORLD_WIDTH / 2, barY - 36, 'Loading…', {
       fontFamily: 'FoxwhelpFont',
-      fontSize: '18px',
+      fontSize: '27px',
       color: '#ffffff',
     }).setOrigin(0.5, 0);
 
