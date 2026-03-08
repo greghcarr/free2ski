@@ -2,9 +2,9 @@ import Phaser from 'phaser';
 import { ObstacleBase } from './ObstacleBase';
 import { COLORS, DEPTH, GATE_GAP_WIDTH, GATE_POLE_RADIUS, GAME_HEIGHT } from '@/data/constants';
 
-const POLE_H       = 64;   // visual height of each pole
-const BANNER_H     = 14;   // horizontal flag/banner thickness
-const CULL_PADDING = 80;
+const POLE_H       = 96;   // visual height of each pole
+const BANNER_H     = 21;   // horizontal flag/banner thickness
+const CULL_PADDING = 120;
 
 export type GateColor = 'red' | 'blue';
 
@@ -83,7 +83,7 @@ export class SlalomGate extends ObstacleBase {
 
     if (gateNumber !== undefined) {
       const numStr = String(gateNumber);
-      const style = { fontFamily: 'sans-serif', fontSize: '26px', fontStyle: 'bold', color: '#222222' };
+      const style = { fontFamily: 'sans-serif', fontSize: '38px', fontStyle: 'bold', color: '#222222' };
       const labelY = -POLE_H / 2;
       poleChildren.push(
         scene.add.text(-halfGap, labelY, numStr, style).setOrigin(0.5, 0.5).setAlpha(0.55),

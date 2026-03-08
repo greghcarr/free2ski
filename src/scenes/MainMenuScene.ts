@@ -16,46 +16,46 @@ export class MainMenuScene extends Phaser.Scene {
     bg.fillRect(0, 0, WORLD_WIDTH, GAME_HEIGHT);
 
     // Title
-    this.add.text(WORLD_WIDTH / 2, 160, 'free2ski', {
+    this.add.text(WORLD_WIDTH / 2, 240, 'free2ski', {
       fontFamily: 'FoxwhelpFont',
-      fontSize: '72px',
+      fontSize: '108px',
       fontStyle: 'bold',
       color: COLORS.UI_TITLE,
       stroke: '#ffffff',
-      strokeThickness: 4,
+      strokeThickness: 6,
     }).setOrigin(0.5);
 
-    this.add.text(WORLD_WIDTH / 2, 240, 'a skiing adventure', {
+    this.add.text(WORLD_WIDTH / 2, 360, 'a skiing adventure', {
       fontFamily: 'FoxwhelpFont',
-      fontSize: '22px',
+      fontSize: '33px',
       color: COLORS.UI_SUBTITLE,
     }).setOrigin(0.5);
 
     // Menu buttons
     let nav: MenuNav | undefined;
-    const playItem        = this.createButton(WORLD_WIDTH / 2, 340, 'play',        () => { this.scene.start(SceneKey.ModeSelect); },   () => nav?.hoverAt(0));
-    const leaderboardItem = this.createButton(WORLD_WIDTH / 2, 420, 'leaderboard', () => { this.scene.start(SceneKey.Leaderboard); }, () => nav?.hoverAt(1));
-    const settingsItem    = this.createButton(WORLD_WIDTH / 2, 500, 'settings',    () => { this.scene.start(SceneKey.Settings); },    () => nav?.hoverAt(2));
+    const playItem        = this.createButton(WORLD_WIDTH / 2, 510, 'play',        () => { this.scene.start(SceneKey.ModeSelect); },   () => nav?.hoverAt(0));
+    const leaderboardItem = this.createButton(WORLD_WIDTH / 2, 630, 'leaderboard', () => { this.scene.start(SceneKey.Leaderboard); }, () => nav?.hoverAt(1));
+    const settingsItem    = this.createButton(WORLD_WIDTH / 2, 750, 'settings',    () => { this.scene.start(SceneKey.Settings); },    () => nav?.hoverAt(2));
     nav = new MenuNav(this, [playItem, leaderboardItem, settingsItem]);
 
     addVersionLabel(this);
   }
 
   private createButton(x: number, y: number, label: string, onClick: () => void, onHover?: () => void): MenuNavItem {
-    const btnW = 260;
-    const btnH = 54;
+    const btnW = 390;
+    const btnH = 81;
 
     const bg = this.add.graphics();
     const drawBg = (hovered: boolean): void => {
       bg.clear();
       bg.fillStyle(hovered ? COLORS.BTN_HOVER : COLORS.BTN, 1);
-      bg.fillRoundedRect(x - btnW / 2, y - btnH / 2, btnW, btnH, 10);
+      bg.fillRoundedRect(x - btnW / 2, y - btnH / 2, btnW, btnH, 15);
     };
     drawBg(false);
 
     this.add.text(x, y, label, {
       fontFamily: 'FoxwhelpFont',
-      fontSize: '22px',
+      fontSize: '33px',
       fontStyle: 'bold',
       color: '#ffffff',
     }).setOrigin(0.5);

@@ -21,22 +21,22 @@ export class ModeSelectScene extends Phaser.Scene {
     bg.fillGradientStyle(COLORS.SNOW_LIGHT, COLORS.SNOW_LIGHT, COLORS.SNOW_SHADOW, COLORS.SNOW_SHADOW, 1);
     bg.fillRect(0, 0, WORLD_WIDTH, GAME_HEIGHT);
 
-    this.add.text(WORLD_WIDTH / 2, 160, 'SELECT MODE', {
+    this.add.text(WORLD_WIDTH / 2, 240, 'SELECT MODE', {
       fontFamily: 'FoxwhelpFont',
-      fontSize: '40px',
+      fontSize: '60px',
       fontStyle: 'bold',
       color: COLORS.UI_TITLE,
     }).setOrigin(0.5);
 
-    this.add.text(WORLD_WIDTH / 2, 202, `Total runs: ${HighScoreManager.getTotalRuns()}`, {
+    this.add.text(WORLD_WIDTH / 2, 303, `Total runs: ${HighScoreManager.getTotalRuns()}`, {
       fontFamily: 'FoxwhelpFont',
-      fontSize: '16px',
+      fontSize: '24px',
       color: COLORS.UI_SUBTITLE,
     }).setOrigin(0.5);
 
-    const cardW = 240;
-    const cardH = 260;
-    const spacing = 20;
+    const cardW = 360;
+    const cardH = 390;
+    const spacing = 30;
     const totalW = MODES.length * cardW + (MODES.length - 1) * spacing;
     const startX = (WORLD_WIDTH - totalW) / 2 + cardW / 2;
 
@@ -44,7 +44,7 @@ export class ModeSelectScene extends Phaser.Scene {
     const cardItems: MenuNavItem[] = MODES.map((mode, i) => {
       const cfg = GAME_MODE_CONFIGS[mode];
       const cx = startX + i * (cardW + spacing);
-      const cy = GAME_HEIGHT / 2 + 30;
+      const cy = GAME_HEIGHT / 2 + 45;
       return this.createModeCard(cx, cy, cardW, cardH, mode, cfg.displayName, cfg.description, () => {
         const session: SessionConfig = { mode, seed: Date.now() };
         this.scene.start(SceneKey.Game, { session });
@@ -56,7 +56,7 @@ export class ModeSelectScene extends Phaser.Scene {
     // Back button
     this.add.text(60, GAME_HEIGHT - 50, '← Back', {
       fontFamily: 'FoxwhelpFont',
-      fontSize: '20px',
+      fontSize: '30px',
       color: COLORS.UI_TITLE,
     }).setInteractive({ useHandCursor: true })
       .on('pointerdown', () => this.scene.start(SceneKey.MainMenu));
@@ -83,30 +83,30 @@ export class ModeSelectScene extends Phaser.Scene {
     const draw = (hovered: boolean): void => {
       bg.clear();
       bg.fillStyle(hovered ? COLORS.CARD_HOVER : COLORS.CARD, 1);
-      bg.lineStyle(2, COLORS.BTN, 1);
+      bg.lineStyle(3, COLORS.BTN, 1);
       bg.fillRoundedRect(cx - w / 2, cy - h / 2, w, h, 12);
       bg.strokeRoundedRect(cx - w / 2, cy - h / 2, w, h, 12);
     };
     draw(false);
 
-    this.add.text(cx, cy - h / 2 + 36, title, {
+    this.add.text(cx, cy - h / 2 + 54, title, {
       fontFamily: 'FoxwhelpFont',
-      fontSize: '20px',
+      fontSize: '30px',
       fontStyle: 'bold',
       color: COLORS.UI_TITLE,
     }).setOrigin(0.5);
 
-    this.add.text(cx, cy - h / 2 + 68, desc, {
+    this.add.text(cx, cy - h / 2 + 102, desc, {
       fontFamily: 'FoxwhelpFont',
-      fontSize: '14px',
+      fontSize: '21px',
       color: COLORS.UI_SUBTITLE,
       wordWrap: { width: w - 24 },
       align: 'center',
     }).setOrigin(0.5, 0);
 
-    this.add.text(cx, cy + 4, this.bestLabel(mode), {
+    this.add.text(cx, cy + 6, this.bestLabel(mode), {
       fontFamily: 'FoxwhelpFont',
-      fontSize: '13px',
+      fontSize: '20px',
       fontStyle: 'bold',
       color: COLORS.UI_TITLE,
       align: 'center',
@@ -139,7 +139,7 @@ export class ModeSelectScene extends Phaser.Scene {
 
   // ---------------------------------------------------------------------------
   // Per-mode illustrations — exact same drawing logic as the in-game entities,
-  // scaled to fit the lower half of a 240×260 card.
+  // scaled to fit the lower half of a 360×390 card.
   // ---------------------------------------------------------------------------
 
   private drawModeIllustration(mode: GameMode, cx: number, cy: number): void {
@@ -151,15 +151,14 @@ export class ModeSelectScene extends Phaser.Scene {
   }
 
   /**
-   * Pine tree — matches Tree.ts drawTree() at scale 2.0.
+   * Pine tree — matches Tree.ts drawTree() at scale 3.0.
    * Origin placed so the visual mass is centred in the lower card half.
    */
   private drawTree(cx: number, cy: number): void {
     const g  = this.add.graphics();
-    const s  = 2.0;
+    const s  = 3.0;
     // Shift origin so the tree sits comfortably in the lower card half.
-    // At s=2: top of snow cap = oy-52, trunk bottom = oy+14, shadow bottom = oy+30
-    const oy = cy + 75;
+    const oy = cy + 112;
 
     // Drop shadow
     g.fillStyle(0x000000, 0.12);
@@ -185,16 +184,16 @@ export class ModeSelectScene extends Phaser.Scene {
 
   /**
    * Slalom gate — matches SlalomGate.ts at a scaled-down half-gap so it fits
-   * within the 240 px card width.
+   * within the 360 px card width.
    */
   private drawGate(cx: number, cy: number): void {
     const g        = this.add.graphics();
-    const halfGap  = 55;    // scaled from in-game 110 to fit card
-    const halfPole = GATE_POLE_RADIUS;   // 8 px — same as game
-    const poleH    = 56;    // close to in-game POLE_H=64, trimmed slightly
-    const bannerH  = 14;    // same as in-game BANNER_H
+    const halfGap  = 82;    // scaled from in-game 165 to fit card
+    const halfPole = GATE_POLE_RADIUS;   // 12 px — same as game
+    const poleH    = 84;    // close to in-game POLE_H=96, trimmed slightly
+    const bannerH  = 21;    // same as in-game BANNER_H
     // Centre vertically in the lower card half
-    const oy = cy + 68;
+    const oy = cy + 102;
 
     // Drop shadows under poles
     g.fillStyle(0x000000, 0.12);
@@ -225,11 +224,11 @@ export class ModeSelectScene extends Phaser.Scene {
   }
 
   /**
-   * Jump ramp — matches Ramp.ts at scale 2×.
+   * Jump ramp — matches Ramp.ts at scale 3×.
    */
   private drawRamp(cx: number, cy: number): void {
     const g = this.add.graphics();
-    const s = 2;
+    const s = 3;
 
     const RAMP_W = 70, RAMP_D = 28, CORNER = 7;
     const hw   = (RAMP_W / 2) * s;
@@ -237,7 +236,7 @@ export class ModeSelectScene extends Phaser.Scene {
     const lipH = 7 * s;
 
     // Centre vertically in the lower card half
-    const oy = cy + 68;
+    const oy = cy + 102;
 
     // Drop shadow
     g.fillStyle(0x000000, 0.18);

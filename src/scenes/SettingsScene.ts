@@ -15,20 +15,20 @@ export class SettingsScene extends Phaser.Scene {
     bg.fillGradientStyle(COLORS.SNOW_LIGHT, COLORS.SNOW_LIGHT, COLORS.SNOW_SHADOW, COLORS.SNOW_SHADOW, 1);
     bg.fillRect(0, 0, WORLD_WIDTH, GAME_HEIGHT);
 
-    this.add.text(WORLD_WIDTH / 2, 80, 'SETTINGS', {
+    this.add.text(WORLD_WIDTH / 2, 120, 'SETTINGS', {
       fontFamily: 'FoxwhelpFont',
-      fontSize: '40px',
+      fontSize: '60px',
       fontStyle: 'bold',
       color: COLORS.UI_TITLE,
     }).setOrigin(0.5);
 
     this.add.text(WORLD_WIDTH / 2, GAME_HEIGHT / 2, 'Settings — coming soon.', {
       fontFamily: 'FoxwhelpFont',
-      fontSize: '22px',
+      fontSize: '33px',
       color: COLORS.UI_SUBTITLE,
     }).setOrigin(0.5);
 
-    const resetItem = this.createDebugButton(WORLD_WIDTH / 2, GAME_HEIGHT / 2 + 60, 'DEBUG: Reset All Stats', () => {
+    const resetItem = this.createDebugButton(WORLD_WIDTH / 2, GAME_HEIGHT / 2 + 90, 'DEBUG: Reset All Stats', () => {
       HighScoreManager.reset();
     });
 
@@ -36,7 +36,7 @@ export class SettingsScene extends Phaser.Scene {
 
     this.add.text(60, GAME_HEIGHT - 50, '← Back', {
       fontFamily: 'FoxwhelpFont',
-      fontSize: '20px',
+      fontSize: '30px',
       color: COLORS.UI_TITLE,
     }).setInteractive({ useHandCursor: true })
       .on('pointerdown', () => this.scene.start(SceneKey.MainMenu));
@@ -49,8 +49,8 @@ export class SettingsScene extends Phaser.Scene {
   }
 
   private createDebugButton(x: number, y: number, label: string, onClick: () => void): MenuNavItem {
-    const btnW = 280;
-    const btnH = 42;
+    const btnW = 420;
+    const btnH = 63;
     const bg   = this.add.graphics();
     let   pending = false;
 
@@ -61,13 +61,13 @@ export class SettingsScene extends Phaser.Scene {
       } else {
         bg.fillStyle(hovered ? COLORS.DESTRUCT_HOVER : COLORS.DESTRUCT_BTN, 1);
       }
-      bg.fillRoundedRect(x - btnW / 2, y - btnH / 2, btnW, btnH, 8);
+      bg.fillRoundedRect(x - btnW / 2, y - btnH / 2, btnW, btnH, 12);
     };
     draw(false);
 
     const txt = this.add.text(x, y, label, {
       fontFamily: 'FoxwhelpFont',
-      fontSize:   '15px',
+      fontSize:   '23px',
       color:      COLORS.DESTRUCT_TEXT,
     }).setOrigin(0.5);
 

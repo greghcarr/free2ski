@@ -1,7 +1,7 @@
 // World / chunk sizing
-export const WORLD_WIDTH       = 1280;  // px
-export const GAME_HEIGHT       = 720;   // px
-export const CHUNK_HEIGHT      = 1200;  // px — ~1.5 screen heights
+export const WORLD_WIDTH       = 1920;  // px
+export const GAME_HEIGHT       = 1080;  // px
+export const CHUNK_HEIGHT      = 1800;  // px — ~1.5 screen heights
 export const CHUNKS_AHEAD      = 3;     // chunks to keep loaded ahead of player
 export const CHUNKS_BEHIND     = 2;     // chunks to keep loaded behind player
 
@@ -24,19 +24,19 @@ export const GATE_PASS_BONUS  = 50;   // score points per clean slalom gate
 export const AIR_TIME_DIVISOR = 15;   // totalAirTimeMs / this = bonus score
 
 // Slalom gate geometry
-export const GATE_GAP_WIDTH     = 220;   // px gap between the two poles
-export const GATE_POLE_RADIUS   = 8;     // collision radius for each pole
+export const GATE_GAP_WIDTH     = 330;   // px gap between the two poles
+export const GATE_POLE_RADIUS   = 12;    // collision radius for each pole
 
 // Jump / ramp
 export const JUMP_DURATION          = 1400; // ms the player stays airborne
-export const JUMP_VISUAL_HEIGHT     = 50;   // px the container rises at apex
+export const JUMP_VISUAL_HEIGHT     = 75;   // px the container rises at apex
 export const JUMP_COURSE_DISTANCE_M = 5000; // metres to the finish line
-export const FINISH_LINE_H          = 64;   // px height of the checkered band
+export const FINISH_LINE_H          = 96;   // px height of the checkered band
 
 // Course boundary (distance from each side edge where the forest begins)
 // These drive both the forest-tree spawner and the on-slope boundary lines.
-export const COURSE_EDGE_WIDE   = 280;  // FreeSki, Jump
-export const COURSE_EDGE_NARROW = 220;  // Slalom
+export const COURSE_EDGE_WIDE   = 420;  // FreeSki, Jump
+export const COURSE_EDGE_NARROW = 330;  // Slalom
 
 // Achievement IDs (must match Steamworks portal exactly)
 export const ACHIEVEMENTS = {
