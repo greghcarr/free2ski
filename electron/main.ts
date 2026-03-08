@@ -20,7 +20,7 @@ function createWindow(): void {
     height: 720,
     minWidth: 800,
     minHeight: 450,
-    title: 'Free2Ski',
+    title: 'free2ski',
     backgroundColor: '#1a2a3a',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
