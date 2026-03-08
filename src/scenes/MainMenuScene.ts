@@ -18,16 +18,16 @@ export class MainMenuScene extends Phaser.Scene {
     // Title
     this.add.text(WORLD_WIDTH / 2, 240, 'free2ski', {
       fontFamily: 'FoxwhelpFont',
-      fontSize: '72px',
+      fontSize: '108px',
       fontStyle: 'bold',
       color: COLORS.UI_TITLE,
       stroke: '#ffffff',
-      strokeThickness: 4,
+      strokeThickness: 6,
     }).setOrigin(0.5);
 
     this.add.text(WORLD_WIDTH / 2, 360, 'a skiing adventure', {
       fontFamily: 'FoxwhelpFont',
-      fontSize: '22px',
+      fontSize: '33px',
       color: COLORS.UI_SUBTITLE,
     }).setOrigin(0.5);
 
@@ -42,20 +42,20 @@ export class MainMenuScene extends Phaser.Scene {
   }
 
   private createButton(x: number, y: number, label: string, onClick: () => void, onHover?: () => void): MenuNavItem {
-    const btnW = 260;
-    const btnH = 54;
+    const btnW = 390;
+    const btnH = 81;
 
     const bg = this.add.graphics();
     const drawBg = (hovered: boolean): void => {
       bg.clear();
       bg.fillStyle(hovered ? COLORS.BTN_HOVER : COLORS.BTN, 1);
-      bg.fillRoundedRect(x - btnW / 2, y - btnH / 2, btnW, btnH, 10);
+      bg.fillRoundedRect(x - btnW / 2, y - btnH / 2, btnW, btnH, 15);
     };
     drawBg(false);
 
     this.add.text(x, y, label, {
       fontFamily: 'FoxwhelpFont',
-      fontSize: '22px',
+      fontSize: '33px',
       fontStyle: 'bold',
       color: '#ffffff',
     }).setOrigin(0.5);
