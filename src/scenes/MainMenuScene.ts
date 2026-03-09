@@ -34,8 +34,8 @@ export class MainMenuScene extends Phaser.Scene {
     // Menu buttons
     let nav: MenuNav | undefined;
     const playItem        = this.createButton(WORLD_WIDTH / 2, 635, 710, 115, 'play', 65, 'bold',      () => { this.scene.start(SceneKey.ModeSelect); },   () => nav?.hoverAt(0));
-    const leaderboardItem = this.createButton(WORLD_WIDTH / 2, 755, 390, 75, 'leaderboard', 50, '', () => { this.scene.start(SceneKey.Leaderboard); }, () => nav?.hoverAt(1));
-    const settingsItem    = this.createButton(WORLD_WIDTH / 2, 845, 390, 75, 'settings', 50, '',  () => { this.scene.start(SceneKey.Settings); },    () => nav?.hoverAt(2));
+    const leaderboardItem = this.createButton(WORLD_WIDTH / 2, 755, 390, 75, 'leaderboard', 50, 'bold', () => { this.scene.start(SceneKey.Leaderboard); }, () => nav?.hoverAt(1));
+    const settingsItem    = this.createButton(WORLD_WIDTH / 2, 845, 390, 75, 'settings', 50, 'bold',  () => { this.scene.start(SceneKey.Settings); },    () => nav?.hoverAt(2));
     nav = new MenuNav(this, [playItem, leaderboardItem, settingsItem]);
 
     addVersionLabel(this);
