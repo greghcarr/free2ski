@@ -44,7 +44,28 @@ export class ModeSelectScene extends Phaser.Scene {
       }, () => nav?.hoverAt(i));
     });
 
-    nav = new MenuNav(this, cardItems, 'horizontal', 1);
+    // Back button
+    const backGoTo = () => this.scene.start(SceneKey.MainMenu);
+    const backText = this.add.text(60, GAME_HEIGHT - 100, '← back', {
+      fontFamily: 'FoxwhelpFont',
+      fontSize: '50px',
+      color: COLORS.UI_TITLE,
+    }).setInteractive({ useHandCursor: true })
+      .on('pointerdown', backGoTo);
+
+    const backUlY = (GAME_HEIGHT - 100) + backText.displayHeight - 6;
+    const backUnderline = this.add.graphics();
+    backUnderline.fillStyle(parseInt(COLORS.UI_TITLE.slice(1), 16), 1);
+    backUnderline.fillRect(60, backUlY, backText.displayWidth, 4);
+    backUnderline.setVisible(false);
+
+    const backItem: MenuNavItem = {
+      setFocus: (f) => backUnderline.setVisible(f),
+      activate: backGoTo,
+    };
+
+    backText.on('pointerover', () => { nav?.hoverAt(cardItems.length); backUnderline.setVisible(true); });
+    backText.on('pointerout',  () => backUnderline.setVisible(false));
 
     // this.add.text(WORLD_WIDTH / 2, 880, `total runs: ${HighScoreManager.getTotalRuns()}`, {
     //   fontFamily: 'FoxwhelpFont',
@@ -53,13 +74,7 @@ export class ModeSelectScene extends Phaser.Scene {
     //   color: COLORS.UI_SUBTITLE,
     // }).setOrigin(0.5);
 
-    // Back button
-    this.add.text(60, GAME_HEIGHT - 100, '← back', {
-      fontFamily: 'FoxwhelpFont',
-      fontSize: '50px',
-      color: COLORS.UI_TITLE,
-    }).setInteractive({ useHandCursor: true })
-      .on('pointerdown', () => this.scene.start(SceneKey.MainMenu));
+    nav = new MenuNav(this, [...cardItems, backItem], 'horizontal', 1);
 
     if (this.input.keyboard) {
       this.input.keyboard.on('keydown-ESC', () => this.scene.start(SceneKey.MainMenu));
@@ -80,21 +95,28 @@ export class ModeSelectScene extends Phaser.Scene {
     onHover?: () => void,
   ): MenuNavItem {
     const bg = this.add.graphics();
+    const titleText = this.add.text(cx, cy - h / 2 + 145, title, {
+      fontFamily: 'FoxwhelpFont',
+      fontSize: '100px',
+      fontStyle: 'bold',
+      color: COLORS.UI_TITLE,
+    }).setOrigin(0.5);
+
+    const ulY = cy - h / 2 + 145 + titleText.displayHeight / 2 - 18;
+    const underline = this.add.graphics();
+    underline.fillStyle(parseInt(COLORS.UI_TITLE.slice(1), 16), 1);
+    underline.fillRect(cx - titleText.displayWidth / 2, ulY, titleText.displayWidth, 6);
+    underline.setVisible(false);
+
     const draw = (hovered: boolean): void => {
       bg.clear();
       bg.fillStyle(hovered ? COLORS.CARD_HOVER : COLORS.CARD, 1);
       bg.lineStyle(3, COLORS.BTN, 1);
       bg.fillRoundedRect(cx - w / 2, cy - h / 2, w, h, 12);
       bg.strokeRoundedRect(cx - w / 2, cy - h / 2, w, h, 12);
+      underline.setVisible(hovered);
     };
     draw(false);
-
-    this.add.text(cx, cy - h / 2 + 145, title, {
-      fontFamily: 'FoxwhelpFont',
-      fontSize: '100px',
-      fontStyle: 'bold',
-      color: COLORS.UI_TITLE,
-    }).setOrigin(0.5);
 
     this.add.text(cx, cy - h / 2 + 220, desc, {
       fontFamily: 'FoxwhelpFont',
