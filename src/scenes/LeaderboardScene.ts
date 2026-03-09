@@ -13,16 +13,16 @@ export class LeaderboardScene extends Phaser.Scene {
     bg.fillGradientStyle(COLORS.SNOW_LIGHT, COLORS.SNOW_LIGHT, COLORS.SNOW_SHADOW, COLORS.SNOW_SHADOW, 1);
     bg.fillRect(0, 0, WORLD_WIDTH, GAME_HEIGHT);
 
-    this.add.text(WORLD_WIDTH / 2, 120, 'LEADERBOARD', {
+    this.add.text(WORLD_WIDTH / 2, 400, 'leaderboard', {
       fontFamily: 'FoxwhelpFont',
-      fontSize: '60px',
+      fontSize: '100px',
       fontStyle: 'bold',
       color: COLORS.UI_TITLE,
     }).setOrigin(0.5);
 
-    this.add.text(WORLD_WIDTH / 2, GAME_HEIGHT / 2, 'Steam leaderboards — coming soon.\nPlay some runs first!', {
+    this.add.text(WORLD_WIDTH / 2, GAME_HEIGHT / 2, 'coming "soon"', {
       fontFamily: 'FoxwhelpFont',
-      fontSize: '33px',
+      fontSize: '60px',
       color: COLORS.UI_SUBTITLE,
       align: 'center',
     }).setOrigin(0.5);

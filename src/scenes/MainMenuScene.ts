@@ -16,7 +16,7 @@ export class MainMenuScene extends Phaser.Scene {
     bg.fillRect(0, 0, WORLD_WIDTH, GAME_HEIGHT);
 
     // Title
-    this.add.text(WORLD_WIDTH / 2, 365, 'free2ski', {
+    this.add.text(WORLD_WIDTH / 2, 445, 'free2ski', {
       fontFamily: 'FoxwhelpFont',
       fontSize: '280px',
       fontStyle: 'bold',
@@ -25,18 +25,22 @@ export class MainMenuScene extends Phaser.Scene {
       strokeThickness: 6,
     }).setOrigin(0.5);
 
-    this.add.text(WORLD_WIDTH / 2, 512, 'a skiing adventure', {
-      fontFamily: 'FoxwhelpFont',
-      fontSize: '80px',
-      color: COLORS.UI_SUBTITLE,
-    }).setOrigin(0.5);
+    // this.add.text(WORLD_WIDTH / 2, 557, 'a skiing adventure', {
+    //   fontFamily: 'FoxwhelpFont',
+    //   fontSize: '80px',
+    //   color: COLORS.UI_SUBTITLE,
+    // }).setOrigin(0.5);
 
     // Menu buttons
     let nav: MenuNav | undefined;
-    const playItem        = this.createButton(WORLD_WIDTH / 2, 635, 710, 115, 'play', 65, 'bold',      () => { this.scene.start(SceneKey.ModeSelect); },   () => nav?.hoverAt(0));
-    const leaderboardItem = this.createButton(WORLD_WIDTH / 2, 755, 390, 75, 'leaderboard', 50, 'bold', () => { this.scene.start(SceneKey.Leaderboard); }, () => nav?.hoverAt(1));
-    const settingsItem    = this.createButton(WORLD_WIDTH / 2, 845, 390, 75, 'settings', 50, 'bold',  () => { this.scene.start(SceneKey.Settings); },    () => nav?.hoverAt(2));
-    nav = new MenuNav(this, [playItem, leaderboardItem, settingsItem]);
+    const playItem        = this.createButton(WORLD_WIDTH / 2, 650, 650, 145, 'play', 100, 'bold',      () => { this.scene.start(SceneKey.ModeSelect); },   () => nav?.hoverAt(0));
+    // const leaderboardItem = this.createButton(WORLD_WIDTH / 2, 810, 410, 105, 'leaderboard', 50, 'bold', () => { this.scene.start(SceneKey.Leaderboard); }, () => nav?.hoverAt(1));
+    const settingsItem    = this.createButton(WORLD_WIDTH / 20, 1000, 100, 105, '⚙️', 50, '',  () => { this.scene.start(SceneKey.Settings); },    () => nav?.hoverAt(2));
+    nav = new MenuNav(this, [
+      playItem, 
+      // leaderboardItem, 
+      settingsItem
+    ]);
 
     addVersionLabel(this);
   }

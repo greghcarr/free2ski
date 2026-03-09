@@ -15,20 +15,20 @@ export class SettingsScene extends Phaser.Scene {
     bg.fillGradientStyle(COLORS.SNOW_LIGHT, COLORS.SNOW_LIGHT, COLORS.SNOW_SHADOW, COLORS.SNOW_SHADOW, 1);
     bg.fillRect(0, 0, WORLD_WIDTH, GAME_HEIGHT);
 
-    this.add.text(WORLD_WIDTH / 2, 120, 'SETTINGS', {
+    this.add.text(WORLD_WIDTH / 2, 400, 'settings', {
       fontFamily: 'FoxwhelpFont',
-      fontSize: '60px',
+      fontSize: '100px',
       fontStyle: 'bold',
       color: COLORS.UI_TITLE,
     }).setOrigin(0.5);
 
-    this.add.text(WORLD_WIDTH / 2, GAME_HEIGHT / 2, 'Settings — coming soon.', {
-      fontFamily: 'FoxwhelpFont',
-      fontSize: '33px',
-      color: COLORS.UI_SUBTITLE,
-    }).setOrigin(0.5);
+    // this.add.text(WORLD_WIDTH / 2, GAME_HEIGHT / 2, 'coming "soon."', {
+    //   fontFamily: 'FoxwhelpFont',
+    //   fontSize: '50px',
+    //   color: COLORS.UI_SUBTITLE,
+    // }).setOrigin(0.5);
 
-    const resetItem = this.createDebugButton(WORLD_WIDTH / 2, GAME_HEIGHT / 2 + 90, 'DEBUG: Reset All Stats', () => {
+    const resetItem = this.createDebugButton(WORLD_WIDTH / 2, GAME_HEIGHT / 2, 'DEBUG: Reset All Stats', () => {
       HighScoreManager.reset();
     });
 
@@ -49,8 +49,8 @@ export class SettingsScene extends Phaser.Scene {
   }
 
   private createDebugButton(x: number, y: number, label: string, onClick: () => void): MenuNavItem {
-    const btnW = 420;
-    const btnH = 63;
+    const btnW = 600;
+    const btnH = 100;
     const bg   = this.add.graphics();
     let   pending = false;
 
@@ -67,14 +67,14 @@ export class SettingsScene extends Phaser.Scene {
 
     const txt = this.add.text(x, y, label, {
       fontFamily: 'FoxwhelpFont',
-      fontSize:   '23px',
+      fontSize:   '50px',
       color:      COLORS.DESTRUCT_TEXT,
     }).setOrigin(0.5);
 
     const activate = (): void => {
       if (!pending) {
         pending = true;
-        txt.setText('Are you sure? Confirm to reset.');
+        txt.setText('Are you sure? Once more to reset.');
         draw(false);
       } else {
         onClick();
