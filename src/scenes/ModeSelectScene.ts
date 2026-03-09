@@ -6,7 +6,7 @@ import type { SessionConfig } from '@/config/GameConfig';
 import { addVersionLabel } from '@/ui/versionLabel';
 import { HighScoreManager } from '@/data/HighScoreManager';
 import { formatRaceTime } from '@/utils/MathUtils';
-import { MenuNav, type MenuNavItem } from '@/ui/MenuNav';
+import { type MenuNavItem } from '@/ui/MenuNav';
 
 const MODES = [GameMode.Slalom, GameMode.FreeSki, GameMode.Jump];
 export class ModeSelectScene extends Phaser.Scene {
@@ -33,7 +33,10 @@ export class ModeSelectScene extends Phaser.Scene {
     const totalW = MODES.length * cardW + (MODES.length - 1) * spacing;
     const startX = (WORLD_WIDTH - totalW) / 2 + cardW / 2;
 
-    let nav: MenuNav | undefined;
+    // Nav state: which card is remembered, and whether "back" is focused
+    let cardIndex = 1; // start on middle card (FreeSki)
+    let isBack = false;
+
     const cardItems: MenuNavItem[] = MODES.map((mode, i) => {
       const cfg = GAME_MODE_CONFIGS[mode];
       const cx = startX + i * (cardW + spacing);
@@ -41,7 +44,7 @@ export class ModeSelectScene extends Phaser.Scene {
       return this.createModeCard(cx, cy, cardW, cardH, mode, cfg.displayName, cfg.description, () => {
         const session: SessionConfig = { mode, seed: Date.now() };
         this.scene.start(SceneKey.Game, { session });
-      }, () => nav?.hoverAt(i));
+      }, () => { cardIndex = i; isBack = false; });
     });
 
     // Back button
@@ -54,18 +57,27 @@ export class ModeSelectScene extends Phaser.Scene {
       .on('pointerdown', backGoTo);
 
     const backUlY = (GAME_HEIGHT - 100) + backText.displayHeight - 6;
+    const prefixMeasure = this.add.text(0, 0, '← ', { fontFamily: 'FoxwhelpFont', fontSize: '50px' }).setVisible(false);
+    const backWordX = 60 + prefixMeasure.displayWidth;
+    const backWordW = backText.displayWidth - prefixMeasure.displayWidth;
+    prefixMeasure.destroy();
     const backUnderline = this.add.graphics();
     backUnderline.fillStyle(parseInt(COLORS.UI_TITLE.slice(1), 16), 1);
-    backUnderline.fillRect(60, backUlY, backText.displayWidth, 4);
+    backUnderline.fillRect(backWordX, backUlY, backWordW, 4);
     backUnderline.setVisible(false);
 
-    const backItem: MenuNavItem = {
-      setFocus: (f) => backUnderline.setVisible(f),
-      activate: backGoTo,
-    };
+    backText.on('pointerover', () => {
+      cardItems.forEach(item => item.setFocus(false));
+      backUnderline.setVisible(true);
+      isBack = true;
+    });
+    backText.on('pointerout', () => {
+      backUnderline.setVisible(false);
+      isBack = false;
+    });
 
-    backText.on('pointerover', () => { nav?.hoverAt(cardItems.length); backUnderline.setVisible(true); });
-    backText.on('pointerout',  () => backUnderline.setVisible(false));
+    // Initial focus
+    cardItems[cardIndex]!.setFocus(true);
 
     // this.add.text(WORLD_WIDTH / 2, 880, `total runs: ${HighScoreManager.getTotalRuns()}`, {
     //   fontFamily: 'FoxwhelpFont',
@@ -74,10 +86,45 @@ export class ModeSelectScene extends Phaser.Scene {
     //   color: COLORS.UI_SUBTITLE,
     // }).setOrigin(0.5);
 
-    nav = new MenuNav(this, [...cardItems, backItem], 'horizontal', 1);
-
     if (this.input.keyboard) {
-      this.input.keyboard.on('keydown-ESC', () => this.scene.start(SceneKey.MainMenu));
+      const kb = this.input.keyboard;
+      kb.on('keydown-LEFT', () => {
+        if (isBack) return;
+        cardItems[cardIndex]!.setFocus(false);
+        cardIndex = (cardIndex - 1 + MODES.length) % MODES.length;
+        cardItems[cardIndex]!.setFocus(true);
+      });
+      kb.on('keydown-RIGHT', () => {
+        if (isBack) return;
+        cardItems[cardIndex]!.setFocus(false);
+        cardIndex = (cardIndex + 1) % MODES.length;
+        cardItems[cardIndex]!.setFocus(true);
+      });
+      kb.on('keydown-DOWN', () => {
+        if (isBack) {
+          backUnderline.setVisible(false);
+          isBack = false;
+          cardItems[cardIndex]!.setFocus(true);
+        } else {
+          cardItems[cardIndex]!.setFocus(false);
+          backUnderline.setVisible(true);
+          isBack = true;
+        }
+      });
+      kb.on('keydown-UP', () => {
+        if (isBack) {
+          backUnderline.setVisible(false);
+          isBack = false;
+          cardItems[cardIndex]!.setFocus(true);
+        } else {
+          cardItems[cardIndex]!.setFocus(false);
+          backUnderline.setVisible(true);
+          isBack = true;
+        }
+      });
+      kb.on('keydown-SPACE', () => { isBack ? backGoTo() : cardItems[cardIndex]!.activate(); });
+      kb.on('keydown-ENTER', () => { isBack ? backGoTo() : cardItems[cardIndex]!.activate(); });
+      kb.on('keydown-ESC',   () => this.scene.start(SceneKey.MainMenu));
     }
 
     addVersionLabel(this);
@@ -102,19 +149,13 @@ export class ModeSelectScene extends Phaser.Scene {
       color: COLORS.UI_TITLE,
     }).setOrigin(0.5);
 
-    const ulY = cy - h / 2 + 145 + titleText.displayHeight / 2 - 18;
-    const underline = this.add.graphics();
-    underline.fillStyle(parseInt(COLORS.UI_TITLE.slice(1), 16), 1);
-    underline.fillRect(cx - titleText.displayWidth / 2, ulY, titleText.displayWidth, 6);
-    underline.setVisible(false);
-
     const draw = (hovered: boolean): void => {
       bg.clear();
       bg.fillStyle(hovered ? COLORS.CARD_HOVER : COLORS.CARD, 1);
       bg.lineStyle(3, COLORS.BTN, 1);
       bg.fillRoundedRect(cx - w / 2, cy - h / 2, w, h, 12);
       bg.strokeRoundedRect(cx - w / 2, cy - h / 2, w, h, 12);
-      underline.setVisible(hovered);
+      titleText.setText(hovered ? `~ ${title} ~` : title);
     };
     draw(false);
 

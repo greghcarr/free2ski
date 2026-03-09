@@ -3,7 +3,7 @@ import { SceneKey } from '@/config/SceneKeys';
 import { WORLD_WIDTH, GAME_HEIGHT, COLORS } from '@/data/constants';
 import { addVersionLabel } from '@/ui/versionLabel';
 import { HighScoreManager } from '@/data/HighScoreManager';
-import { MenuNav, type MenuNavItem } from '@/ui/MenuNav';
+import { type MenuNavItem } from '@/ui/MenuNav';
 
 export class SettingsScene extends Phaser.Scene {
   constructor() {
@@ -22,48 +22,82 @@ export class SettingsScene extends Phaser.Scene {
       color: COLORS.UI_TITLE,
     }).setOrigin(0.5);
 
-    // this.add.text(WORLD_WIDTH / 2, GAME_HEIGHT / 2, 'coming "soon."', {
-    //   fontFamily: 'FoxwhelpFont',
-    //   fontSize: '50px',
-    //   color: COLORS.UI_SUBTITLE,
-    // }).setOrigin(0.5);
+    // Nav state
+    let isBack = false;
 
     const resetItem = this.createDebugButton(WORLD_WIDTH / 2, GAME_HEIGHT / 2, 'DEBUG: Reset All Stats', () => {
       HighScoreManager.reset();
     });
 
-    new MenuNav(this, [resetItem]);
-
-    this.add.text(60, GAME_HEIGHT - 100, '← back', {
+    // Back button
+    const backGoTo = () => this.scene.start(SceneKey.MainMenu);
+    const backText = this.add.text(60, GAME_HEIGHT - 100, '← back', {
       fontFamily: 'FoxwhelpFont',
       fontSize: '50px',
       color: COLORS.UI_TITLE,
     }).setInteractive({ useHandCursor: true })
-      .on('pointerdown', () => this.scene.start(SceneKey.MainMenu));
+      .on('pointerdown', backGoTo);
+
+    const backUlY = (GAME_HEIGHT - 100) + backText.displayHeight - 6;
+    const prefixMeasure = this.add.text(0, 0, '← ', { fontFamily: 'FoxwhelpFont', fontSize: '50px' }).setVisible(false);
+    const backWordX = 60 + prefixMeasure.displayWidth;
+    const backWordW = backText.displayWidth - prefixMeasure.displayWidth;
+    prefixMeasure.destroy();
+    const backUnderline = this.add.graphics();
+    backUnderline.fillStyle(parseInt(COLORS.UI_TITLE.slice(1), 16), 1);
+    backUnderline.fillRect(backWordX, backUlY, backWordW, 4);
+    backUnderline.setVisible(false);
+
+    backText.on('pointerover', () => {
+      resetItem.setFocus(false);
+      backUnderline.setVisible(true);
+      isBack = true;
+    });
+    backText.on('pointerout', () => {
+      backUnderline.setVisible(false);
+      isBack = false;
+    });
+
+    // Initial focus
+    resetItem.setFocus(true);
 
     if (this.input.keyboard) {
-      this.input.keyboard.on('keydown-ESC', () => this.scene.start(SceneKey.MainMenu));
+      const kb = this.input.keyboard;
+      kb.on('keydown-DOWN', () => {
+        if (isBack) {
+          backUnderline.setVisible(false);
+          isBack = false;
+          resetItem.setFocus(true);
+        } else {
+          resetItem.setFocus(false);
+          backUnderline.setVisible(true);
+          isBack = true;
+        }
+      });
+      kb.on('keydown-UP', () => {
+        if (isBack) {
+          backUnderline.setVisible(false);
+          isBack = false;
+          resetItem.setFocus(true);
+        } else {
+          resetItem.setFocus(false);
+          backUnderline.setVisible(true);
+          isBack = true;
+        }
+      });
+      kb.on('keydown-SPACE', () => { isBack ? backGoTo() : resetItem.activate(); });
+      kb.on('keydown-ENTER', () => { isBack ? backGoTo() : resetItem.activate(); });
+      kb.on('keydown-ESC',   () => this.scene.start(SceneKey.MainMenu));
     }
 
     addVersionLabel(this);
   }
 
   private createDebugButton(x: number, y: number, label: string, onClick: () => void): MenuNavItem {
-    const btnW = 600;
+    const btnW = 800;
     const btnH = 100;
     const bg   = this.add.graphics();
     let   pending = false;
-
-    const draw = (hovered: boolean): void => {
-      bg.clear();
-      if (pending) {
-        bg.fillStyle(COLORS.DESTRUCT_CONFIRM, 1);
-      } else {
-        bg.fillStyle(hovered ? COLORS.DESTRUCT_HOVER : COLORS.DESTRUCT_BTN, 1);
-      }
-      bg.fillRoundedRect(x - btnW / 2, y - btnH / 2, btnW, btnH, 12);
-    };
-    draw(false);
 
     const txt = this.add.text(x, y, label, {
       fontFamily: 'FoxwhelpFont',
@@ -71,26 +105,37 @@ export class SettingsScene extends Phaser.Scene {
       color:      COLORS.DESTRUCT_TEXT,
     }).setOrigin(0.5);
 
+    const draw = (hovered: boolean): void => {
+      bg.clear();
+      if (pending) {
+        bg.fillStyle(COLORS.DESTRUCT_CONFIRM, 1);
+        txt.setText('Are you sure? Once more to reset.');
+      } else {
+        bg.fillStyle(hovered ? COLORS.DESTRUCT_HOVER : COLORS.DESTRUCT_BTN, 1);
+        txt.setText(hovered ? `~ ${label} ~` : label);
+      }
+      bg.fillRoundedRect(x - btnW / 2, y - btnH / 2, btnW, btnH, 12);
+    };
+    draw(false);
+
     const activate = (): void => {
       if (!pending) {
         pending = true;
-        txt.setText('Are you sure? Once more to reset.');
         draw(false);
       } else {
         onClick();
         pending = false;
-        txt.setText(label);
         draw(false);
       }
     };
 
     const hit = this.add.rectangle(x, y, btnW, btnH).setInteractive({ useHandCursor: true });
     hit.on('pointerover',  () => draw(true));
-    hit.on('pointerout',   () => draw(false));
+    hit.on('pointerout',   () => { pending = false; draw(false); });
     hit.on('pointerdown',  activate);
 
     return {
-      setFocus: (f) => draw(f),
+      setFocus: (f) => { if (!f) pending = false; draw(f); },
       activate,
     };
   }

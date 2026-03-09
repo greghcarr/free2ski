@@ -35,7 +35,7 @@ export class MainMenuScene extends Phaser.Scene {
     let nav: MenuNav | undefined;
     const playItem        = this.createButton(WORLD_WIDTH / 2, 655, 650, 145, 'play', 100, 'bold',      () => { this.scene.start(SceneKey.ModeSelect); },   () => nav?.hoverAt(0));
     // const leaderboardItem = this.createButton(WORLD_WIDTH / 2, 810, 410, 105, 'leaderboard', 50, 'bold', () => { this.scene.start(SceneKey.Leaderboard); }, () => nav?.hoverAt(1));
-    const settingsItem    = this.createButton(WORLD_WIDTH / 20, 1000, 100, 105, '⚙️', 50, '',  () => { this.scene.start(SceneKey.Settings); },    () => nav?.hoverAt(2));
+    const settingsItem    = this.createButton(WORLD_WIDTH / 2, 800, 300, 100, 'settings', 50, '',  () => { this.scene.start(SceneKey.Settings); },    () => nav?.hoverAt(2));
     nav = new MenuNav(this, [
       playItem, 
       // leaderboardItem, 
@@ -47,19 +47,20 @@ export class MainMenuScene extends Phaser.Scene {
 
   private createButton(x: number, y: number, width: number, height: number, label: string, fontSize: number, fontStyle: string, onClick: () => void, onHover?: () => void): MenuNavItem {
     const bg = this.add.graphics();
-    const drawBg = (hovered: boolean): void => {
-      bg.clear();
-      bg.fillStyle(hovered ? COLORS.BTN_HOVER : COLORS.BTN, 1);
-      bg.fillRoundedRect(x - width / 2, y - height / 2, width, height, 15);
-    };
-    drawBg(false);
-
-    this.add.text(x, y, label, {
+    const labelText = this.add.text(x, y, label, {
       fontFamily: 'FoxwhelpFont',
       fontSize: fontSize + 'px',
       fontStyle,
       color: '#ffffff',
     }).setOrigin(0.5);
+
+    const drawBg = (hovered: boolean): void => {
+      bg.clear();
+      bg.fillStyle(hovered ? COLORS.BTN_HOVER : COLORS.BTN, 1);
+      bg.fillRoundedRect(x - width / 2, y - height / 2, width, height, 15);
+      labelText.setText(hovered ? `~ ${label} ~` : label);
+    };
+    drawBg(false);
 
     const hitArea = this.add.rectangle(x, y, width, height)
       .setInteractive({ useHandCursor: true });
