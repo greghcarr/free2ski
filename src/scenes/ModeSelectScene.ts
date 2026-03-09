@@ -9,7 +9,6 @@ import { formatRaceTime } from '@/utils/MathUtils';
 import { MenuNav, type MenuNavItem } from '@/ui/MenuNav';
 
 const MODES = [GameMode.Slalom, GameMode.FreeSki, GameMode.Jump];
-
 export class ModeSelectScene extends Phaser.Scene {
   constructor() {
     super({ key: SceneKey.ModeSelect });
@@ -21,21 +20,15 @@ export class ModeSelectScene extends Phaser.Scene {
     bg.fillGradientStyle(COLORS.SNOW_LIGHT, COLORS.SNOW_LIGHT, COLORS.SNOW_SHADOW, COLORS.SNOW_SHADOW, 1);
     bg.fillRect(0, 0, WORLD_WIDTH, GAME_HEIGHT);
 
-    this.add.text(WORLD_WIDTH / 2, 240, 'SELECT MODE', {
-      fontFamily: 'FoxwhelpFont',
-      fontSize: '60px',
-      fontStyle: 'bold',
-      color: COLORS.UI_TITLE,
-    }).setOrigin(0.5);
+    // this.add.text(WORLD_WIDTH / 2, 220, 'modes', {
+    //   fontFamily: 'FoxwhelpFont',
+    //   fontSize: '130px',
+    //   fontStyle: 'bold',
+    //   color: COLORS.UI_TITLE,
+    // }).setOrigin(0.5);
 
-    this.add.text(WORLD_WIDTH / 2, 303, `Total runs: ${HighScoreManager.getTotalRuns()}`, {
-      fontFamily: 'FoxwhelpFont',
-      fontSize: '24px',
-      color: COLORS.UI_SUBTITLE,
-    }).setOrigin(0.5);
-
-    const cardW = 360;
-    const cardH = 390;
+    const cardW = 550;
+    const cardH = 675;
     const spacing = 30;
     const totalW = MODES.length * cardW + (MODES.length - 1) * spacing;
     const startX = (WORLD_WIDTH - totalW) / 2 + cardW / 2;
@@ -44,19 +37,26 @@ export class ModeSelectScene extends Phaser.Scene {
     const cardItems: MenuNavItem[] = MODES.map((mode, i) => {
       const cfg = GAME_MODE_CONFIGS[mode];
       const cx = startX + i * (cardW + spacing);
-      const cy = GAME_HEIGHT / 2 + 45;
+      const cy = GAME_HEIGHT / 2 + 10;
       return this.createModeCard(cx, cy, cardW, cardH, mode, cfg.displayName, cfg.description, () => {
         const session: SessionConfig = { mode, seed: Date.now() };
         this.scene.start(SceneKey.Game, { session });
       }, () => nav?.hoverAt(i));
     });
 
-    nav = new MenuNav(this, cardItems, 'horizontal');
+    nav = new MenuNav(this, cardItems, 'horizontal', 1);
+
+    // this.add.text(WORLD_WIDTH / 2, 880, `total runs: ${HighScoreManager.getTotalRuns()}`, {
+    //   fontFamily: 'FoxwhelpFont',
+    //   fontSize: '50px',
+    //   fontStyle: 'bold italic',
+    //   color: COLORS.UI_SUBTITLE,
+    // }).setOrigin(0.5);
 
     // Back button
-    this.add.text(60, GAME_HEIGHT - 50, '← Back', {
+    this.add.text(60, GAME_HEIGHT - 100, '← back', {
       fontFamily: 'FoxwhelpFont',
-      fontSize: '30px',
+      fontSize: '50px',
       color: COLORS.UI_TITLE,
     }).setInteractive({ useHandCursor: true })
       .on('pointerdown', () => this.scene.start(SceneKey.MainMenu));
@@ -89,31 +89,33 @@ export class ModeSelectScene extends Phaser.Scene {
     };
     draw(false);
 
-    this.add.text(cx, cy - h / 2 + 54, title, {
+    this.add.text(cx, cy - h / 2 + 145, title, {
       fontFamily: 'FoxwhelpFont',
-      fontSize: '30px',
+      fontSize: '100px',
       fontStyle: 'bold',
       color: COLORS.UI_TITLE,
     }).setOrigin(0.5);
 
-    this.add.text(cx, cy - h / 2 + 102, desc, {
+    this.add.text(cx, cy - h / 2 + 220, desc, {
       fontFamily: 'FoxwhelpFont',
-      fontSize: '21px',
+      fontSize: '50px',
       color: COLORS.UI_SUBTITLE,
-      wordWrap: { width: w - 24 },
+      wordWrap: { width: w - 100 },
       align: 'center',
     }).setOrigin(0.5, 0);
 
-    this.add.text(cx, cy + 6, this.bestLabel(mode), {
-      fontFamily: 'FoxwhelpFont',
-      fontSize: '20px',
-      fontStyle: 'bold',
-      color: COLORS.UI_TITLE,
-      align: 'center',
-    }).setOrigin(0.5, 1);
-
     // Mode illustration in the lower half of the card
     this.drawModeIllustration(mode, cx, cy);
+
+    this.add.text(cx, cy + 250, this.bestLabel(mode), {
+      fontFamily: 'FoxwhelpFont',
+      fontSize: '38px',
+      fontStyle: 'bold italic',
+      color: COLORS.UI_SUBTITLE,
+      // stroke: COLORS.UI_TITLE,
+      // strokeThickness: 10,
+      align: 'center',
+    }).setOrigin(0.5, 1);
 
     const hit = this.add.rectangle(cx, cy, w, h)
       .setInteractive({ useHandCursor: true });
@@ -129,11 +131,11 @@ export class ModeSelectScene extends Phaser.Scene {
 
   private bestLabel(mode: GameMode): string {
     const best = HighScoreManager.getBest(mode);
-    if (!best) return 'No personal best yet';
+    if (!best) return 'no personal best yet';
     switch (mode) {
-      case GameMode.FreeSki: return `Personal best: ${best.distance.toLocaleString()} m`;
-      case GameMode.Slalom:  return best.timeMs !== undefined ? `Personal best: ${formatRaceTime(best.timeMs)}` : 'No personal best yet';
-      case GameMode.Jump:    return `Personal best: ${best.score}`;
+      case GameMode.FreeSki: return `personal best: ${best.distance.toLocaleString()} m`;
+      case GameMode.Slalom:  return best.timeMs !== undefined ? `personal best: ${formatRaceTime(best.timeMs)}` : 'no personal best yet';
+      case GameMode.Jump:    return `personal best: ${best.score}`;
     }
   }
 
@@ -143,10 +145,11 @@ export class ModeSelectScene extends Phaser.Scene {
   // ---------------------------------------------------------------------------
 
   private drawModeIllustration(mode: GameMode, cx: number, cy: number): void {
+    const illustrationOffsetY = 0;
     switch (mode) {
-      case GameMode.FreeSki: this.drawTree(cx, cy);  break;
-      case GameMode.Slalom:  this.drawGate(cx, cy);  break;
-      case GameMode.Jump:    this.drawRamp(cx, cy);  break;
+      case GameMode.FreeSki: this.drawTree(cx, cy + illustrationOffsetY);  break;
+      case GameMode.Slalom:  this.drawGate(cx, cy + illustrationOffsetY);  break;
+      case GameMode.Jump:    this.drawRamp(cx, cy + illustrationOffsetY);  break;
     }
   }
 
@@ -158,7 +161,7 @@ export class ModeSelectScene extends Phaser.Scene {
     const g  = this.add.graphics();
     const s  = 3.0;
     // Shift origin so the tree sits comfortably in the lower card half.
-    const oy = cy + 112;
+    const oy = cy + 115;
 
     // Drop shadow
     g.fillStyle(0x000000, 0.12);
@@ -193,7 +196,7 @@ export class ModeSelectScene extends Phaser.Scene {
     const poleH    = 84;    // close to in-game POLE_H=96, trimmed slightly
     const bannerH  = 21;    // same as in-game BANNER_H
     // Centre vertically in the lower card half
-    const oy = cy + 102;
+    const oy = cy + 110;
 
     // Drop shadows under poles
     g.fillStyle(0x000000, 0.12);
@@ -236,7 +239,7 @@ export class ModeSelectScene extends Phaser.Scene {
     const lipH = 7 * s;
 
     // Centre vertically in the lower card half
-    const oy = cy + 102;
+    const oy = cy + 105;
 
     // Drop shadow
     g.fillStyle(0x000000, 0.18);

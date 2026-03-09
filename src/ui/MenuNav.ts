@@ -17,9 +17,11 @@ export class MenuNav {
     scene: Phaser.Scene,
     private readonly items: MenuNavItem[],
     axis: 'vertical' | 'horizontal' = 'vertical',
+    private readonly initialFocusIndex = 0,
   ) {
     if (!items.length) return;
-    items[0]!.setFocus(true);
+    this.index = initialFocusIndex;
+    items[initialFocusIndex]!.setFocus(true);
     const kb = scene.input.keyboard;
     if (!kb) return;
     const prev = axis === 'vertical' ? 'UP'   : 'LEFT';

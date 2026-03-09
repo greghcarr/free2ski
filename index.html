@@ -45,13 +45,22 @@
         height: 100dvh;
         background: #1a2a3a;
         overflow: hidden;
-        display: flex;
-        align-items: center;
-        justify-content: center;
         /* Prevent long-press text selection and callout menus on mobile */
         user-select: none;
         -webkit-user-select: none;
         -webkit-touch-callout: none;
+      }
+      /* Phaser renders into this div. Inset by safe-area on left/right so
+         CENTER_BOTH centers within the notch-safe region, not the full viewport. */
+      #game-container {
+        position: fixed;
+        top: env(safe-area-inset-top);
+        left: env(safe-area-inset-left);
+        right: env(safe-area-inset-right);
+        bottom: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
       }
       canvas {
         display: block;
@@ -86,6 +95,7 @@
     </style>
   </head>
   <body>
+    <div id="game-container"></div>
     <!-- Shown only when a phone is held in portrait mode -->
     <div id="rotate-prompt" aria-live="polite">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
@@ -96,6 +106,19 @@
       </svg>
       <span>Rotate your device to play</span>
     </div>
+    <script>
+      // On first touch, request fullscreen to hide browser chrome.
+      // Works on Android Chrome; fails silently on iOS Safari (use Add to Home Screen there).
+      document.addEventListener('pointerdown', function requestFS() {
+        document.removeEventListener('pointerdown', requestFS);
+        var el = document.documentElement;
+        if (el.requestFullscreen) {
+          el.requestFullscreen({ navigationUI: 'hide' }).catch(function() {});
+        } else if (el.webkitRequestFullscreen) {
+          el.webkitRequestFullscreen();
+        }
+      }, { once: true });
+    </script>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

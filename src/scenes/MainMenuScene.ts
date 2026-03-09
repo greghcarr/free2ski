@@ -16,51 +16,48 @@ export class MainMenuScene extends Phaser.Scene {
     bg.fillRect(0, 0, WORLD_WIDTH, GAME_HEIGHT);
 
     // Title
-    this.add.text(WORLD_WIDTH / 2, 240, 'free2ski', {
+    this.add.text(WORLD_WIDTH / 2, 365, 'free2ski', {
       fontFamily: 'FoxwhelpFont',
-      fontSize: '108px',
+      fontSize: '280px',
       fontStyle: 'bold',
       color: COLORS.UI_TITLE,
       stroke: '#ffffff',
       strokeThickness: 6,
     }).setOrigin(0.5);
 
-    this.add.text(WORLD_WIDTH / 2, 360, 'a skiing adventure', {
+    this.add.text(WORLD_WIDTH / 2, 512, 'a skiing adventure', {
       fontFamily: 'FoxwhelpFont',
-      fontSize: '33px',
+      fontSize: '80px',
       color: COLORS.UI_SUBTITLE,
     }).setOrigin(0.5);
 
     // Menu buttons
     let nav: MenuNav | undefined;
-    const playItem        = this.createButton(WORLD_WIDTH / 2, 510, 'play',        () => { this.scene.start(SceneKey.ModeSelect); },   () => nav?.hoverAt(0));
-    const leaderboardItem = this.createButton(WORLD_WIDTH / 2, 630, 'leaderboard', () => { this.scene.start(SceneKey.Leaderboard); }, () => nav?.hoverAt(1));
-    const settingsItem    = this.createButton(WORLD_WIDTH / 2, 750, 'settings',    () => { this.scene.start(SceneKey.Settings); },    () => nav?.hoverAt(2));
+    const playItem        = this.createButton(WORLD_WIDTH / 2, 635, 710, 115, 'play', 65, 'bold',      () => { this.scene.start(SceneKey.ModeSelect); },   () => nav?.hoverAt(0));
+    const leaderboardItem = this.createButton(WORLD_WIDTH / 2, 755, 390, 75, 'leaderboard', 50, '', () => { this.scene.start(SceneKey.Leaderboard); }, () => nav?.hoverAt(1));
+    const settingsItem    = this.createButton(WORLD_WIDTH / 2, 845, 390, 75, 'settings', 50, '',  () => { this.scene.start(SceneKey.Settings); },    () => nav?.hoverAt(2));
     nav = new MenuNav(this, [playItem, leaderboardItem, settingsItem]);
 
     addVersionLabel(this);
   }
 
-  private createButton(x: number, y: number, label: string, onClick: () => void, onHover?: () => void): MenuNavItem {
-    const btnW = 390;
-    const btnH = 81;
-
+  private createButton(x: number, y: number, width: number, height: number, label: string, fontSize: number, fontStyle: string, onClick: () => void, onHover?: () => void): MenuNavItem {
     const bg = this.add.graphics();
     const drawBg = (hovered: boolean): void => {
       bg.clear();
       bg.fillStyle(hovered ? COLORS.BTN_HOVER : COLORS.BTN, 1);
-      bg.fillRoundedRect(x - btnW / 2, y - btnH / 2, btnW, btnH, 15);
+      bg.fillRoundedRect(x - width / 2, y - height / 2, width, height, 15);
     };
     drawBg(false);
 
     this.add.text(x, y, label, {
       fontFamily: 'FoxwhelpFont',
-      fontSize: '33px',
-      fontStyle: 'bold',
+      fontSize: fontSize + 'px',
+      fontStyle,
       color: '#ffffff',
     }).setOrigin(0.5);
 
-    const hitArea = this.add.rectangle(x, y, btnW, btnH)
+    const hitArea = this.add.rectangle(x, y, width, height)
       .setInteractive({ useHandCursor: true });
 
     hitArea.on('pointerover', () => { onHover?.(); drawBg(true); });

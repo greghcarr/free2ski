@@ -27,9 +27,9 @@ export class LeaderboardScene extends Phaser.Scene {
       align: 'center',
     }).setOrigin(0.5);
 
-    this.add.text(60, GAME_HEIGHT - 50, '← Back', {
+    this.add.text(60, GAME_HEIGHT - 100, '← back', {
       fontFamily: 'FoxwhelpFont',
-      fontSize: '30px',
+      fontSize: '50px',
       color: COLORS.UI_TITLE,
     }).setInteractive({ useHandCursor: true })
       .on('pointerdown', () => this.scene.start(SceneKey.MainMenu));
