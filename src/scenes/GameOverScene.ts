@@ -464,25 +464,23 @@ export class GameOverScene extends Phaser.Scene {
   }
 
   private createButton(x: number, y: number, label: string, onClick: () => void, onHover?: () => void): MenuNavItem {
-    const btnW = 270;
-    const btnH = 54;
-    const bg   = this.add.graphics();
-
-    const draw = (hovered: boolean): void => {
-      bg.clear();
-      bg.fillStyle(hovered ? COLORS.BTN_HOVER : COLORS.BTN, 1);
-      bg.fillRoundedRect(x - btnW / 2, y - btnH / 2, btnW, btnH, 10);
-    };
-    draw(false);
-
-    this.add.text(x, y, label, {
-      fontFamily: 'sans-serif',
-      fontSize: '20px',
+    const bg = this.add.graphics();
+    const labelText = this.add.text(x, y, label, {
+      fontFamily: 'FoxwhelpFont',
+      fontSize: LAYOUT.BTN_FONT,
       fontStyle: 'bold',
       color: '#ffffff',
     }).setOrigin(0.5);
 
-    const hit = this.add.rectangle(x, y, btnW, btnH).setInteractive({ useHandCursor: true });
+    const draw = (hovered: boolean): void => {
+      bg.clear();
+      bg.fillStyle(hovered ? COLORS.BTN_HOVER : COLORS.BTN, 1);
+      bg.fillRoundedRect(x - LAYOUT.BTN_W / 2, y - LAYOUT.BTN_H / 2, LAYOUT.BTN_W, LAYOUT.BTN_H, LAYOUT.BTN_RADIUS);
+      labelText.setText(hovered ? `~ ${label} ~` : label);
+    };
+    draw(false);
+
+    const hit = this.add.rectangle(x, y, LAYOUT.BTN_W, LAYOUT.BTN_H).setInteractive({ useHandCursor: true });
     hit.on('pointerover', () => { onHover?.(); draw(true); });
     hit.on('pointerout',  () => draw(false));
     hit.on('pointerdown', onClick);
