@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { SceneKey } from '@/config/SceneKeys';
-import { WORLD_WIDTH, GAME_HEIGHT, COLORS } from '@/data/constants';
+import { WORLD_WIDTH, GAME_HEIGHT, COLORS, MAIN_MENU_BADGE_TEXT } from '@/data/constants';
 import { addVersionLabel } from '@/ui/versionLabel';
 import { MenuNav, type MenuNavItem } from '@/ui/MenuNav';
 
@@ -25,6 +25,26 @@ export class MainMenuScene extends Phaser.Scene {
       strokeThickness: 6,
     }).setOrigin(0.5);
 
+    // Badge — golden text above the top-right corner of the title, rotated clockwise
+    const badge = this.add.text(1300, 320, MAIN_MENU_BADGE_TEXT, {
+      fontFamily: 'FoxwhelpFont',
+      fontSize: '72px',
+      fontStyle: 'bold',
+      color: '#FFD700',
+      stroke: '#001a6e',
+      strokeThickness: 10,
+    }).setOrigin(0.5).setAngle(12);
+
+    this.tweens.add({
+      targets: badge,
+      scaleX: 1.15,
+      scaleY: 1.15,
+      duration: 700,
+      yoyo: true,
+      repeat: -1,
+      ease: 'Sine.easeInOut',
+    });
+
     // this.add.text(WORLD_WIDTH / 2, 557, 'a skiing adventure', {
     //   fontFamily: 'FoxwhelpFont',
     //   fontSize: '80px',
@@ -35,7 +55,7 @@ export class MainMenuScene extends Phaser.Scene {
     let nav: MenuNav | undefined;
     const playItem        = this.createButton(WORLD_WIDTH / 2, 630, 650, 145, 'play', 100, 'bold',      () => { this.scene.start(SceneKey.ModeSelect); },   () => nav?.hoverAt(0));
     // const leaderboardItem = this.createButton(WORLD_WIDTH / 2, 810, 410, 105, 'leaderboard', 50, 'bold', () => { this.scene.start(SceneKey.Leaderboard); }, () => nav?.hoverAt(1));
-    const settingsItem    = this.createButton(WORLD_WIDTH / 2, 780, 300, 100, 'settings', 50, 'bold',  () => { this.scene.start(SceneKey.Settings); },    () => nav?.hoverAt(1));
+    const settingsItem    = this.createButton(WORLD_WIDTH / 2, 780, 400, 105, 'settings', 60, 'bold',  () => { this.scene.start(SceneKey.Settings); },    () => nav?.hoverAt(1));
     nav = new MenuNav(this, [
       playItem, 
       // leaderboardItem, 
