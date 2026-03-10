@@ -34,8 +34,9 @@ export class ModeSelectScene extends Phaser.Scene {
     const startX = (WORLD_WIDTH - totalW) / 2 + cardW / 2;
 
     // Nav state: which card is remembered, and whether "back" is focused
-    let cardIndex = 1; // start on middle card (FreeSki)
+    let cardIndex = 1; // FreeSki — first keypress lands here
     let isBack = false;
+    let cardFocused = false;
 
     const cardItems: MenuNavItem[] = MODES.map((mode, i) => {
       const cfg = GAME_MODE_CONFIGS[mode];
@@ -44,7 +45,7 @@ export class ModeSelectScene extends Phaser.Scene {
       return this.createModeCard(cx, cy, cardW, cardH, mode, cfg.displayName, cfg.description, () => {
         const session: SessionConfig = { mode, seed: Date.now() };
         this.scene.start(SceneKey.Game, { session });
-      }, () => { cardIndex = i; isBack = false; });
+      }, () => { cardIndex = i; isBack = false; cardFocused = false; });
     });
 
     // Back button
@@ -76,9 +77,6 @@ export class ModeSelectScene extends Phaser.Scene {
       isBack = false;
     });
 
-    // Initial focus
-    cardItems[cardIndex]!.setFocus(true);
-
     // this.add.text(WORLD_WIDTH / 2, 880, `total runs: ${HighScoreManager.getTotalRuns()}`, {
     //   fontFamily: 'FoxwhelpFont',
     //   fontSize: '50px',
@@ -90,12 +88,14 @@ export class ModeSelectScene extends Phaser.Scene {
       const kb = this.input.keyboard;
       kb.on('keydown-LEFT', () => {
         if (isBack) return;
+        if (!cardFocused) { cardFocused = true; cardItems[cardIndex]!.setFocus(true); return; }
         cardItems[cardIndex]!.setFocus(false);
         cardIndex = (cardIndex - 1 + MODES.length) % MODES.length;
         cardItems[cardIndex]!.setFocus(true);
       });
       kb.on('keydown-RIGHT', () => {
         if (isBack) return;
+        if (!cardFocused) { cardFocused = true; cardItems[cardIndex]!.setFocus(true); return; }
         cardItems[cardIndex]!.setFocus(false);
         cardIndex = (cardIndex + 1) % MODES.length;
         cardItems[cardIndex]!.setFocus(true);
@@ -104,22 +104,30 @@ export class ModeSelectScene extends Phaser.Scene {
         if (isBack) {
           backUnderline.setVisible(false);
           isBack = false;
+          cardFocused = true;
           cardItems[cardIndex]!.setFocus(true);
-        } else {
+        } else if (cardFocused) {
           cardItems[cardIndex]!.setFocus(false);
           backUnderline.setVisible(true);
           isBack = true;
+        } else {
+          cardFocused = true;
+          cardItems[cardIndex]!.setFocus(true);
         }
       });
       kb.on('keydown-UP', () => {
         if (isBack) {
           backUnderline.setVisible(false);
           isBack = false;
+          cardFocused = true;
           cardItems[cardIndex]!.setFocus(true);
-        } else {
+        } else if (cardFocused) {
           cardItems[cardIndex]!.setFocus(false);
           backUnderline.setVisible(true);
           isBack = true;
+        } else {
+          cardFocused = true;
+          cardItems[cardIndex]!.setFocus(true);
         }
       });
       kb.on('keydown-SPACE', () => { isBack ? backGoTo() : cardItems[cardIndex]!.activate(); });

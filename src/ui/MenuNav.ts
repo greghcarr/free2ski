@@ -19,11 +19,8 @@ export class MenuNav {
     scene: Phaser.Scene,
     private readonly items: MenuNavItem[],
     axis: 'vertical' | 'horizontal' = 'vertical',
-    private readonly initialFocusIndex = 0,
   ) {
-    if (!items.length) return;  
-    this.index = initialFocusIndex;
-    items[initialFocusIndex]!.setFocus(true);
+    if (!items.length) return;
     const kb = scene.input.keyboard;
     if (!kb) return;
     const prev = axis === 'vertical' ? 'UP'   : 'LEFT';
@@ -45,14 +42,12 @@ export class MenuNav {
 
   private move(delta: number): void {
     if (!this.hasFocus) {
-      // First arrow key press — enter keyboard mode, land on the first or last item.
-      this.index = delta > 0 ? 0 : this.items.length - 1;
-      this.items[this.index]!.setFocus(true);
+      this.index = 0;
       this.hasFocus = true;
-      return;
+    } else {
+      this.items[this.index]!.setFocus(false);
+      this.index = (this.index + delta + this.items.length) % this.items.length;
     }
-    this.items[this.index]!.setFocus(false);
-    this.index = (this.index + delta + this.items.length) % this.items.length;
     this.items[this.index]!.setFocus(true);
   }
 }
