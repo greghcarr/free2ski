@@ -21,32 +21,32 @@ export class PauseScene extends Phaser.Scene {
 
   create(): void {
     // Dim overlay
-    this.add.rectangle(WORLD_WIDTH / 2, GAME_HEIGHT / 2, WORLD_WIDTH, GAME_HEIGHT, COLORS.OVERLAY, 0.55);
+    this.add.rectangle(WORLD_WIDTH / 2, GAME_HEIGHT / 2, WORLD_WIDTH, GAME_HEIGHT, COLORS.OVERLAY, 0.65);
 
     // Light blue card behind the menu
     const cardW = 540;
     const cardH = 570;
     const cardGfx = this.add.graphics();
-    cardGfx.fillStyle(COLORS.PAUSE_CARD, 0.5);
+    cardGfx.fillStyle(COLORS.HUD_BG, 0.);
     cardGfx.fillRoundedRect(WORLD_WIDTH / 2 - cardW / 2, 270, cardW, cardH, 18);
 
-    this.add.text(WORLD_WIDTH / 2, 360, 'PAUSED', {
+    this.add.text(WORLD_WIDTH / 2, 260, 'pause', {
       fontFamily: 'FoxwhelpFont',
-      fontSize: '78px',
+      fontSize: '150px',
       fontStyle: 'bold',
-      color: '#ffffff',
+      color: COLORS.HUD_UTILITY,
     }).setOrigin(0.5);
 
     const resume = (): void => { this.scene.stop(); this.scene.resume(this.callerKey); };
 
     let nav: MenuNav | undefined;
-    const resumeItem  = this.createButton(WORLD_WIDTH / 2, 510, 'RESUME',       resume, () => nav?.hoverAt(0));
-    const restartItem = this.createButton(WORLD_WIDTH / 2, 630, 'RESTART', () => {
+    const resumeItem  = this.createButton(WORLD_WIDTH / 2, 440, 'resume',       resume, () => nav?.hoverAt(0));
+    const restartItem = this.createButton(WORLD_WIDTH / 2, 630, 'restart run', () => {
       this.scene.stop(this.callerKey);
       this.scene.stop();
       this.scene.start(SceneKey.Game, { session: this.session });
     }, () => nav?.hoverAt(1));
-    const quitItem    = this.createButton(WORLD_WIDTH / 2, 750, 'QUIT TO MENU', () => {
+    const quitItem    = this.createButton(WORLD_WIDTH / 2, 820, 'quit to menu', () => {
       this.scene.stop(this.callerKey);
       this.scene.stop();
       this.scene.start(SceneKey.MainMenu);
@@ -62,8 +62,8 @@ export class PauseScene extends Phaser.Scene {
   }
 
   private createButton(x: number, y: number, label: string, onClick: () => void, onHover?: () => void): MenuNavItem {
-    const btnW = 390;
-    const btnH = 81;
+    const btnW = 600;
+    const btnH = 140;
     const bg = this.add.graphics();
     const draw = (hovered: boolean): void => {
       bg.clear();
@@ -73,7 +73,7 @@ export class PauseScene extends Phaser.Scene {
     draw(false);
     this.add.text(x, y, label, {
       fontFamily: 'FoxwhelpFont',
-      fontSize: '30px',
+      fontSize: '80px',
       fontStyle: 'bold',
       color: '#ffffff',
     }).setOrigin(0.5);
