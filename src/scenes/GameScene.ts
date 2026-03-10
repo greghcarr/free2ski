@@ -96,8 +96,6 @@ export class GameScene extends Phaser.Scene {
   // --- Course announcement (world-space) ---
   private announcementContainer: Phaser.GameObjects.Container | undefined;
   private announcementWorldY     = 0;
-  private pointerIsDown          = false;
-  private onWindowPointerUp      = () => { this.pointerIsDown = false; };
 
 
   // --- Session ---
@@ -175,7 +173,7 @@ export class GameScene extends Phaser.Scene {
     // --- Player update ---
     const inputState = this.controls.getState();
     const pointer    = this.input.activePointer;
-    if (this.pointerIsDown) {
+    if (pointer.isDown) {
       // Determine which side of the skier's current trajectory the pointer is on.
       // Dot the pointer-relative vector against the trajectory's right-normal:
       //   trajectory direction = (sin a, cos a)
@@ -800,9 +798,6 @@ const isJump = this.session.mode === GameMode.Jump;
   private bindPauseKey(): void {
     this.input.keyboard?.on('keydown-ESC', () => this.triggerPause());
     this.input.keyboard?.on('keydown-P',   () => this.triggerPause());
-    this.input.on('pointerdown', () => { this.pointerIsDown = true; });
-    this.input.on('pointerup',   this.onWindowPointerUp);
-    window.addEventListener('pointerup', this.onWindowPointerUp);
   }
 
   // ---------------------------------------------------------------------------
@@ -866,7 +861,6 @@ const isJump = this.session.mode === GameMode.Jump;
   }
 
   shutdown(): void {
-    window.removeEventListener('pointerup', this.onWindowPointerUp);
     this.controls?.destroy();
     this.chunkManager?.destroy();
     this.yetiSystem?.destroy();

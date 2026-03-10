@@ -1,4 +1,4 @@
-# free2ski — Claude Context
+# Free2Ski — Claude Context
 
 ## What This Is
 A SkiFree-inspired endless skiing game. Targets: browser (web) via GitHub Pages, and macOS + Windows via Steam/Electron.

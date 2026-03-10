@@ -1,17 +1,3 @@
-// Main menu badge text (golden rotating label above the title)
-export const MAIN_MENU_BADGE_TEXT = 'New UI wow!!';
-
-// Debug: set to a GameMode string to skip straight to GameOverScene on startup.
-
-import { GAME_MODE_CONFIGS } from "@/config/GameModes";
-
-// Set to null to run the game normally.
-export const DEBUG_GAME_OVER_MODE: string | null 
-  = null;
-  // = GAME_MODE_CONFIGS.slalom.displayName;
-  // = GAME_MODE_CONFIGS.free_ski.displayName;
-  // = GAME_MODE_CONFIGS.jump.displayName;
-
 // World / chunk sizing
 export const WORLD_WIDTH       = 1280;  // px
 export const GAME_HEIGHT       = 720;   // px

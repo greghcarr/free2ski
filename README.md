@@ -1,4 +1,4 @@
-# free2ski
+# Free2Ski
 
 An endless skiing game inspired by the classic SkiFree. Built with Phaser 3, TypeScript, and Vite. Playable in the browser and coming to Steam.
 

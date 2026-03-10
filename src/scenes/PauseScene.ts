@@ -65,19 +65,18 @@ export class PauseScene extends Phaser.Scene {
     const btnW = 260;
     const btnH = 54;
     const bg = this.add.graphics();
-    const labelText = this.add.text(x, y, label, {
-      fontFamily: 'FoxwhelpFont',
-      fontSize: '80px',
-      fontStyle: 'bold',
-      color: '#ffffff',
-    }).setOrigin(0.5);
     const draw = (hovered: boolean): void => {
       bg.clear();
       bg.fillStyle(hovered ? COLORS.BTN_HOVER : COLORS.BTN, 1);
-      bg.fillRoundedRect(x - btnW / 2, y - btnH / 2, btnW, btnH, 15);
-      labelText.setText(hovered ? `~ ${label} ~` : label);
+      bg.fillRoundedRect(x - btnW / 2, y - btnH / 2, btnW, btnH, 10);
     };
     draw(false);
+    this.add.text(x, y, label, {
+      fontFamily: 'sans-serif',
+      fontSize: '20px',
+      fontStyle: 'bold',
+      color: '#ffffff',
+    }).setOrigin(0.5);
     const hit = this.add.rectangle(x, y, btnW, btnH).setInteractive({ useHandCursor: true });
     hit.on('pointerover', () => { onHover?.(); draw(true); });
     hit.on('pointerout',  () => draw(false));

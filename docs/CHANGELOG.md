@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to free2ski are documented here.
+All notable changes to Free2Ski are documented here.
 Format: newest first, grouped by version/date.
 
 ---
@@ -48,7 +48,7 @@ Format: newest first, grouped by version/date.
 - Gate number display on each slalom pole
 
 ### Changed
-- Renamed project to **free2ski**
+- Renamed project to **Free2Ski**
 - Removed Tree Slalom mode (out of scope for now)
 - Slalom overhauled to 25-gate time trial — missed gate = +5s penalty, best score = fastest time
 - HUD layout: distance/timer centred top, mode label top-left, best score below distance

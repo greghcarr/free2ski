@@ -40,11 +40,7 @@ export class ModeSelectScene extends Phaser.Scene {
     const totalW = MODES.length * cardW + (MODES.length - 1) * spacing;
     const startX = (WORLD_WIDTH - totalW) / 2 + cardW / 2;
 
-    // Nav state: which card is remembered, and whether "back" is focused
-    let cardIndex = 1; // FreeSki — first keypress lands here
-    let isBack = false;
-    let cardFocused = false;
-
+    let nav: MenuNav | undefined;
     const cardItems: MenuNavItem[] = MODES.map((mode, i) => {
       const cfg = GAME_MODE_CONFIGS[mode];
       const cx = startX + i * (cardW + spacing);
@@ -52,7 +48,7 @@ export class ModeSelectScene extends Phaser.Scene {
       return this.createModeCard(cx, cy, cardW, cardH, mode, cfg.displayName, cfg.description, () => {
         const session: SessionConfig = { mode, seed: Date.now() };
         this.scene.start(SceneKey.Game, { session });
-      }, () => { cardIndex = i; isBack = false; cardFocused = false; });
+      }, () => nav?.hoverAt(i));
     });
 
     nav = new MenuNav(this, cardItems, 'horizontal');
@@ -63,84 +59,10 @@ export class ModeSelectScene extends Phaser.Scene {
       fontSize: '20px',
       color: COLORS.UI_TITLE,
     }).setInteractive({ useHandCursor: true })
-      .on('pointerdown', backGoTo);
-
-    const backUlY = (GAME_HEIGHT - 100) + backText.displayHeight - 6;
-    const prefixMeasure = this.add.text(0, 0, '← ', { fontFamily: 'FoxwhelpFont', fontSize: '50px' }).setVisible(false);
-    const backWordX = 60 + prefixMeasure.displayWidth;
-    const backWordW = backText.displayWidth - prefixMeasure.displayWidth;
-    prefixMeasure.destroy();
-    const backUnderline = this.add.graphics();
-    backUnderline.fillStyle(parseInt(COLORS.UI_TITLE.slice(1), 16), 1);
-    backUnderline.fillRect(backWordX, backUlY, backWordW, 4);
-    backUnderline.setVisible(false);
-
-    backText.on('pointerover', () => {
-      cardItems.forEach(item => item.setFocus(false));
-      backUnderline.setVisible(true);
-      isBack = true;
-    });
-    backText.on('pointerout', () => {
-      backUnderline.setVisible(false);
-      isBack = false;
-    });
-
-    // this.add.text(WORLD_WIDTH / 2, 880, `total runs: ${HighScoreManager.getTotalRuns()}`, {
-    //   fontFamily: 'FoxwhelpFont',
-    //   fontSize: '50px',
-    //   fontStyle: 'bold italic',
-    //   color: COLORS.UI_SUBTITLE,
-    // }).setOrigin(0.5);
+      .on('pointerdown', () => this.scene.start(SceneKey.MainMenu));
 
     if (this.input.keyboard) {
-      const kb = this.input.keyboard;
-      kb.on('keydown-LEFT', () => {
-        if (isBack) return;
-        if (!cardFocused) { cardFocused = true; cardItems[cardIndex]!.setFocus(true); return; }
-        cardItems[cardIndex]!.setFocus(false);
-        cardIndex = (cardIndex - 1 + MODES.length) % MODES.length;
-        cardItems[cardIndex]!.setFocus(true);
-      });
-      kb.on('keydown-RIGHT', () => {
-        if (isBack) return;
-        if (!cardFocused) { cardFocused = true; cardItems[cardIndex]!.setFocus(true); return; }
-        cardItems[cardIndex]!.setFocus(false);
-        cardIndex = (cardIndex + 1) % MODES.length;
-        cardItems[cardIndex]!.setFocus(true);
-      });
-      kb.on('keydown-DOWN', () => {
-        if (isBack) {
-          backUnderline.setVisible(false);
-          isBack = false;
-          cardFocused = true;
-          cardItems[cardIndex]!.setFocus(true);
-        } else if (cardFocused) {
-          cardItems[cardIndex]!.setFocus(false);
-          backUnderline.setVisible(true);
-          isBack = true;
-        } else {
-          cardFocused = true;
-          cardItems[cardIndex]!.setFocus(true);
-        }
-      });
-      kb.on('keydown-UP', () => {
-        if (isBack) {
-          backUnderline.setVisible(false);
-          isBack = false;
-          cardFocused = true;
-          cardItems[cardIndex]!.setFocus(true);
-        } else if (cardFocused) {
-          cardItems[cardIndex]!.setFocus(false);
-          backUnderline.setVisible(true);
-          isBack = true;
-        } else {
-          cardFocused = true;
-          cardItems[cardIndex]!.setFocus(true);
-        }
-      });
-      kb.on('keydown-SPACE', () => { isBack ? backGoTo() : cardItems[cardIndex]!.activate(); });
-      kb.on('keydown-ENTER', () => { isBack ? backGoTo() : cardItems[cardIndex]!.activate(); });
-      kb.on('keydown-ESC',   () => this.scene.start(SceneKey.MainMenu));
+      this.input.keyboard.on('keydown-ESC', () => this.scene.start(SceneKey.MainMenu));
     }
 
     addVersionLabel(this);
