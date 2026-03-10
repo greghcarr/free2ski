@@ -8,7 +8,7 @@ const MAX_CHASE_SPEED = 280;
 // Horizontal tracking strength (fraction of gap closed per second)
 const HORIZONTAL_TRACK = 2.2;
 // Vertical bob amplitude (px) and period (ms)
-const BOB_AMP = 5;
+const BOB_AMP = 3.5;
 const BOB_PERIOD = 380;
 
 export class Yeti {
@@ -32,7 +32,6 @@ export class Yeti {
 
     this.container = scene.add.container(startX, startY, [gfx]);
     this.container.setDepth(DEPTH.YETI);
-    this.container.setScale(1.5);
   }
 
   // ---------------------------------------------------------------------------
@@ -59,7 +58,7 @@ export class Yeti {
 
   /** Approximate radius for catch detection (yeti is large) */
   get hitRadius(): number {
-    return 72;
+    return 32;
   }
 
   destroy(): void {

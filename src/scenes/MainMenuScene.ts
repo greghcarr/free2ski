@@ -16,13 +16,13 @@ export class MainMenuScene extends Phaser.Scene {
     bg.fillRect(0, 0, WORLD_WIDTH, GAME_HEIGHT);
 
     // Title
-    this.add.text(WORLD_WIDTH / 2, 420, 'free2ski', {
-      fontFamily: 'FoxwhelpFont',
-      fontSize: '280px',
+    this.add.text(WORLD_WIDTH / 2, 160, 'FREE2SKI', {
+      fontFamily: 'sans-serif',
+      fontSize: '72px',
       fontStyle: 'bold',
       color: COLORS.UI_TITLE,
       stroke: '#ffffff',
-      strokeThickness: 6,
+      strokeThickness: 4,
     }).setOrigin(0.5);
 
     // Badge — golden text above the top-right corner of the title, rotated clockwise
@@ -65,24 +65,26 @@ export class MainMenuScene extends Phaser.Scene {
     addVersionLabel(this);
   }
 
-  private createButton(x: number, y: number, width: number, height: number, label: string, fontSize: number, fontStyle: string, onClick: () => void, onHover?: () => void): MenuNavItem {
-    const bg = this.add.graphics();
-    const labelText = this.add.text(x, y, label, {
-      fontFamily: 'FoxwhelpFont',
-      fontSize: fontSize + 'px',
-      fontStyle,
-      color: '#ffffff',
-    }).setOrigin(0.5);
+  private createButton(x: number, y: number, label: string, onClick: () => void, onHover?: () => void): MenuNavItem {
+    const btnW = 260;
+    const btnH = 54;
 
+    const bg = this.add.graphics();
     const drawBg = (hovered: boolean): void => {
       bg.clear();
       bg.fillStyle(hovered ? COLORS.BTN_HOVER : COLORS.BTN, 1);
-      bg.fillRoundedRect(x - width / 2, y - height / 2, width, height, 15);
-      labelText.setText(hovered ? `~ ${label} ~` : label);
+      bg.fillRoundedRect(x - btnW / 2, y - btnH / 2, btnW, btnH, 10);
     };
     drawBg(false);
 
-    const hitArea = this.add.rectangle(x, y, width, height)
+    this.add.text(x, y, label, {
+      fontFamily: 'sans-serif',
+      fontSize: '22px',
+      fontStyle: 'bold',
+      color: '#ffffff',
+    }).setOrigin(0.5);
+
+    const hitArea = this.add.rectangle(x, y, btnW, btnH)
       .setInteractive({ useHandCursor: true });
 
     hitArea.on('pointerover', () => { onHover?.(); drawBg(true); });

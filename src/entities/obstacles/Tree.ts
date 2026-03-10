@@ -12,14 +12,13 @@ export class Tree extends ObstacleBase {
     super(worldX, worldY);
 
     const s = variant === 'small' ? 0.72 : 1.0;
-    this.hitRadius = variant === 'small' ? 14 : 20;
+    this.hitRadius = variant === 'small' ? 9 : 13;
 
     const gfx = scene.add.graphics();
     this.drawTree(gfx, s);
 
     this.container = scene.add.container(worldX, 0, [gfx]);
     this.container.setDepth(DEPTH.OBSTACLES);
-    this.container.setScale(1.5);
   }
 
   private drawTree(gfx: Phaser.GameObjects.Graphics, s: number): void {

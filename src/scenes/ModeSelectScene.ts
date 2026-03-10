@@ -6,9 +6,10 @@ import type { SessionConfig } from '@/config/GameConfig';
 import { addVersionLabel } from '@/ui/versionLabel';
 import { HighScoreManager } from '@/data/HighScoreManager';
 import { formatRaceTime } from '@/utils/MathUtils';
-import { type MenuNavItem } from '@/ui/MenuNav';
+import { MenuNav, type MenuNavItem } from '@/ui/MenuNav';
 
 const MODES = [GameMode.Slalom, GameMode.FreeSki, GameMode.Jump];
+
 export class ModeSelectScene extends Phaser.Scene {
   constructor() {
     super({ key: SceneKey.ModeSelect });
@@ -20,16 +21,22 @@ export class ModeSelectScene extends Phaser.Scene {
     bg.fillGradientStyle(COLORS.SNOW_LIGHT, COLORS.SNOW_LIGHT, COLORS.SNOW_SHADOW, COLORS.SNOW_SHADOW, 1);
     bg.fillRect(0, 0, WORLD_WIDTH, GAME_HEIGHT);
 
-    // this.add.text(WORLD_WIDTH / 2, 220, 'modes', {
-    //   fontFamily: 'FoxwhelpFont',
-    //   fontSize: '130px',
-    //   fontStyle: 'bold',
-    //   color: COLORS.UI_TITLE,
-    // }).setOrigin(0.5);
+    this.add.text(WORLD_WIDTH / 2, 160, 'SELECT MODE', {
+      fontFamily: 'sans-serif',
+      fontSize: '40px',
+      fontStyle: 'bold',
+      color: COLORS.UI_TITLE,
+    }).setOrigin(0.5);
 
-    const cardW = 550;
-    const cardH = 675;
-    const spacing = 30;
+    this.add.text(WORLD_WIDTH / 2, 202, `Total runs: ${HighScoreManager.getTotalRuns()}`, {
+      fontFamily: 'sans-serif',
+      fontSize: '16px',
+      color: COLORS.UI_SUBTITLE,
+    }).setOrigin(0.5);
+
+    const cardW = 240;
+    const cardH = 260;
+    const spacing = 20;
     const totalW = MODES.length * cardW + (MODES.length - 1) * spacing;
     const startX = (WORLD_WIDTH - totalW) / 2 + cardW / 2;
 
@@ -41,18 +48,19 @@ export class ModeSelectScene extends Phaser.Scene {
     const cardItems: MenuNavItem[] = MODES.map((mode, i) => {
       const cfg = GAME_MODE_CONFIGS[mode];
       const cx = startX + i * (cardW + spacing);
-      const cy = GAME_HEIGHT / 2 + 10;
+      const cy = GAME_HEIGHT / 2 + 30;
       return this.createModeCard(cx, cy, cardW, cardH, mode, cfg.displayName, cfg.description, () => {
         const session: SessionConfig = { mode, seed: Date.now() };
         this.scene.start(SceneKey.Game, { session });
       }, () => { cardIndex = i; isBack = false; cardFocused = false; });
     });
 
+    nav = new MenuNav(this, cardItems, 'horizontal');
+
     // Back button
-    const backGoTo = () => this.scene.start(SceneKey.MainMenu);
-    const backText = this.add.text(60, GAME_HEIGHT - 100, '← back', {
-      fontFamily: 'FoxwhelpFont',
-      fontSize: '50px',
+    this.add.text(60, GAME_HEIGHT - 50, '← Back', {
+      fontFamily: 'sans-serif',
+      fontSize: '20px',
       color: COLORS.UI_TITLE,
     }).setInteractive({ useHandCursor: true })
       .on('pointerdown', backGoTo);
@@ -150,43 +158,40 @@ export class ModeSelectScene extends Phaser.Scene {
     onHover?: () => void,
   ): MenuNavItem {
     const bg = this.add.graphics();
-    const titleText = this.add.text(cx, cy - h / 2 + 145, title, {
-      fontFamily: 'FoxwhelpFont',
-      fontSize: '100px',
+    const draw = (hovered: boolean): void => {
+      bg.clear();
+      bg.fillStyle(hovered ? COLORS.CARD_HOVER : COLORS.CARD, 1);
+      bg.lineStyle(2, COLORS.BTN, 1);
+      bg.fillRoundedRect(cx - w / 2, cy - h / 2, w, h, 12);
+      bg.strokeRoundedRect(cx - w / 2, cy - h / 2, w, h, 12);
+    };
+    draw(false);
+
+    this.add.text(cx, cy - h / 2 + 36, title, {
+      fontFamily: 'sans-serif',
+      fontSize: '20px',
       fontStyle: 'bold',
       color: COLORS.UI_TITLE,
     }).setOrigin(0.5);
 
-    const draw = (hovered: boolean): void => {
-      bg.clear();
-      bg.fillStyle(hovered ? COLORS.CARD_HOVER : COLORS.CARD, 1);
-      bg.lineStyle(3, COLORS.BTN, 1);
-      bg.fillRoundedRect(cx - w / 2, cy - h / 2, w, h, 12);
-      bg.strokeRoundedRect(cx - w / 2, cy - h / 2, w, h, 12);
-      titleText.setText(hovered ? `~ ${title} ~` : title);
-    };
-    draw(false);
-
-    this.add.text(cx, cy - h / 2 + 220, desc, {
-      fontFamily: 'FoxwhelpFont',
-      fontSize: '50px',
+    this.add.text(cx, cy - h / 2 + 68, desc, {
+      fontFamily: 'sans-serif',
+      fontSize: '14px',
       color: COLORS.UI_SUBTITLE,
-      wordWrap: { width: w - 100 },
+      wordWrap: { width: w - 24 },
       align: 'center',
     }).setOrigin(0.5, 0);
 
-    // Mode illustration in the lower half of the card
-    this.drawModeIllustration(mode, cx, cy);
-
-    this.add.text(cx, cy + 250, this.bestLabel(mode), {
-      fontFamily: 'FoxwhelpFont',
-      fontSize: '38px',
-      fontStyle: 'bold italic',
-      color: COLORS.UI_SUBTITLE,
-      // stroke: COLORS.UI_TITLE,
-      // strokeThickness: 10,
+    this.add.text(cx, cy + 4, this.bestLabel(mode), {
+      fontFamily: 'sans-serif',
+      fontSize: '13px',
+      fontStyle: 'bold',
+      color: COLORS.UI_TITLE,
       align: 'center',
     }).setOrigin(0.5, 1);
+
+    // Mode illustration in the lower half of the card
+    this.drawModeIllustration(mode, cx, cy);
 
     const hit = this.add.rectangle(cx, cy, w, h)
       .setInteractive({ useHandCursor: true });
@@ -202,37 +207,37 @@ export class ModeSelectScene extends Phaser.Scene {
 
   private bestLabel(mode: GameMode): string {
     const best = HighScoreManager.getBest(mode);
-    if (!best) return 'no personal best yet';
+    if (!best) return 'No personal best yet';
     switch (mode) {
-      case GameMode.FreeSki: return `personal best: ${best.distance.toLocaleString()} m`;
-      case GameMode.Slalom:  return best.timeMs !== undefined ? `personal best: ${formatRaceTime(best.timeMs)}` : 'no personal best yet';
-      case GameMode.Jump:    return `personal best: ${best.score}`;
+      case GameMode.FreeSki: return `Personal best: ${best.distance.toLocaleString()} m`;
+      case GameMode.Slalom:  return best.timeMs !== undefined ? `Personal best: ${formatRaceTime(best.timeMs)}` : 'No personal best yet';
+      case GameMode.Jump:    return `Personal best: ${best.score}`;
     }
   }
 
   // ---------------------------------------------------------------------------
   // Per-mode illustrations — exact same drawing logic as the in-game entities,
-  // scaled to fit the lower half of a 360×390 card.
+  // scaled to fit the lower half of a 240×260 card.
   // ---------------------------------------------------------------------------
 
   private drawModeIllustration(mode: GameMode, cx: number, cy: number): void {
-    const illustrationOffsetY = 0;
     switch (mode) {
-      case GameMode.FreeSki: this.drawTree(cx, cy + illustrationOffsetY);  break;
-      case GameMode.Slalom:  this.drawGate(cx, cy + illustrationOffsetY);  break;
-      case GameMode.Jump:    this.drawRamp(cx, cy + illustrationOffsetY);  break;
+      case GameMode.FreeSki: this.drawTree(cx, cy);  break;
+      case GameMode.Slalom:  this.drawGate(cx, cy);  break;
+      case GameMode.Jump:    this.drawRamp(cx, cy);  break;
     }
   }
 
   /**
-   * Pine tree — matches Tree.ts drawTree() at scale 3.0.
+   * Pine tree — matches Tree.ts drawTree() at scale 2.0.
    * Origin placed so the visual mass is centred in the lower card half.
    */
   private drawTree(cx: number, cy: number): void {
     const g  = this.add.graphics();
-    const s  = 3.0;
+    const s  = 2.0;
     // Shift origin so the tree sits comfortably in the lower card half.
-    const oy = cy + 115;
+    // At s=2: top of snow cap = oy-52, trunk bottom = oy+14, shadow bottom = oy+30
+    const oy = cy + 75;
 
     // Drop shadow
     g.fillStyle(0x000000, 0.12);
@@ -258,16 +263,16 @@ export class ModeSelectScene extends Phaser.Scene {
 
   /**
    * Slalom gate — matches SlalomGate.ts at a scaled-down half-gap so it fits
-   * within the 360 px card width.
+   * within the 240 px card width.
    */
   private drawGate(cx: number, cy: number): void {
     const g        = this.add.graphics();
-    const halfGap  = 82;    // scaled from in-game 165 to fit card
-    const halfPole = GATE_POLE_RADIUS;   // 12 px — same as game
-    const poleH    = 84;    // close to in-game POLE_H=96, trimmed slightly
-    const bannerH  = 21;    // same as in-game BANNER_H
+    const halfGap  = 55;    // scaled from in-game 110 to fit card
+    const halfPole = GATE_POLE_RADIUS;   // 8 px — same as game
+    const poleH    = 56;    // close to in-game POLE_H=64, trimmed slightly
+    const bannerH  = 14;    // same as in-game BANNER_H
     // Centre vertically in the lower card half
-    const oy = cy + 110;
+    const oy = cy + 68;
 
     // Drop shadows under poles
     g.fillStyle(0x000000, 0.12);
@@ -298,11 +303,11 @@ export class ModeSelectScene extends Phaser.Scene {
   }
 
   /**
-   * Jump ramp — matches Ramp.ts at scale 3×.
+   * Jump ramp — matches Ramp.ts at scale 2×.
    */
   private drawRamp(cx: number, cy: number): void {
     const g = this.add.graphics();
-    const s = 3;
+    const s = 2;
 
     const RAMP_W = 70, RAMP_D = 28, CORNER = 7;
     const hw   = (RAMP_W / 2) * s;
@@ -310,7 +315,7 @@ export class ModeSelectScene extends Phaser.Scene {
     const lipH = 7 * s;
 
     // Centre vertically in the lower card half
-    const oy = cy + 105;
+    const oy = cy + 68;
 
     // Drop shadow
     g.fillStyle(0x000000, 0.18);

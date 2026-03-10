@@ -21,7 +21,7 @@ const MAX_ANGLE   = 72;
 // How much horizontal travel the angle produces relative to scroll speed
 const LATERAL_FACTOR = 0.48;
 // Minimum screen margin (px) from world edge
-const X_MARGIN = 96;
+const X_MARGIN = 64;
 // Brake deceleration when holding Up (fraction of speed per second)
 const BRAKE_RATE = 0.55;
 // Tuck acceleration multiplier when holding Down
@@ -90,7 +90,6 @@ export class Player {
       this.helmet,
     ]);
     this.container.setDepth(DEPTH.PLAYER);
-    this.container.setScale(1.5);
   }
 
   // ---------------------------------------------------------------------------

@@ -31,14 +31,13 @@ export class Rock extends ObstacleBase {
     super(worldX, worldY);
 
     const s = variant === 'small' ? 0.65 : 1.0;
-    this.hitRadius = variant === 'small' ? 12 : 17;
+    this.hitRadius = variant === 'small' ? 8 : 11;
 
     const gfx = scene.add.graphics();
     this.drawRock(gfx, s);
 
     this.container = scene.add.container(worldX, 0, [gfx]);
     this.container.setDepth(DEPTH.OBSTACLES);
-    this.container.setScale(1.5);
   }
 
   private drawRock(gfx: Phaser.GameObjects.Graphics, s: number): void {
