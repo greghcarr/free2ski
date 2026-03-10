@@ -7,11 +7,13 @@ export interface MenuNavItem {
 
 /**
  * Keyboard navigation manager for menu scenes.
- * First item receives focus automatically on construction.
- * Arrow keys move focus; Space/Enter activate the focused item.
+ * Keyboard focus is NOT shown until the user presses an arrow key, so mouse
+ * and touch users see no pre-selected item.  Arrow keys move focus;
+ * Space/Enter activate the focused item once keyboard mode is active.
  */
 export class MenuNav {
   private index = 0;
+  private hasFocus = false;
 
   constructor(
     scene: Phaser.Scene,
@@ -19,7 +21,7 @@ export class MenuNav {
     axis: 'vertical' | 'horizontal' = 'vertical',
     private readonly initialFocusIndex = 0,
   ) {
-    if (!items.length) return;
+    if (!items.length) return;  
     this.index = initialFocusIndex;
     items[initialFocusIndex]!.setFocus(true);
     const kb = scene.input.keyboard;
@@ -28,17 +30,27 @@ export class MenuNav {
     const next = axis === 'vertical' ? 'DOWN' : 'RIGHT';
     kb.on(`keydown-${prev}`,  () => this.move(-1));
     kb.on(`keydown-${next}`,  () => this.move(+1));
-    kb.on('keydown-SPACE',    () => items[this.index]!.activate());
-    kb.on('keydown-ENTER',    () => items[this.index]!.activate());
+    kb.on('keydown-SPACE',    () => { if (this.hasFocus) this.items[this.index]!.activate(); });
+    kb.on('keydown-ENTER',    () => { if (this.hasFocus) this.items[this.index]!.activate(); });
   }
 
-  /** Called by a button's pointerover to clear keyboard focus from the previously selected item. */
+  /** Called by a button's pointerover to clear keyboard focus. */
   hoverAt(index: number): void {
-    this.items[this.index]!.setFocus(false);
+    if (this.hasFocus) {
+      this.items[this.index]!.setFocus(false);
+      this.hasFocus = false;
+    }
     this.index = index;
   }
 
   private move(delta: number): void {
+    if (!this.hasFocus) {
+      // First arrow key press — enter keyboard mode, land on the first or last item.
+      this.index = delta > 0 ? 0 : this.items.length - 1;
+      this.items[this.index]!.setFocus(true);
+      this.hasFocus = true;
+      return;
+    }
     this.items[this.index]!.setFocus(false);
     this.index = (this.index + delta + this.items.length) % this.items.length;
     this.items[this.index]!.setFocus(true);
