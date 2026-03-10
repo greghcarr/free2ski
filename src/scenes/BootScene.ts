@@ -7,6 +7,10 @@ export class BootScene extends Phaser.Scene {
     super({ key: SceneKey.Boot });
   }
 
+  preload() {
+    this.load.font('FoxwhelpFont', 'assets/fonts/Foxwhelp-Regular.ttf', 'truetype');
+  }
+
   create(): void {
     // Load saved settings from localStorage and store in registry
     const savedRaw = localStorage.getItem('skifree_settings');
