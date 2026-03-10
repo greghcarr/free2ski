@@ -132,7 +132,7 @@ export class GameScene extends Phaser.Scene {
     this.trailGfx      = this.add.graphics().setDepth(DEPTH.TRAIL);
 
     this.drawSlope(0);
-    this.drawEdgeShadows();
+    // this.drawEdgeShadows();
 
     this.player       = new Player(this, WORLD_WIDTH / 2, PLAYER_SCREEN_Y);
     this.controls     = new InputSystem(this);
@@ -238,7 +238,7 @@ export class GameScene extends Phaser.Scene {
       this.player.hitRamp();
       if (this.session.mode === GameMode.Jump) {
         this.jumpScore++;
-        this.jumpScoreText.setText(`Score: ${this.jumpScore}`);
+        this.jumpScoreText.setText(`score: ${this.jumpScore}`);
         this.showJumpBonus(this.player.x, PLAYER_SCREEN_Y - 15);
       }
     }
@@ -302,7 +302,7 @@ export class GameScene extends Phaser.Scene {
     this.drawTrail();
 
     // --- HUD ---
-    this.distanceText.setText(`${Math.floor(this.distancePx / PX_PER_METER)} m`);
+    this.distanceText.setText(`${Math.floor(this.distancePx / PX_PER_METER).toLocaleString()} m`);
     if (this.session.mode === GameMode.Slalom && this.totalGatesInCourse > 0) {
       this.elapsedMs = Math.round(_time - this.courseStartTimeMs) + this.penaltyMs;
       this.timerText.setText(formatRaceTime(this.elapsedMs));
@@ -367,7 +367,7 @@ export class GameScene extends Phaser.Scene {
   private showGatePass(gateWorldX: number): void {
     const pop = this.add.text(gateWorldX, PLAYER_SCREEN_Y - 90, '+1', {
       fontFamily: 'FoxwhelpFont',
-      fontSize:   '42px',
+      fontSize:   '60px',
       fontStyle:  'bold',
       color:      COLORS.POPUP_GOLD,
       stroke:     '#000000',
@@ -386,9 +386,9 @@ export class GameScene extends Phaser.Scene {
 
   private showPenalty(penaltyMs: number): void {
     const secs = penaltyMs / 1000;
-    const pop  = this.add.text(WORLD_WIDTH / 2, PLAYER_SCREEN_Y - 90, `+${secs}s PENALTY`, {
+    const pop  = this.add.text(WORLD_WIDTH / 2, PLAYER_SCREEN_Y - 90, `+${secs}s penalty`, {
       fontFamily: 'FoxwhelpFont',
-      fontSize:   '39px',
+      fontSize:   '60px',
       fontStyle:  'bold',
       color:      COLORS.POPUP_PENALTY,
       stroke:     '#000000',
@@ -541,20 +541,22 @@ export class GameScene extends Phaser.Scene {
   private buildHUD(): void {
     const hudBg = this.add.graphics().setDepth(DEPTH.HUD_BG);
     hudBg.fillStyle(COLORS.HUD_BG, 0.65);
-    hudBg.fillRect(0, 0, WORLD_WIDTH, 69);
+    hudBg.fillRect(0, 0, WORLD_WIDTH, 150);
 
-    const modeLabel = this.session.mode.replace(/_/g, ' ').toUpperCase();
-    this.add.text(27, 20, modeLabel, {
-      fontFamily: 'FoxwhelpFont',
-      fontSize:   '26px',
-      fontStyle:  'bold',
-      color:      COLORS.HUD_LABEL,
-    }).setDepth(DEPTH.HUD);
+    const mainScoreSize = 80;
+
+    // const modeLabel = this.session.mode.replace(/_/g, ' ');
+    // this.add.text(70, 44, modeLabel, {
+    //   fontFamily: 'FoxwhelpFont',
+    //   fontSize:   70 + 'px',
+    //   fontStyle:  '',
+    //   color:      COLORS.HUD_UTILITY,
+    // }).setDepth(DEPTH.HUD);
 
     const isFreeSki = this.session.mode === GameMode.FreeSki;
     this.distanceText = this.add.text(WORLD_WIDTH / 2, 20, '0 m', {
       fontFamily: 'FoxwhelpFont',
-      fontSize:   '27px',
+      fontSize:   mainScoreSize + 'px',
       fontStyle:  'bold',
       color:      COLORS.HUD_VALUE,
     }).setOrigin(0.5, 0).setDepth(DEPTH.HUD).setVisible(isFreeSki);
@@ -568,9 +570,9 @@ export class GameScene extends Phaser.Scene {
         case GameMode.Jump:    return `${best.score}`;
       }
     })();
-    this.add.text(WORLD_WIDTH / 2, 45, `Best: ${bestStr}`, {
+    this.add.text(WORLD_WIDTH / 2, 95, `best: ${bestStr}`, {
       fontFamily: 'FoxwhelpFont',
-      fontSize:   '18px',
+      fontSize:   '45px',
       color:      COLORS.HUD_LABEL,
     }).setOrigin(0.5, 0).setDepth(DEPTH.HUD);
 
@@ -578,20 +580,20 @@ export class GameScene extends Phaser.Scene {
 
     this.timerText = this.add.text(WORLD_WIDTH / 2, 20, '0:00.0', {
       fontFamily: 'FoxwhelpFont',
-      fontSize:   '27px',
+      fontSize:   mainScoreSize + 'px',
       fontStyle:  'bold',
       color:      COLORS.HUD_VALUE,
     }).setOrigin(0.5, 0).setDepth(DEPTH.HUD).setVisible(isTimeTrial);
 
     const isJump = this.session.mode === GameMode.Jump;
-    this.jumpScoreText = this.add.text(WORLD_WIDTH / 2, 20, 'Score: 0', {
+    this.jumpScoreText = this.add.text(WORLD_WIDTH / 2, 20, 'score: 0', {
       fontFamily: 'FoxwhelpFont',
-      fontSize:   '27px',
+      fontSize:   mainScoreSize + 'px',
       fontStyle:  'bold',
       color:      COLORS.HUD_VALUE,
     }).setOrigin(0.5, 0).setDepth(DEPTH.HUD).setVisible(isJump);
 
-    this.yetiWarning = this.add.text(27, 20, '⚠ YETI', {
+    this.yetiWarning = this.add.text(27, 20, '! YETI', {
       fontFamily: 'FoxwhelpFont',
       fontSize:   '24px',
       fontStyle:  'bold',
@@ -608,15 +610,15 @@ export class GameScene extends Phaser.Scene {
     });
 
     // Pause button — top-right corner, finger-friendly hit area
-    const pauseBtn = this.add.text(WORLD_WIDTH - 27, 20, '⏸', {
+    const pauseBtn = this.add.text(WORLD_WIDTH - 57, 44, 'pause', {
       fontFamily: 'FoxwhelpFont',
-      fontSize:   '33px',
+      fontSize:   70 + 'px',
       color:      COLORS.HUD_LABEL,
     }).setOrigin(1, 0).setDepth(DEPTH.HUD).setInteractive({ useHandCursor: true });
 
     // Invisible hit area larger than the glyph for easy tapping
-    const pauseHit = this.add.rectangle(WORLD_WIDTH - 27, 34, 84, 69, 0xffffff, 0)
-      .setOrigin(1, 0.5).setDepth(DEPTH.HUD).setInteractive();
+    const pauseHit = this.add.rectangle(WORLD_WIDTH - 0, 0, 150, 150, 0xffffff, 0)
+      .setOrigin(1, 0).setDepth(DEPTH.HUD).setInteractive();
 
     const openPause = () => this.triggerPause();
     pauseBtn.on('pointerdown', openPause);
@@ -681,9 +683,9 @@ export class GameScene extends Phaser.Scene {
     }
 
     const lines = [
-      { text: `Course: ${cfg.displayName}`, size: '39px', fontStyle: 'bold',   underline: true  },
-      { text: `Personal best: ${bestStr}`,  size: '33px', fontStyle: 'normal', underline: false },
-      { text: `Seed: ${seed} (resets in ${formatTimeUntilMidnightUTC()})`, size: '27px', fontStyle: 'normal', underline: false },
+      { text: `course: ${cfg.displayName}`, size: '70px', fontStyle: 'bold',   underline: true  },
+      { text: `personal best: ${bestStr}`,  size: '55px', fontStyle: 'normal', underline: false },
+      { text: `seed: ${seed} (resets in ${formatTimeUntilMidnightUTC()})`, size: '55px', fontStyle: 'normal', underline: false },
     ];
     // lineH matches the marking-line spacing exactly so each text line stays
     // centred in one gap as the world scrolls.
@@ -693,7 +695,7 @@ export class GameScene extends Phaser.Scene {
     // announcementWorldY % 96 must equal 48 so the first line's centre lands
     // in the middle of a gap (gaps are centred at n*96 + 48 in world space).
     // 432 = 48 + 4*96, and puts all three lines on-screen at run start.
-    this.announcementWorldY = 432;
+    this.announcementWorldY = 912;
     const initScreenY = PLAYER_SCREEN_Y + this.announcementWorldY;
 
     this.announcementContainer = this.add.container(WORLD_WIDTH / 2, initScreenY).setDepth(DEPTH.GROUND).setAlpha(0.8);
@@ -839,9 +841,9 @@ export class GameScene extends Phaser.Scene {
   // Yeti warning overlay
   // ---------------------------------------------------------------------------
   private showYetiWarning(): void {
-    const warn = this.add.text(WORLD_WIDTH / 2, GAME_HEIGHT / 2 - 105, '⚠  THE YETI IS COMING  ⚠', {
+    const warn = this.add.text(WORLD_WIDTH / 2, GAME_HEIGHT / 2 - 105, '!! THE YETI IS COMING !!', {
       fontFamily: 'FoxwhelpFont',
-      fontSize:   '45px',
+      fontSize:   '100px',
       fontStyle:  'bold',
       color:      COLORS.YETI_WARNING,
       stroke:     '#000000',

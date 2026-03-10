@@ -1,3 +1,14 @@
+// Debug: set to a GameMode string to skip straight to GameOverScene on startup.
+
+import { GAME_MODE_CONFIGS } from "@/config/GameModes";
+
+// Set to null to run the game normally.
+export const DEBUG_GAME_OVER_MODE: string | null 
+  = null;
+  // = GAME_MODE_CONFIGS.slalom.displayName;
+  // = GAME_MODE_CONFIGS.free_ski.displayName;
+  // = GAME_MODE_CONFIGS.jump.displayName;
+
 // World / chunk sizing
 export const WORLD_WIDTH       = 1920;  // px
 export const GAME_HEIGHT       = 1080;  // px
@@ -122,12 +133,11 @@ export const COLORS = {
   GATE_RIGHT:  0x3060e6,
 
   // --- HUD (Graphics API) ---
-  HUD_BG:      0x001020,
+  HUD_BG:      0x06192B,
   HUD_TEXT:    0xffffff,
 
   // --- UI backgrounds & overlays ---
   OVERLAY:          0x000020,  // pause dim overlay
-  PAUSE_CARD:       0xa8d8f0,  // light-blue pause menu card
   GAME_OVER_BG_TOP: 0x0a1520,  // game-over gradient top
   GAME_OVER_BG_BOT: 0x162535,  // game-over gradient bottom
   UI_DIVIDER:       0x223344,  // horizontal divider lines
@@ -139,8 +149,9 @@ export const COLORS = {
   CARD_HOVER: 0xd0dcec,  // mode-select card hovered
 
   // --- HUD text (CSS strings) ---
-  HUD_LABEL:    '#aaaacc',  // secondary labels (mode name, best, pause btn)
+  HUD_LABEL:    '#C0C0D5',  // secondary labels (mode name, best, pause btn)
   HUD_VALUE:    '#ffcc00',  // primary values (distance, timer, score, same-score)
+  HUD_UTILITY:  '#E9E9E9',
   YETI_WARNING: '#c8ddf0',  // "⚠ THE YETI IS COMING"
 
   // --- Popup floaters (CSS strings) ---

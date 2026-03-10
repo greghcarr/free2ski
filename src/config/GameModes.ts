@@ -33,15 +33,15 @@ export interface GameModeConfig {
 export const GAME_MODE_CONFIGS: Record<GameMode, GameModeConfig> = {
   [GameMode.FreeSki]: {
     mode: GameMode.FreeSki,
-    displayName: 'Free Ski',
-    description: 'Go as far as you can. Watch out for the yeti.',
+    displayName: 'free ski',
+    description: 'go as far as you can. watch out for the yeti!',
     yetiEnabled: true,
     yetiSpawnDistance: 1500,
   },
   [GameMode.Slalom]: {
     mode: GameMode.Slalom,
-    displayName: 'Slalom',
-    description: 'Race through 25 gates as fast as possible. Missing a gate adds +5s.',
+    displayName: 'slalom',
+    description: 'race through 25 gates. missing a gate adds 5s.',
     yetiEnabled: false,
     yetiSpawnDistance: 0,
     gateConfig: {
@@ -55,8 +55,8 @@ export const GAME_MODE_CONFIGS: Record<GameMode, GameModeConfig> = {
   },
   [GameMode.Jump]: {
     mode: GameMode.Jump,
-    displayName: 'Jump',
-    description: 'Hit ramps and score big air.',
+    displayName: 'jump',
+    description: 'hit ramps and score big air.',
     yetiEnabled: false,
     yetiSpawnDistance: 0,
     jumpConfig: {
