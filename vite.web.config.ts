@@ -23,7 +23,6 @@ export default defineConfig({
     '__STEAM_ENABLED__': false,
   },
   server: {
-    host: true,
     port: 8080,
     hmr: true,
   },

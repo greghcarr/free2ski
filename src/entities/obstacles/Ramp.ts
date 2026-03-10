@@ -3,9 +3,9 @@ import { ObstacleBase } from './ObstacleBase';
 import { COLORS, DEPTH } from '@/data/constants';
 
 // Top-down dimensions: wider than deep (horizontal platform)
-const RAMP_W     = 70;   // px horizontal width (visual drawn at 1.5× scale)
-const RAMP_D     = 28;   // px vertical depth (visual drawn at 1.5× scale)
-const HIT_RADIUS = 42;   // generous — ramp should be easy to trigger
+const RAMP_W     = 70;   // px horizontal width
+const RAMP_D     = 28;   // px vertical depth (screen-Y)
+const HIT_RADIUS = 28;   // generous — ramp should be easy to trigger
 
 // Corner radii for the platform shape
 const CORNER = 7;
@@ -77,6 +77,5 @@ export class Ramp extends ObstacleBase {
 
     this.container = scene.add.container(worldX, 9_999, [gfx]);
     this.container.setDepth(DEPTH.GROUND);
-    this.container.setScale(1.5);
   }
 }

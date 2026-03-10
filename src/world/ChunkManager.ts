@@ -9,10 +9,10 @@ import { SlalomGate } from '@/entities/obstacles/SlalomGate';
 import type { ObstacleBase } from '@/entities/obstacles/ObstacleBase';
 
 // Circular hit radius for the player body (torso, not ski tips)
-const PLAYER_HIT_RADIUS = 18;
+const PLAYER_HIT_RADIUS = 12;
 
 // Axis-aligned pre-check range before the full sqrt
-const COLLISION_CHECK_RANGE = 120;
+const COLLISION_CHECK_RANGE = 80;
 
 export interface CollisionResult {
   crashed:    boolean;  // player hit a tree, rock, or gate pole

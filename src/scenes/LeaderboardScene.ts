@@ -13,23 +13,23 @@ export class LeaderboardScene extends Phaser.Scene {
     bg.fillGradientStyle(COLORS.SNOW_LIGHT, COLORS.SNOW_LIGHT, COLORS.SNOW_SHADOW, COLORS.SNOW_SHADOW, 1);
     bg.fillRect(0, 0, WORLD_WIDTH, GAME_HEIGHT);
 
-    this.add.text(WORLD_WIDTH / 2, 400, 'leaderboard', {
-      fontFamily: 'FoxwhelpFont',
-      fontSize: '100px',
+    this.add.text(WORLD_WIDTH / 2, 80, 'LEADERBOARD', {
+      fontFamily: 'sans-serif',
+      fontSize: '40px',
       fontStyle: 'bold',
       color: COLORS.UI_TITLE,
     }).setOrigin(0.5);
 
-    this.add.text(WORLD_WIDTH / 2, GAME_HEIGHT / 2, 'coming "soon"', {
-      fontFamily: 'FoxwhelpFont',
-      fontSize: '60px',
+    this.add.text(WORLD_WIDTH / 2, GAME_HEIGHT / 2, 'Steam leaderboards — coming soon.\nPlay some runs first!', {
+      fontFamily: 'sans-serif',
+      fontSize: '22px',
       color: COLORS.UI_SUBTITLE,
       align: 'center',
     }).setOrigin(0.5);
 
-    this.add.text(60, GAME_HEIGHT - 100, '← back', {
-      fontFamily: 'FoxwhelpFont',
-      fontSize: '50px',
+    this.add.text(60, GAME_HEIGHT - 50, '← Back', {
+      fontFamily: 'sans-serif',
+      fontSize: '20px',
       color: COLORS.UI_TITLE,
     }).setInteractive({ useHandCursor: true })
       .on('pointerdown', () => this.scene.start(SceneKey.MainMenu));
