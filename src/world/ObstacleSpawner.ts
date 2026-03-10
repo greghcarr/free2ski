@@ -19,34 +19,34 @@ export interface ObstacleSpawnPoint {
 }
 
 // Horizontal margins (course obstacles)
-const X_MIN = 135;
-const X_MAX = WORLD_WIDTH - 135;
+const X_MIN = 90;
+const X_MAX = WORLD_WIDTH - 90;
 
 // Forest border
 // Wide: FreeSki / Jump — push the "hug the edge" exploit out as far as possible.
 // Narrow: Slalom — keep clear of gate poles (worst-case left pole ≈ x 135).
 const FOREST_DEPTH_WIDE   = COURSE_EDGE_WIDE;
 const FOREST_DEPTH_NARROW = COURSE_EDGE_NARROW;
-const FOREST_ROW_HEIGHT   = 90;   // px between sample rows
+const FOREST_ROW_HEIGHT   = 60;   // px between sample rows
 const FOREST_CANDS        = 8;    // candidates tested per row per side
 const FOREST_MIN_SPACING  = 16;   // tight spacing for dense packing
-const FOREST_GRACE_Y      = 150;  // px from chunk top before forest begins
+const FOREST_GRACE_Y      = 100;  // px from chunk top before forest begins
 
 // Minimum distance between obstacles (prevents total overlap)
-const MIN_SPACING = 60;
+const MIN_SPACING = 40;
 
 // Y offset into the chunk before first obstacle
-const CHUNK_GRACE_Y = 180;
+const CHUNK_GRACE_Y = 120;
 
 // Slalom gate layout constants
-const GATE_SPACING    = 840;   // px between consecutive gates
-const GATE_X_LEFT     = 450;   // centre X for left-side gates
-const GATE_X_RIGHT    = 1470;  // centre X for right-side gates
-const GATE_X_JITTER   = 150;   // ±px random offset from the centre line
-const GATE_Y_JITTER   = 105;   // ±px random offset along the fall line
+const GATE_SPACING    = 560;   // px between consecutive gates
+const GATE_X_LEFT     = 300;   // centre X for left-side gates
+const GATE_X_RIGHT    = 980;   // centre X for right-side gates
+const GATE_X_JITTER   = 100;   // ±px random offset from the centre line
+const GATE_Y_JITTER   = 70;    // ±px random offset along the fall line
 
 // Buffer inside the yellow boundary line where no gate pole may appear
-const GATE_BOUNDARY_BUFFER = 60;
+const GATE_BOUNDARY_BUFFER = 40;
 
 // Minimum/maximum gate centre X so neither pole crosses into the buffer zone
 const GATE_CENTRE_MIN = COURSE_EDGE_NARROW + GATE_BOUNDARY_BUFFER + GATE_GAP_WIDTH / 2 + GATE_POLE_RADIUS;
