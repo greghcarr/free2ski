@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { SceneKey } from '@/config/SceneKeys';
 import { WORLD_WIDTH, GAME_HEIGHT, COLORS } from '@/data/constants';
-import { addVersionLabel } from '@/ui/versionLabel';
+import { addVersionLabel, addUsernameLabel } from '@/ui/versionLabel';
 import { MenuNav, type MenuNavItem } from '@/ui/MenuNav';
 import type { SessionConfig } from '@/config/GameConfig';
 import { GameMode } from '@/config/GameModes';
@@ -59,6 +59,7 @@ export class PauseScene extends Phaser.Scene {
     }
 
     addVersionLabel(this, COLORS.VERSION_GAME);
+    addUsernameLabel(this, COLORS.VERSION_GAME);
   }
 
   private createButton(x: number, y: number, label: string, onClick: () => void, onHover?: () => void): MenuNavItem {

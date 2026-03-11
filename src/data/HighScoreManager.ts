@@ -1,5 +1,7 @@
 import { GameMode } from '@/config/GameModes';
 import { EMPTY_SAVE, type RunRecord, type SaveData } from './SaveData';
+import { getDailySeed } from '@/utils/MathUtils';
+import { generateUsername } from '@/utils/UsernameGenerator';
 
 const STORAGE_KEY = 'skifree_save_v1';
 
@@ -61,6 +63,21 @@ export class HighScoreManager {
     return this.load().totalRuns;
   }
 
+  static getOrCreateUsername(): string {
+    const data = this.load();
+    if (data.username) return data.username;
+    const name = generateUsername();
+    data.username = name;
+    this.persist(data);
+    return name;
+  }
+
+  static getDailyBest(mode: GameMode): RunRecord | null {
+    const daily = this.load().dailyBests?.[mode];
+    if (!daily || daily.seed !== getDailySeed()) return null;
+    return daily.record;
+  }
+
   // ---------------------------------------------------------------------------
   // Submit a completed run
   // ---------------------------------------------------------------------------
@@ -73,7 +90,7 @@ export class HighScoreManager {
     const data     = this.load();
     const prevBest = data.highScores[mode] ?? null;
     const current: RunRecord = {
-      distance, score, timestamp: Date.now(),
+      distance, score, timestamp: Date.now(), seed: getDailySeed(),
       ...(timeMs !== undefined && { timeMs }),
     };
 
@@ -91,6 +108,20 @@ export class HighScoreManager {
       data.highScores[mode] = current;
     }
 
+    // Track daily best (same comparison logic, scoped to today's seed)
+    const todaySeed  = getDailySeed();
+    const prevDaily  = data.dailyBests?.[mode];
+    const isNewDaily = !prevDaily || prevDaily.seed !== todaySeed
+      || (timeMs !== undefined
+        ? timeMs < (prevDaily.record.timeMs ?? Infinity)
+        : mode === GameMode.Jump
+          ? current.score > (prevDaily.record.score ?? 0)
+          : current.distance > prevDaily.record.distance);
+    if (!data.dailyBests) data.dailyBests = {};
+    if (isNewDaily) {
+      data.dailyBests[mode] = { seed: todaySeed, record: current };
+    }
+
     this.persist(data);
     return { isNewBest, prevBest, current };
   }
@@ -99,9 +130,13 @@ export class HighScoreManager {
   // Dev / testing helpers
   // ---------------------------------------------------------------------------
 
-  /** Clears all saved data — useful for testing. */
+  /** Clears all saved data — useful for testing. Preserves username. */
   static reset(): void {
+    const username = this.getOrCreateUsername();
     this.cache = null;
     try { localStorage.removeItem(STORAGE_KEY); } catch { /* ignore */ }
+    const fresh = this.load();
+    fresh.username = username;
+    this.persist(fresh);
   }
 }

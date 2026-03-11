@@ -1,9 +1,9 @@
 import Phaser from 'phaser';
 import { SceneKey } from '@/config/SceneKeys';
 import { GameMode, GAME_MODE_CONFIGS } from '@/config/GameModes';
-import { WORLD_WIDTH, GAME_HEIGHT, COLORS, GATE_POLE_RADIUS } from '@/data/constants';
+import { WORLD_WIDTH, GAME_HEIGHT, COLORS, GATE_POLE_RADIUS, BACK_BTN_Y } from '@/data/constants';
 import type { SessionConfig } from '@/config/GameConfig';
-import { addVersionLabel } from '@/ui/versionLabel';
+import { addVersionLabel, addUsernameLabel } from '@/ui/versionLabel';
 import { HighScoreManager } from '@/data/HighScoreManager';
 import { formatRaceTime } from '@/utils/MathUtils';
 import { type MenuNavItem } from '@/ui/MenuNav';
@@ -50,14 +50,14 @@ export class ModeSelectScene extends Phaser.Scene {
 
     // Back button
     const backGoTo = () => this.scene.start(SceneKey.MainMenu);
-    const backText = this.add.text(60, GAME_HEIGHT - 100, '← back', {
+    const backText = this.add.text(60, BACK_BTN_Y, '← back', {
       fontFamily: 'FoxwhelpFont',
       fontSize: '50px',
       color: COLORS.UI_TITLE,
     }).setInteractive({ useHandCursor: true })
       .on('pointerdown', backGoTo);
 
-    const backUlY = (GAME_HEIGHT - 100) + backText.displayHeight - 6;
+    const backUlY = BACK_BTN_Y + backText.displayHeight - 6;
     const prefixMeasure = this.add.text(0, 0, '← ', { fontFamily: 'FoxwhelpFont', fontSize: '50px' }).setVisible(false);
     const backWordX = 60 + prefixMeasure.displayWidth;
     const backWordW = backText.displayWidth - prefixMeasure.displayWidth;
@@ -136,6 +136,7 @@ export class ModeSelectScene extends Phaser.Scene {
     }
 
     addVersionLabel(this);
+    addUsernameLabel(this);
   }
 
   private createModeCard(
@@ -178,13 +179,19 @@ export class ModeSelectScene extends Phaser.Scene {
     // Mode illustration in the lower half of the card
     this.drawModeIllustration(mode, cx, cy);
 
-    this.add.text(cx, cy + 250, this.bestLabel(mode), {
+    this.add.text(cx, cy + 225, this.bestLabel(mode), {
       fontFamily: 'FoxwhelpFont',
       fontSize: '38px',
       fontStyle: 'bold italic',
       color: COLORS.UI_SUBTITLE,
-      // stroke: COLORS.UI_TITLE,
-      // strokeThickness: 10,
+      align: 'center',
+    }).setOrigin(0.5, 1);
+
+    this.add.text(cx, cy + 275, this.dailyLabel(mode), {
+      fontFamily: 'FoxwhelpFont',
+      fontSize: '38px',
+      fontStyle: 'bold italic',
+      color: COLORS.UI_SUBTITLE,
       align: 'center',
     }).setOrigin(0.5, 1);
 
@@ -198,6 +205,16 @@ export class ModeSelectScene extends Phaser.Scene {
       setFocus: (f) => draw(f),
       activate: onClick,
     };
+  }
+
+  private dailyLabel(mode: GameMode): string {
+    const best = HighScoreManager.getDailyBest(mode);
+    if (!best) return 'daily: —';
+    switch (mode) {
+      case GameMode.FreeSki: return `daily: ${best.distance.toLocaleString()} m`;
+      case GameMode.Slalom:  return best.timeMs !== undefined ? `daily: ${formatRaceTime(best.timeMs)}` : 'daily: —';
+      case GameMode.Jump:    return `daily: ${best.score}`;
+    }
   }
 
   private bestLabel(mode: GameMode): string {

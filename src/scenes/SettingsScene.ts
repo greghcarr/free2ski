@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { SceneKey } from '@/config/SceneKeys';
-import { WORLD_WIDTH, GAME_HEIGHT, COLORS } from '@/data/constants';
-import { addVersionLabel } from '@/ui/versionLabel';
+import { WORLD_WIDTH, GAME_HEIGHT, COLORS, BACK_BTN_Y } from '@/data/constants';
+import { addVersionLabel, addUsernameLabel } from '@/ui/versionLabel';
 import { HighScoreManager } from '@/data/HighScoreManager';
 import { type MenuNavItem } from '@/ui/MenuNav';
 
@@ -31,14 +31,14 @@ export class SettingsScene extends Phaser.Scene {
 
     // Back button
     const backGoTo = () => this.scene.start(SceneKey.MainMenu);
-    const backText = this.add.text(60, GAME_HEIGHT - 100, '← back', {
+    const backText = this.add.text(60, BACK_BTN_Y, '← back', {
       fontFamily: 'FoxwhelpFont',
       fontSize: '50px',
       color: COLORS.UI_TITLE,
     }).setInteractive({ useHandCursor: true })
       .on('pointerdown', backGoTo);
 
-    const backUlY = (GAME_HEIGHT - 100) + backText.displayHeight - 6;
+    const backUlY = (BACK_BTN_Y) + backText.displayHeight - 6;
     const prefixMeasure = this.add.text(0, 0, '← ', { fontFamily: 'FoxwhelpFont', fontSize: '50px' }).setVisible(false);
     const backWordX = 60 + prefixMeasure.displayWidth;
     const backWordW = backText.displayWidth - prefixMeasure.displayWidth;
@@ -91,6 +91,7 @@ export class SettingsScene extends Phaser.Scene {
     }
 
     addVersionLabel(this);
+    addUsernameLabel(this);
   }
 
   private createDebugButton(x: number, y: number, label: string, onClick: () => void): MenuNavItem {

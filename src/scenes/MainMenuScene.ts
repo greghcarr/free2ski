@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { SceneKey } from '@/config/SceneKeys';
 import { WORLD_WIDTH, GAME_HEIGHT, COLORS, MAIN_MENU_BADGE_TEXT } from '@/data/constants';
-import { addVersionLabel } from '@/ui/versionLabel';
+import { addVersionLabel, addUsernameLabel } from '@/ui/versionLabel';
 import { MenuNav, type MenuNavItem } from '@/ui/MenuNav';
 
 export class MainMenuScene extends Phaser.Scene {
@@ -53,16 +53,13 @@ export class MainMenuScene extends Phaser.Scene {
 
     // Menu buttons
     let nav: MenuNav | undefined;
-    const playItem        = this.createButton(WORLD_WIDTH / 2, 630, 650, 145, 'play', 100, 'bold',      () => { this.scene.start(SceneKey.ModeSelect); },   () => nav?.hoverAt(0));
-    // const leaderboardItem = this.createButton(WORLD_WIDTH / 2, 810, 410, 105, 'leaderboard', 50, 'bold', () => { this.scene.start(SceneKey.Leaderboard); }, () => nav?.hoverAt(1));
-    const settingsItem    = this.createButton(WORLD_WIDTH / 2, 780, 400, 105, 'settings', 60, 'bold',  () => { this.scene.start(SceneKey.Settings); },    () => nav?.hoverAt(1));
-    nav = new MenuNav(this, [
-      playItem, 
-      // leaderboardItem, 
-      settingsItem
-    ]);
+    const playItem        = this.createButton(WORLD_WIDTH / 2, 600, 650, 145, 'play',        100, 'bold', () => { this.scene.start(SceneKey.ModeSelect); },   () => nav?.hoverAt(0));
+    const leaderboardItem = this.createButton(WORLD_WIDTH / 2, 750, 410, 105, 'leaderboard',  50, 'bold', () => { this.scene.start(SceneKey.Leaderboard); }, () => nav?.hoverAt(1));
+    const settingsItem    = this.createButton(WORLD_WIDTH / 2, 870, 350, 85, 'settings',     60, 'bold', () => { this.scene.start(SceneKey.Settings); },    () => nav?.hoverAt(2));
+    nav = new MenuNav(this, [playItem, leaderboardItem, settingsItem]);
 
     addVersionLabel(this);
+    addUsernameLabel(this);
   }
 
   private createButton(x: number, y: number, width: number, height: number, label: string, fontSize: number, fontStyle: string, onClick: () => void, onHover?: () => void): MenuNavItem {

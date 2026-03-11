@@ -1,12 +1,13 @@
 import Phaser from 'phaser';
 import { SceneKey } from '@/config/SceneKeys';
 import { WORLD_WIDTH, GAME_HEIGHT, PX_PER_METER, JUMP_COURSE_DISTANCE_M, COLORS } from '@/data/constants';
-import { addVersionLabel } from '@/ui/versionLabel';
+import { addVersionLabel, addUsernameLabel } from '@/ui/versionLabel';
 import { HighScoreManager, type SubmitResult } from '@/data/HighScoreManager';
 import type { SessionConfig } from '@/config/GameConfig';
 import { GameMode } from '@/config/GameModes';
 import { formatRaceTime } from '@/utils/MathUtils';
 import { MenuNav, type MenuNavItem } from '@/ui/MenuNav';
+import { pushScores } from '@/services/LeaderboardService';
 
 const LAYOUT = {
   // Mode label (top of screen)
@@ -134,11 +135,14 @@ export class GameOverScene extends Phaser.Scene {
       this.summary.finishTimeMs,
     );
 
+    pushScores().catch(() => { /* network unavailable */ });
+
     this.buildBackground();
     this.buildHeadline();
     this.buildStats(result);
     this.buildButtons();
     addVersionLabel(this, COLORS.VERSION_GAMEOVER);
+    addUsernameLabel(this, COLORS.VERSION_GAMEOVER);
   }
 
   // ---------------------------------------------------------------------------

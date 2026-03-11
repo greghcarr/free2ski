@@ -29,6 +29,16 @@ export function formatTimeUntilMidnightUTC(): string {
 }
 
 /**
+ * Formats a getDailySeed() integer (e.g. 20260310) as a short date string (e.g. "Mar 10").
+ */
+export function formatSeedDate(seed: number): string {
+  const year  = Math.floor(seed / 10000);
+  const month = Math.floor((seed % 10000) / 100) - 1; // 0-indexed for Date
+  const day   = seed % 100;
+  return new Date(year, month, day).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+/**
  * Formats a duration in milliseconds as a race time string.
  * e.g. 83_400 ms → "1:23.4"
  */

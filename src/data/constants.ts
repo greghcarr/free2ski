@@ -47,6 +47,9 @@ export const JUMP_VISUAL_HEIGHT     = 75;   // px the container rises at apex
 export const JUMP_COURSE_DISTANCE_M = 5000; // metres to the finish line
 export const FINISH_LINE_H          = 96;   // px height of the checkered band
 
+// UI layout
+export const BACK_BTN_Y = GAME_HEIGHT - 140;  // y position of "← back" buttons across scenes
+
 // Course boundary (distance from each side edge where the forest begins)
 // These drive both the forest-tree spawner and the on-slope boundary lines.
 export const COURSE_EDGE_WIDE   = 420;  // FreeSki, Jump

@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { SceneKey } from '@/config/SceneKeys';
-import { addVersionLabel } from '@/ui/versionLabel';
+import { addVersionLabel, addUsernameLabel } from '@/ui/versionLabel';
 import {
   WORLD_WIDTH,
   GAME_HEIGHT,
@@ -627,6 +627,7 @@ export class GameScene extends Phaser.Scene {
     pauseHit.on('pointerdown', openPause);
 
     addVersionLabel(this, COLORS.VERSION_GAME);
+    addUsernameLabel(this, COLORS.VERSION_GAME);
   }
 
   // ---------------------------------------------------------------------------
@@ -684,10 +685,19 @@ export class GameScene extends Phaser.Scene {
       case GameMode.Jump:    bestStr = best ? `${best.score}` : '–'; break;
     }
 
+    const dailyBest = HighScoreManager.getDailyBest(mode);
+    let dailyStr: string;
+    switch (mode) {
+      case GameMode.FreeSki: dailyStr = dailyBest ? `${dailyBest.distance.toLocaleString()} m` : '–'; break;
+      case GameMode.Slalom:  dailyStr = (dailyBest && dailyBest.timeMs !== undefined) ? formatRaceTime(dailyBest.timeMs) : '–'; break;
+      case GameMode.Jump:    dailyStr = dailyBest ? `${dailyBest.score}` : '–'; break;
+    }
+
     const lines = [
-      { text: `course: ${cfg.displayName}`, size: '70px', fontStyle: 'bold',   underline: true  },
-      { text: `personal best: ${bestStr}`,  size: '55px', fontStyle: 'normal', underline: false },
-      { text: `seed: ${seed} (resets in ${formatTimeUntilMidnightUTC()})`, size: '55px', fontStyle: 'normal', underline: false },
+      { text: `course: ${cfg.displayName}`,                                    size: '70px', fontStyle: 'bold',   underline: true  },
+      { text: `personal best: ${bestStr}`,                                      size: '55px', fontStyle: 'normal', underline: false },
+      { text: `daily: ${dailyStr}`,                                             size: '55px', fontStyle: 'normal', underline: false },
+      { text: `seed: ${seed} (resets in ${formatTimeUntilMidnightUTC()})`,      size: '55px', fontStyle: 'normal', underline: false },
     ];
     // lineH matches the marking-line spacing exactly so each text line stays
     // centred in one gap as the world scrolls.
