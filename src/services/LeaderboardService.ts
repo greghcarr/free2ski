@@ -61,6 +61,25 @@ export async function submitRun(
 }
 
 /**
+ * Returns the total number of runs ever recorded across all modes and players.
+ * Throws on network error so the caller can fall back gracefully.
+ */
+export async function fetchTotalRuns(): Promise<number> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 5000);
+  try {
+    const { count, error } = await supabase
+      .from('runs')
+      .select('*', { count: 'exact', head: true })
+      .abortSignal(controller.signal);
+    if (error) throw new Error(error.message);
+    return count ?? 0;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+/**
  * Fetch the top 10 runs for a given mode, across all players.
  * Returns an empty array on network error.
  */

@@ -5,6 +5,7 @@ import { addVersionLabel, addUsernameLabel } from '@/ui/versionLabel';
 import { GameMode, GAME_MODE_CONFIGS } from '@/config/GameModes';
 import { fetchTopScores, type LeaderboardRow } from '@/services/LeaderboardService';
 import { formatRaceTime } from '@/utils/MathUtils';
+import { HighScoreManager } from '@/data/HighScoreManager';
 
 const MODES: GameMode[] = [GameMode.Slalom, GameMode.FreeSki, GameMode.Jump];
 
@@ -43,6 +44,8 @@ export class LeaderboardScene extends Phaser.Scene {
     this.tabGraphics = [];
     this.tabLabels   = [];
     this.contentContainer = null;
+    this.tabIndex = MODES.indexOf(GameMode.FreeSki);
+    this.isBack   = false;
     // Background
     const bg = this.add.graphics();
     bg.fillGradientStyle(COLORS.SNOW_LIGHT, COLORS.SNOW_LIGHT, COLORS.SNOW_SHADOW, COLORS.SNOW_SHADOW, 1);
@@ -113,7 +116,7 @@ export class LeaderboardScene extends Phaser.Scene {
       color:      COLORS.UI_TITLE,
     }).setInteractive({ useHandCursor: true })
       .on('pointerdown', () => this.scene.start(SceneKey.MainMenu))
-      .on('pointerover', () => { this.isBack = true; this.setBackFocus(true); })
+      .on('pointerover', () => { this.isBack = true;  this.setBackFocus(true);  })
       .on('pointerout',  () => { this.isBack = false; this.setBackFocus(false); });
 
     // Back underline (keyboard focus indicator, mirrors ModeSelectScene)
@@ -130,26 +133,26 @@ export class LeaderboardScene extends Phaser.Scene {
     // Keyboard navigation
     if (this.input.keyboard) {
       const kb = this.input.keyboard;
-      kb.on('keydown-LEFT', () => {
-        if (this.isBack) return;
+      kb.on('keydown-LEFT',  () => {
+        this.isBack = false; this.setBackFocus(false);
         this.tabIndex = (this.tabIndex - 1 + MODES.length) % MODES.length;
         this.switchTab(MODES[this.tabIndex]!);
       });
       kb.on('keydown-RIGHT', () => {
-        if (this.isBack) return;
+        this.isBack = false; this.setBackFocus(false);
         this.tabIndex = (this.tabIndex + 1) % MODES.length;
         this.switchTab(MODES[this.tabIndex]!);
       });
-      kb.on('keydown-DOWN', () => {
-        if (!this.isBack) { this.isBack = true; this.setBackFocus(true); }
-        else              { this.isBack = false; this.setBackFocus(false); }
+      kb.on('keydown-DOWN',  () => {
+        this.isBack = !this.isBack;
+        this.setBackFocus(this.isBack);
       });
-      kb.on('keydown-UP', () => {
-        if (!this.isBack) { this.isBack = true; this.setBackFocus(true); }
-        else              { this.isBack = false; this.setBackFocus(false); }
+      kb.on('keydown-UP',    () => {
+        this.isBack = !this.isBack;
+        this.setBackFocus(this.isBack);
       });
-      kb.on('keydown-SPACE', () => { if (this.isBack) this.scene.start(SceneKey.MainMenu); });
       kb.on('keydown-ENTER', () => { if (this.isBack) this.scene.start(SceneKey.MainMenu); });
+      kb.on('keydown-SPACE', () => { if (this.isBack) this.scene.start(SceneKey.MainMenu); });
       kb.on('keydown-ESC',   () => this.scene.start(SceneKey.MainMenu));
     }
 
@@ -251,6 +254,7 @@ export class LeaderboardScene extends Phaser.Scene {
 
     const rowStyle   = { fontFamily: 'FoxwhelpFont', fontSize: '50px', color: this.modeColorStr(mode!) };
     const mutedStyle = { fontFamily: 'FoxwhelpFont', fontSize: '46px', color: COLORS.UI_SECONDARY };
+    const myUsername = HighScoreManager.getOrCreateUsername();
 
     rows.forEach((row, i) => {
       const y = ROW_START_Y + i * ROW_H;
@@ -265,12 +269,28 @@ export class LeaderboardScene extends Phaser.Scene {
       const scoreStr = this.formatScore(row.score, mode!);
       const seedStr  = new Date(row.playedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 
-      this.contentContainer!.add([
-        this.add.text(COL_RANK,     y, `${row.rank}`,  rowStyle).setOrigin(1, 0.5),
-        this.add.text(COL_USERNAME, y, row.username,   rowStyle).setOrigin(0, 0.5),
-        this.add.text(COL_SCORE,    y, scoreStr,       rowStyle).setOrigin(1, 0.5),
-        this.add.text(COL_SEED,     y, seedStr,      mutedStyle).setOrigin(1, 0.5),
-      ]);
+      const usernameText = this.add.text(COL_USERNAME, y, row.username, rowStyle).setOrigin(0, 0.5);
+      const items: Phaser.GameObjects.GameObject[] = [
+        this.add.text(COL_RANK, y, `${row.rank}`, rowStyle).setOrigin(1, 0.5),
+        usernameText,
+        this.add.text(COL_SCORE, y, scoreStr,  rowStyle).setOrigin(1, 0.5),
+        this.add.text(COL_SEED,  y, seedStr, mutedStyle).setOrigin(1, 0.5),
+      ];
+
+      if (row.username === myUsername) {
+        items.push(
+          this.add.text(COL_USERNAME + usernameText.displayWidth + 20, y, '← this is you', {
+            fontFamily:      'FoxwhelpFont',
+            fontSize:        '36px',
+            letterSpacing:   2,
+            color:           '#FFD700',
+            stroke:          this.modeColorStr(mode!),
+            strokeThickness: 10,
+          }).setOrigin(0, 0.5),
+        );
+      }
+
+      this.contentContainer!.add(items);
     });
   }
 
