@@ -40,10 +40,14 @@ export async function pushScores(): Promise<void> {
     row.jump_seed = jump.seed ?? null;
   }
 
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 5000);
   try {
-    await supabase.from('users').upsert(row, { onConflict: 'username' });
+    await supabase.from('users').upsert(row, { onConflict: 'username' }).abortSignal(controller.signal);
   } catch {
     // Network unavailable — silently ignore
+  } finally {
+    clearTimeout(timeout);
   }
 }
 
