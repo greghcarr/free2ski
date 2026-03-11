@@ -6,6 +6,17 @@ export interface PatchEntry {
 
 export const PATCH_NOTES: PatchEntry[] = [
   {
+    version: 'v0.3.4-pre-alpha',
+    date:    'Mar 11, 2026',
+    notes: [
+      'main menu now has a proper mountain scene — sky, peaks, trees, and falling snow',
+      'skier character sits on a log by a campfire with crossed skis planted in the snow',
+      'campfire flames animate with a flickering effect',
+      'title slides in from above and gently floats',
+      'menu buttons now fade and slide in with staggered timing',
+    ],
+  },
+  {
     version: 'v0.3.2-pre-alpha',
     date:    'Mar 11, 2026',
     notes: [
