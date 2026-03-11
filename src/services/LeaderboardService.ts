@@ -79,7 +79,7 @@ export async function fetchTopScores(mode: GameMode): Promise<LeaderboardRow[]> 
 
     if (error || !data) throw new Error(error?.message ?? 'no data');
 
-    return (data as Record<string, unknown>[]).map((row, i) => ({
+    return (data as unknown as Record<string, unknown>[]).map((row, i) => ({
       rank:     i + 1,
       username: row['username'] as string,
       score:    row[best]       as number,
