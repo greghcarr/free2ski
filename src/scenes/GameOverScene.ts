@@ -7,7 +7,8 @@ import type { SessionConfig } from '@/config/GameConfig';
 import { GameMode } from '@/config/GameModes';
 import { formatRaceTime } from '@/utils/MathUtils';
 import { MenuNav, type MenuNavItem } from '@/ui/MenuNav';
-import { pushScores } from '@/services/LeaderboardService';
+import { submitRun } from '@/services/LeaderboardService';
+import { getDailySeed } from '@/utils/MathUtils';
 
 const LAYOUT = {
   // Mode label (top of screen)
@@ -135,7 +136,24 @@ export class GameOverScene extends Phaser.Scene {
       this.summary.finishTimeMs,
     );
 
-    pushScores().catch(() => { /* network unavailable */ });
+    // Submit this run to the global leaderboard
+    const { mode } = this.summary.session;
+    let leaderboardScore: number | null = null;
+    if (mode === GameMode.FreeSki) {
+      leaderboardScore = this.summary.distanceM;
+    } else if (mode === GameMode.Slalom && this.summary.finishTimeMs !== undefined) {
+      leaderboardScore = this.summary.finishTimeMs;
+    } else if (mode === GameMode.Jump) {
+      leaderboardScore = this.summary.score;
+    }
+    if (leaderboardScore !== null) {
+      submitRun(
+        HighScoreManager.getOrCreateUsername(),
+        mode,
+        leaderboardScore,
+        getDailySeed(),
+      ).catch(() => { /* network unavailable */ });
+    }
 
     this.buildBackground();
     this.buildHeadline();

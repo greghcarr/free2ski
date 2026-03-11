@@ -4,7 +4,7 @@ import { WORLD_WIDTH, GAME_HEIGHT, COLORS, BACK_BTN_Y } from '@/data/constants';
 import { addVersionLabel, addUsernameLabel } from '@/ui/versionLabel';
 import { GameMode, GAME_MODE_CONFIGS } from '@/config/GameModes';
 import { fetchTopScores, type LeaderboardRow } from '@/services/LeaderboardService';
-import { formatRaceTime, formatSeedDate } from '@/utils/MathUtils';
+import { formatRaceTime } from '@/utils/MathUtils';
 
 const MODES: GameMode[] = [GameMode.Slalom, GameMode.FreeSki, GameMode.Jump];
 
@@ -95,7 +95,7 @@ export class LeaderboardScene extends Phaser.Scene {
     this.add.text(COL_RANK,     HEADER_Y, '#',      headerStyle).setOrigin(1, 0);
     this.add.text(COL_USERNAME, HEADER_Y, 'player', headerStyle).setOrigin(0, 0);
     this.add.text(COL_SCORE,    HEADER_Y, 'score',  headerStyle).setOrigin(1, 0);
-    this.add.text(COL_SEED,     HEADER_Y, 'seed',   headerStyle).setOrigin(1, 0);
+    this.add.text(COL_SEED,     HEADER_Y, 'date',   headerStyle).setOrigin(1, 0);
 
     // Divider under headers
     const div = this.add.graphics();
@@ -263,7 +263,7 @@ export class LeaderboardScene extends Phaser.Scene {
       }
 
       const scoreStr = this.formatScore(row.score, mode!);
-      const seedStr  = row.seed !== null ? formatSeedDate(row.seed) : '—';
+      const seedStr  = new Date(row.playedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 
       this.contentContainer!.add([
         this.add.text(COL_RANK,     y, `${row.rank}`,  rowStyle).setOrigin(1, 0.5),

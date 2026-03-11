@@ -72,6 +72,46 @@ export class HighScoreManager {
     return name;
   }
 
+  /**
+   * Ensures the stored username is uniquely reserved in Supabase.
+   * Loops generating new candidates if the current one is already taken.
+   * If the network is unavailable the username is saved locally as unclaimed
+   * and this method will retry on the next call.
+   *
+   * Pass `claimFn` from LeaderboardService to avoid a circular import.
+   */
+  static async initUsername(
+    claimFn: (username: string) => Promise<boolean>,
+  ): Promise<void> {
+    const data = this.load();
+    if (data.usernameClaimed) return;
+
+    let candidate = data.username ?? generateUsername();
+
+    for (let attempt = 0; attempt < 20; attempt++) {
+      let claimed: boolean;
+      try {
+        claimed = await claimFn(candidate);
+      } catch {
+        // Network unavailable — save the candidate locally and retry next session
+        data.username = candidate;
+        data.usernameClaimed = false;
+        this.persist(data);
+        return;
+      }
+
+      if (claimed) {
+        data.username = candidate;
+        data.usernameClaimed = true;
+        this.persist(data);
+        return;
+      }
+
+      // Username taken — generate a fresh candidate and retry
+      candidate = generateUsername();
+    }
+  }
+
   static getDailyBest(mode: GameMode): RunRecord | null {
     const daily = this.load().dailyBests?.[mode];
     if (!daily || daily.seed !== getDailySeed()) return null;
