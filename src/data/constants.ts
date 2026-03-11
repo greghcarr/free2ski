@@ -1,5 +1,5 @@
 // Main menu badge text (golden rotating label above the title)
-export const MAIN_MENU_BADGE_TEXT = 'New UI wow!!';
+export const MAIN_MENU_BADGE_TEXT = 'leaderboards?!';
 
 // Debug: set to a GameMode string to skip straight to GameOverScene on startup.
 
