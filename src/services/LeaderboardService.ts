@@ -79,11 +79,11 @@ export async function fetchTopScores(mode: GameMode): Promise<LeaderboardRow[]> 
 
     if (error || !data) throw new Error(error?.message ?? 'no data');
 
-    return data.map((row, i) => ({
+    return (data as Record<string, unknown>[]).map((row, i) => ({
       rank:     i + 1,
-      username: row.username as string,
-      score:    row[best]    as number,
-      seed:     (row[seed]   as number | null) ?? null,
+      username: row['username'] as string,
+      score:    row[best]       as number,
+      seed:     (row[seed]      as number | null) ?? null,
     }));
   } finally {
     clearTimeout(timeout);
