@@ -167,6 +167,64 @@ export class HighScoreManager {
   }
 
   // ---------------------------------------------------------------------------
+  // Legacy score backfill
+  // ---------------------------------------------------------------------------
+
+  /**
+   * One-time migration: submits any local personal bests that existed before
+   * the online leaderboard was introduced. Safe to call on every load — it
+   * no-ops after the first successful run.
+   *
+   * Defensively coerces old record fields; skips any mode whose metric is
+   * missing, null, non-numeric, or non-positive.
+   *
+   * Pass `submitFn` from LeaderboardService to avoid a circular import.
+   */
+  static async submitLegacyScores(
+    submitFn: (username: string, mode: GameMode, score: number, seed: number) => Promise<void>,
+  ): Promise<void> {
+    const data = this.load();
+    if (data.legacyScoresSubmitted) return;
+    if (!data.usernameClaimed || !data.username) return;
+
+    const username = data.username;
+
+    // Safely coerce an unknown value to a positive finite number, or null.
+    const safePositive = (val: unknown): number | null => {
+      const n = Number(val);
+      return Number.isFinite(n) && n > 0 ? n : null;
+    };
+
+    const submissions: Promise<void>[] = [];
+
+    for (const modeKey of Object.keys(data.highScores) as GameMode[]) {
+      const record = data.highScores[modeKey];
+      if (!record) continue;
+
+      const seed = safePositive(record.seed) ?? 0;
+
+      // Each mode uses a different field as its leaderboard score metric.
+      let score: number | null;
+      if (modeKey === GameMode.Slalom) {
+        score = safePositive(record.timeMs);   // lower = better; skip if missing
+      } else if (modeKey === GameMode.Jump) {
+        score = safePositive(record.score);
+      } else {
+        score = safePositive(record.distance); // FreeSki and any future distance modes
+      }
+
+      if (score === null) continue;
+
+      submissions.push(submitFn(username, modeKey, score, seed));
+    }
+
+    await Promise.allSettled(submissions);
+
+    data.legacyScoresSubmitted = true;
+    this.persist(data);
+  }
+
+  // ---------------------------------------------------------------------------
   // Dev / testing helpers
   // ---------------------------------------------------------------------------
 

@@ -27,12 +27,11 @@ const DRAG_RIGHT_EDGE = 1650;
 
 type FocusItem = 'scroll-up' | 'scroll-down' | 'back';
 const FOCUS_ORDER: FocusItem[] = ['scroll-up', 'scroll-down', 'back'];
-
 export class PatchNotesScene extends Phaser.Scene {
   private scrollY         = 0;
   private maxScroll       = 0;
   private contentContainer!: Phaser.GameObjects.Container;
-  private focused: FocusItem = 'scroll-up';
+  private focused: FocusItem | null = null;
   private dragActive      = false;
   private dragStartY      = 0;
   private dragStartScroll = 0;
@@ -48,7 +47,7 @@ export class PatchNotesScene extends Phaser.Scene {
 
   create(): void {
     this.scrollY    = 0;
-    this.focused    = 'scroll-up';
+    this.focused    = null;
     this.dragActive = false;
 
     // Background
@@ -124,9 +123,6 @@ export class PatchNotesScene extends Phaser.Scene {
 
     // Back button
     this.setBackFocus = this.createBackButton();
-
-    // Show initial keyboard focus
-    this.updateFocusVisuals();
 
     // Keyboard navigation
     if (this.input.keyboard) {
@@ -253,9 +249,13 @@ export class PatchNotesScene extends Phaser.Scene {
   // ---------------------------------------------------------------------------
 
   private moveFocus(dir: 1 | -1): void {
-    const idx    = FOCUS_ORDER.indexOf(this.focused);
-    const newIdx = (idx + dir + FOCUS_ORDER.length) % FOCUS_ORDER.length;
-    this.focused = FOCUS_ORDER[newIdx]!;
+    if (this.focused === null) {
+      this.focused = FOCUS_ORDER[0]!;
+    } else {
+      const idx    = FOCUS_ORDER.indexOf(this.focused);
+      const newIdx = (idx + dir + FOCUS_ORDER.length) % FOCUS_ORDER.length;
+      this.focused = FOCUS_ORDER[newIdx]!;
+    }
     this.updateFocusVisuals();
   }
 
@@ -266,6 +266,11 @@ export class PatchNotesScene extends Phaser.Scene {
   }
 
   private activateFocused(): void {
+    if (this.focused === null) {
+      this.focused = FOCUS_ORDER[0]!;
+      this.updateFocusVisuals();
+      return;
+    }
     switch (this.focused) {
       case 'scroll-up':   this.applyScroll(-SCROLL_AMOUNT); break;
       case 'scroll-down': this.applyScroll(SCROLL_AMOUNT);  break;

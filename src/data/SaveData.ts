@@ -18,8 +18,9 @@ export interface SaveData {
   highScores:      Partial<Record<GameMode, RunRecord>>;
   dailyBests:      Partial<Record<GameMode, DailyRecord>>;
   totalRuns:       number;
-  username?:       string;
-  usernameClaimed?: boolean;  // true once the username has been reserved in Supabase
+  username?:              string;
+  usernameClaimed?:       boolean;  // true once the username has been reserved in Supabase
+  legacyScoresSubmitted?: boolean;  // true once pre-leaderboard local bests have been backfilled
 }
 
 export const EMPTY_SAVE: SaveData = {
