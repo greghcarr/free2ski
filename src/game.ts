@@ -9,6 +9,7 @@ import { GameOverScene } from '@/scenes/GameOverScene';
 import { PauseScene } from '@/scenes/PauseScene';
 import { LeaderboardScene } from '@/scenes/LeaderboardScene';
 import { SettingsScene } from '@/scenes/SettingsScene';
+import { PatchNotesScene } from '@/scenes/PatchNotesScene';
 import type { IPlatformService } from '@/platform/IPlatformService';
 
 export function createGame(platform: IPlatformService): Phaser.Game {
@@ -39,6 +40,7 @@ export function createGame(platform: IPlatformService): Phaser.Game {
       GameOverScene,
       LeaderboardScene,
       SettingsScene,
+      PatchNotesScene,
     ],
     // Attach the platform service so scenes can access it via this.game.registry
     callbacks: {

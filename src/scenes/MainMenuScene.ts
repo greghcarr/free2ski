@@ -3,6 +3,35 @@ import { SceneKey } from '@/config/SceneKeys';
 import { WORLD_WIDTH, GAME_HEIGHT, COLORS, MAIN_MENU_BADGE_TEXT } from '@/data/constants';
 import { addVersionLabel, addUsernameLabel } from '@/ui/versionLabel';
 import { MenuNav, type MenuNavItem } from '@/ui/MenuNav';
+import { fetchTotalRuns } from '@/services/LeaderboardService';
+
+const BADGE_PHRASES = [
+  'skis freed',
+  'runs runned',
+  'slaloms slalomed',
+  'yetis outrun',
+  'wipeouts wiped',
+  'mountains descended',
+  'slopes shredded',
+  'chairlifts skipped',
+  'spines compressed',
+  'hot chocolates earned',
+  'ankles twisted',
+  'ski pants worn',
+  'goggles fogged',
+  'lodge fireplaces deserved',
+  'snow eaten facefirst',
+  'ski instructors disappointed',
+  'lift tickets wasted',
+  'moguls mogulled',
+  'black diamonds survived',
+  'avalanches not caused',
+  'trees narrowly avoided',
+  'poles abandoned mid-slope',
+  'bindings blamed',
+  'beers justified',
+  "pizza wedges pizza'd",
+];
 
 export class MainMenuScene extends Phaser.Scene {
   constructor() {
@@ -25,25 +54,43 @@ export class MainMenuScene extends Phaser.Scene {
       strokeThickness: 6,
     }).setOrigin(0.5);
 
-    // Badge — golden text above the top-right corner of the title, rotated clockwise
-    const badge = this.add.text(1300, 320, MAIN_MENU_BADGE_TEXT, {
+    // Badge — golden text above the top-right corner of the title, rotated clockwise.
+    // Starts invisible; scales up once the network call resolves or fails.
+    const badge = this.add.text(1300, 320, '', {
       fontFamily: 'FoxwhelpFont',
       fontSize: '72px',
       fontStyle: 'bold',
       color: '#FFD700',
       stroke: '#001a6e',
       strokeThickness: 10,
-    }).setOrigin(0.5).setAngle(12);
+    }).setOrigin(0.5).setAngle(12).setScale(0.01);
 
-    this.tweens.add({
-      targets: badge,
-      scaleX: 1.15,
-      scaleY: 1.15,
-      duration: 700,
-      yoyo: true,
-      repeat: -1,
-      ease: 'Sine.easeInOut',
-    });
+    const revealBadge = (text: string): void => {
+      badge.setText(text);
+      this.tweens.add({
+        targets:  badge,
+        scaleX:   1,
+        scaleY:   1,
+        duration: 400,
+        ease:     'Back.easeOut',
+        onComplete: () => {
+          this.tweens.add({
+            targets:  badge,
+            scaleX:   1.15,
+            scaleY:   1.15,
+            duration: 700,
+            yoyo:     true,
+            repeat:   -1,
+            ease:     'Sine.easeInOut',
+          });
+        },
+      });
+    };
+
+    const phrase = BADGE_PHRASES[Math.floor(Math.random() * BADGE_PHRASES.length)]!;
+    fetchTotalRuns()
+      .then(n  => revealBadge(`${phrase}: ${n.toLocaleString()}`))
+      .catch(() => revealBadge(MAIN_MENU_BADGE_TEXT));
 
     // this.add.text(WORLD_WIDTH / 2, 557, 'a skiing adventure', {
     //   fontFamily: 'FoxwhelpFont',
@@ -53,10 +100,11 @@ export class MainMenuScene extends Phaser.Scene {
 
     // Menu buttons
     let nav: MenuNav | undefined;
-    const playItem        = this.createButton(WORLD_WIDTH / 2, 600, 650, 145, 'play',        100, 'bold', () => { this.scene.start(SceneKey.ModeSelect); },   () => nav?.hoverAt(0));
-    const leaderboardItem = this.createButton(WORLD_WIDTH / 2, 750, 410, 105, 'leaderboard',  50, 'bold', () => { this.scene.start(SceneKey.Leaderboard); }, () => nav?.hoverAt(1));
-    const settingsItem    = this.createButton(WORLD_WIDTH / 2, 870, 350, 85, 'settings',     60, 'bold', () => { this.scene.start(SceneKey.Settings); },    () => nav?.hoverAt(2));
-    nav = new MenuNav(this, [playItem, leaderboardItem, settingsItem]);
+    const playItem        = this.createButton(WORLD_WIDTH / 2, 580, 650, 145, 'play',         100, 'bold', () => { this.scene.start(SceneKey.ModeSelect); },   () => nav?.hoverAt(0));
+    const leaderboardItem = this.createButton(WORLD_WIDTH / 2, 720, 410, 105, 'leaderboard',   50, 'bold', () => { this.scene.start(SceneKey.Leaderboard); }, () => nav?.hoverAt(1));
+    const settingsItem    = this.createButton(WORLD_WIDTH / 2, 830,  350,  85, 'settings',      60, 'bold', () => { this.scene.start(SceneKey.Settings); },    () => nav?.hoverAt(2));
+    const patchNotesItem  = this.createButton(WORLD_WIDTH / 2, 935,  310,  70, 'patch notes',   44, 'bold', () => { this.scene.start(SceneKey.PatchNotes); }, () => nav?.hoverAt(3));
+    nav = new MenuNav(this, [playItem, leaderboardItem, settingsItem, patchNotesItem]);
 
     addVersionLabel(this);
     addUsernameLabel(this);

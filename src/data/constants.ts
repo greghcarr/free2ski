@@ -1,5 +1,5 @@
-// Main menu badge text (golden rotating label above the title)
-export const MAIN_MENU_BADGE_TEXT = 'leaderboards?!';
+// Main menu badge fallback text — shown when the DB is unreachable
+export const MAIN_MENU_BADGE_TEXT = 'no more auto-fullscreen';
 
 // Debug: set to a GameMode string to skip straight to GameOverScene on startup.
 

@@ -8,4 +8,5 @@ export enum SceneKey {
   GameOver    = 'GameOverScene',
   Leaderboard = 'LeaderboardScene',
   Settings    = 'SettingsScene',
+  PatchNotes  = 'PatchNotesScene',
 }

@@ -3,6 +3,8 @@ import { SceneKey } from '@/config/SceneKeys';
 import { WORLD_WIDTH, GAME_HEIGHT, COLORS, DEBUG_GAME_OVER_MODE, PX_PER_METER } from '@/data/constants';
 import { GameMode } from '@/config/GameModes';
 import type { GameOverData } from '@/scenes/GameOverScene';
+import { HighScoreManager } from '@/data/HighScoreManager';
+import { claimUsername } from '@/services/LeaderboardService';
 
 export class PreloadScene extends Phaser.Scene {
   constructor() {
@@ -40,6 +42,7 @@ export class PreloadScene extends Phaser.Scene {
   }
 
   create(): void {
+    HighScoreManager.initUsername(claimUsername).catch(() => { /* network unavailable */ });
     if (DEBUG_GAME_OVER_MODE !== null) {
       this.scene.start(SceneKey.GameOver, buildDebugGameOverData(DEBUG_GAME_OVER_MODE));
       return;

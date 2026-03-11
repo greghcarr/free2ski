@@ -106,19 +106,6 @@
       </svg>
       <span>Rotate your device to play</span>
     </div>
-    <script>
-      // On first touch, request fullscreen to hide browser chrome.
-      // Works on Android Chrome; fails silently on iOS Safari (use Add to Home Screen there).
-      document.addEventListener('pointerdown', function requestFS() {
-        document.removeEventListener('pointerdown', requestFS);
-        var el = document.documentElement;
-        if (el.requestFullscreen) {
-          el.requestFullscreen({ navigationUI: 'hide' }).catch(function() {});
-        } else if (el.webkitRequestFullscreen) {
-          el.webkitRequestFullscreen();
-        }
-      }, { once: true });
-    </script>
-    <script type="module" src="/src/main.ts"></script>
+<script type="module" src="/src/main.ts"></script>
   </body>
 </html>

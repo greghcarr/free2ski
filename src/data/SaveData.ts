@@ -14,11 +14,12 @@ export interface DailyRecord {
 }
 
 export interface SaveData {
-  version:    1;
-  highScores: Partial<Record<GameMode, RunRecord>>;
-  dailyBests: Partial<Record<GameMode, DailyRecord>>;
-  totalRuns:  number;
-  username?:  string;
+  version:         1;
+  highScores:      Partial<Record<GameMode, RunRecord>>;
+  dailyBests:      Partial<Record<GameMode, DailyRecord>>;
+  totalRuns:       number;
+  username?:       string;
+  usernameClaimed?: boolean;  // true once the username has been reserved in Supabase
 }
 
 export const EMPTY_SAVE: SaveData = {
