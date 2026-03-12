@@ -22,14 +22,28 @@ export class SettingsScene extends Phaser.Scene {
       color: COLORS.UI_TITLE,
     }).setOrigin(0.5);
 
-    // Nav state
-    let isBack = false;
+    // Simple linear nav — UP/DOWN cycles through all items
+    const navItems: MenuNavItem[] = [];
+    let focusIdx = 0;
 
-    const resetItem = this.createDebugButton(WORLD_WIDTH / 2, GAME_HEIGHT / 2, 'DEBUG: Reset All Stats', () => {
-      HighScoreManager.reset();
-    });
+    const setFocus = (idx: number): void => {
+      navItems[focusIdx]?.setFocus(false);
+      focusIdx = (idx + navItems.length) % navItems.length;
+      navItems[focusIdx]?.setFocus(true);
+    };
 
-    // Back button
+    // ── Fullscreen toggle ────────────────────────────────────────────────────
+    navItems.push(this.createToggle(WORLD_WIDTH / 2, 560, 'fullscreen', () => {
+      if (this.scale.isFullscreen) this.scale.stopFullscreen();
+      else                         this.scale.startFullscreen();
+    }));
+
+    // ── Reset stats (debug) — hidden for now ────────────────────────────────
+    // navItems.push(this.createDebugButton(WORLD_WIDTH / 2, 700, 'DEBUG: Reset All Stats', () => {
+    //   HighScoreManager.reset();
+    // }));
+
+    // ── Back button ──────────────────────────────────────────────────────────
     const backGoTo = () => this.scene.start(SceneKey.MainMenu);
     const backText = this.add.text(60, BACK_BTN_Y, '← back', {
       fontFamily: 'FoxwhelpFont',
@@ -38,55 +52,31 @@ export class SettingsScene extends Phaser.Scene {
     }).setInteractive({ useHandCursor: true })
       .on('pointerdown', backGoTo);
 
-    const backUlY = (BACK_BTN_Y) + backText.displayHeight - 6;
-    const prefixMeasure = this.add.text(0, 0, '← ', { fontFamily: 'FoxwhelpFont', fontSize: '50px' }).setVisible(false);
-    const backWordX = 60 + prefixMeasure.displayWidth;
-    const backWordW = backText.displayWidth - prefixMeasure.displayWidth;
-    prefixMeasure.destroy();
+    const backUlY      = BACK_BTN_Y + backText.displayHeight - 6;
+    const prefix       = this.add.text(0, 0, '← ', { fontFamily: 'FoxwhelpFont', fontSize: '50px' }).setVisible(false);
+    const backWordX    = 60 + prefix.displayWidth;
+    const backWordW    = backText.displayWidth - prefix.displayWidth;
+    prefix.destroy();
     const backUnderline = this.add.graphics();
     backUnderline.fillStyle(parseInt(COLORS.UI_TITLE.slice(1), 16), 1);
     backUnderline.fillRect(backWordX, backUlY, backWordW, 4);
     backUnderline.setVisible(false);
 
-    backText.on('pointerover', () => {
-      resetItem.setFocus(false);
-      backUnderline.setVisible(true);
-      isBack = true;
+    navItems.push({
+      setFocus: (f) => backUnderline.setVisible(f),
+      activate: backGoTo,
     });
-    backText.on('pointerout', () => {
-      backUnderline.setVisible(false);
-      isBack = false;
-    });
+    backText.on('pointerover', () => setFocus(navItems.length - 1));
 
-    // Initial focus
-    resetItem.setFocus(true);
+    // ── Initial focus + keyboard nav ─────────────────────────────────────────
+    setFocus(0);
 
     if (this.input.keyboard) {
       const kb = this.input.keyboard;
-      kb.on('keydown-DOWN', () => {
-        if (isBack) {
-          backUnderline.setVisible(false);
-          isBack = false;
-          resetItem.setFocus(true);
-        } else {
-          resetItem.setFocus(false);
-          backUnderline.setVisible(true);
-          isBack = true;
-        }
-      });
-      kb.on('keydown-UP', () => {
-        if (isBack) {
-          backUnderline.setVisible(false);
-          isBack = false;
-          resetItem.setFocus(true);
-        } else {
-          resetItem.setFocus(false);
-          backUnderline.setVisible(true);
-          isBack = true;
-        }
-      });
-      kb.on('keydown-SPACE', () => { isBack ? backGoTo() : resetItem.activate(); });
-      kb.on('keydown-ENTER', () => { isBack ? backGoTo() : resetItem.activate(); });
+      kb.on('keydown-DOWN',  () => setFocus(focusIdx + 1));
+      kb.on('keydown-UP',    () => setFocus(focusIdx - 1));
+      kb.on('keydown-SPACE', () => navItems[focusIdx]?.activate());
+      kb.on('keydown-ENTER', () => navItems[focusIdx]?.activate());
       kb.on('keydown-ESC',   () => this.scene.start(SceneKey.MainMenu));
     }
 
@@ -94,9 +84,57 @@ export class SettingsScene extends Phaser.Scene {
     addUsernameLabel(this);
   }
 
+  // ─── Toggle row ─────────────────────────────────────────────────────────────
+  // Full-width row with a label on the left and an on/off indicator on the right.
+
+  private createToggle(x: number, y: number, label: string, onToggle: () => void): MenuNavItem {
+    const W = 700, H = 90;
+
+    const rowBg = this.add.graphics();
+
+    const labelText = this.add.text(x - W / 2 + 30, y, label, {
+      fontFamily: 'FoxwhelpFont',
+      fontSize:   '54px',
+      color:      '#ffffff',
+    }).setOrigin(0, 0.5);
+
+    const stateText = this.add.text(x + W / 2 - 30, y, '', {
+      fontFamily: 'FoxwhelpFont',
+      fontSize:   '54px',
+    }).setOrigin(1, 0.5);
+
+    const draw = (focused: boolean): void => {
+      rowBg.clear();
+      rowBg.fillStyle(focused ? COLORS.BTN_HOVER : COLORS.BTN, 1);
+      rowBg.fillRoundedRect(x - W / 2, y - H / 2, W, H, 12);
+      // Read current state after the toggle has had a chance to apply
+      const isOn = this.scale.isFullscreen;
+      stateText.setText(isOn ? 'on' : 'off');
+      stateText.setColor(isOn ? '#4caf50' : '#888888');
+      // suppress TS unused-var warning
+      void labelText;
+    };
+    draw(false);
+
+    const activate = (): void => {
+      onToggle();
+      // Delay one frame so scale.isFullscreen reflects the new state
+      this.time.delayedCall(50, () => draw(true));
+    };
+
+    const hit = this.add.rectangle(x, y, W, H).setInteractive({ useHandCursor: true });
+    hit.on('pointerover',  () => draw(true));
+    hit.on('pointerout',   () => draw(false));
+    hit.on('pointerdown',  activate);
+
+    return { setFocus: draw, activate };
+  }
+
+  // ─── Destructive confirm button ──────────────────────────────────────────────
+
   private createDebugButton(x: number, y: number, label: string, onClick: () => void): MenuNavItem {
-    const btnW = 800;
-    const btnH = 100;
+    const btnW = 700;
+    const btnH = 90;
     const bg   = this.add.graphics();
     let   pending = false;
 

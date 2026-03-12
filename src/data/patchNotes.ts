@@ -6,6 +6,13 @@ export interface PatchEntry {
 
 export const PATCH_NOTES: PatchEntry[] = [
   {
+    version: 'v0.3.9.1-pre-alpha',
+    date:    'Mar 12, 2026',
+    notes: [
+      'settings screen now has a fullscreen toggle',
+    ],
+  },
+  {
     version: 'v0.3.9-pre-alpha',
     date:    'Mar 12, 2026',
     notes: [
