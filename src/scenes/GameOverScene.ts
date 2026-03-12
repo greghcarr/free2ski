@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { SceneKey } from '@/config/SceneKeys';
 import { WORLD_WIDTH, GAME_HEIGHT, PX_PER_METER, JUMP_COURSE_DISTANCE_M, COLORS } from '@/data/constants';
-import { addVersionLabel, addUsernameLabel } from '@/ui/versionLabel';
+import { addVersionLabel } from '@/ui/versionLabel';
 import { HighScoreManager, type SubmitResult } from '@/data/HighScoreManager';
 import type { SessionConfig } from '@/config/GameConfig';
 import { GameMode } from '@/config/GameModes';
@@ -9,6 +9,8 @@ import { formatRaceTime } from '@/utils/MathUtils';
 import { MenuNav, type MenuNavItem } from '@/ui/MenuNav';
 import { submitRun } from '@/services/LeaderboardService';
 import { getDailySeed } from '@/utils/MathUtils';
+import { hasProfanity, sanitizeName } from '@/utils/ProfanityFilter';
+import { DEBUG } from '@/data/DebugConfig';
 
 const LAYOUT = {
   // Mode label (top of screen)
@@ -49,19 +51,27 @@ const LAYOUT = {
   NEW_BEST_PULSE_MS:    700,
 
   // Sub-detail row (prev→current improvement, or run delta)
-  DETAIL_Y_BADGE: 597,  // below new-best badge
-  DETAIL_Y_DELTA: 597,  // below existing-best row
-  DETAIL_FONT:    '40px',
+  DETAIL_Y_BADGE: 540,  // below new-best badge
+  DETAIL_Y_DELTA: 540,  // below existing-best row
+  DETAIL_FONT:    '60px',
+
+  // Name entry (confirm button is inline to the right of the input)
+  NAME_LABEL_Y:      615,
+  NAME_INPUT_Y:      678,   // game-space center of the DOM input (H=68)
+  NAME_INPUT_W:      620,   // width of the DOM input in game units
+  NAME_INPUT_H:      68,
+  CONFIRM_BTN_W:     210,   // sits inline right of the input; gap of 16 between them
+  CONFIRM_BTN_FONT:  '44px',
 
   // Run counter (pinned to bottom)
-  RUN_COUNTER_BOTTOM: 70,  // offset from GAME_HEIGHT
+  RUN_COUNTER_BOTTOM: 45,   // offset from GAME_HEIGHT
   RUN_COUNTER_FONT:   '50px',
 
-  // Buttons
-  BTN_PLAY_AGAIN_Y: 630,
-  BTN_MAIN_MENU_Y:  860,
+  // Nav buttons
+  BTN_PLAY_AGAIN_Y: 790,
+  BTN_MAIN_MENU_Y:  930,
   BTN_W:            695,
-  BTN_H:            180,
+  BTN_H:            110,
   BTN_RADIUS:       15,
   BTN_FONT:         '80px',
 } as const;
@@ -98,7 +108,15 @@ interface RunSummary {
 }
 
 export class GameOverScene extends Phaser.Scene {
-  private summary!: RunSummary;
+  private summary!:                RunSummary;
+  private pendingLeaderboardScore: number | null = null;
+  private nameInput:               HTMLInputElement | null = null;
+  private handleConfirmVisual:     ((success: boolean) => void) | null = null;
+  private liveDotText:             Phaser.GameObjects.Text | null = null;
+  private liveNameText:            Phaser.GameObjects.Text | null = null;
+  private nav:                     MenuNav | null = null;
+  private setConfirmBtnFocus:      ((focused: boolean) => void) | null = null;
+  private inputErrorActive         = false;
 
   constructor() {
     super({ key: SceneKey.GameOver });
@@ -129,38 +147,36 @@ export class GameOverScene extends Phaser.Scene {
 
   create(): void {
     // Submit run first so the result informs the whole UI
-    const result = HighScoreManager.submitRun(
-      this.summary.session.mode,
-      this.summary.distanceM,
-      this.summary.score,
-      this.summary.finishTimeMs,
-    );
+    // In debug mode: skip the real save and always show "first run on record"
+    const result: SubmitResult = DEBUG.forceNewBest
+      ? { isNewBest: true, prevBest: null, current: { distance: this.summary.distanceM, score: this.summary.score, timestamp: Date.now() } }
+      : HighScoreManager.submitRun(
+          this.summary.session.mode,
+          this.summary.distanceM,
+          this.summary.score,
+          this.summary.finishTimeMs,
+        );
 
-    // Submit this run to the global leaderboard
+    // Compute the leaderboard score — will be submitted after the user enters their name
     const { mode } = this.summary.session;
-    let leaderboardScore: number | null = null;
     if (mode === GameMode.FreeSki) {
-      leaderboardScore = this.summary.distanceM;
+      this.pendingLeaderboardScore = this.summary.distanceM;
     } else if (mode === GameMode.Slalom && this.summary.finishTimeMs !== undefined) {
-      leaderboardScore = this.summary.finishTimeMs;
+      this.pendingLeaderboardScore = this.summary.finishTimeMs;
     } else if (mode === GameMode.Jump) {
-      leaderboardScore = this.summary.score;
-    }
-    if (leaderboardScore !== null && HighScoreManager.load().usernameClaimed) {
-      submitRun(
-        HighScoreManager.getOrCreateUsername(),
-        mode,
-        leaderboardScore,
-        getDailySeed(),
-      ).catch(() => { /* network unavailable */ });
+      this.pendingLeaderboardScore = this.summary.score;
     }
 
     this.buildBackground();
     this.buildHeadline();
     this.buildStats(result);
-    this.buildButtons();
+    const inputNavItem = this.buildNameEntry();
+    this.buildConfirmButton();
+    this.buildButtons(inputNavItem);
     addVersionLabel(this, COLORS.VERSION_GAMEOVER);
-    addUsernameLabel(this, COLORS.VERSION_GAMEOVER);
+    this.buildLiveUsernameLabel(COLORS.VERSION_GAMEOVER);
+
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.cleanupNameInput());
   }
 
   // ---------------------------------------------------------------------------
@@ -534,15 +550,268 @@ export class GameOverScene extends Phaser.Scene {
     }
   }
 
-  private buildButtons(): void {
-    let nav: MenuNav | undefined;
+  private buildButtons(inputNavItem: MenuNavItem): void {
     const playAgain = this.createButton(WORLD_WIDTH / 2, LAYOUT.BTN_PLAY_AGAIN_Y, 'play again', () => {
-      this.scene.start(SceneKey.Game, { session: this.summary.session });
-    }, () => nav?.hoverAt(0));
+      this.submitAndNavigate(() => this.scene.start(SceneKey.Game, { session: this.summary.session }));
+    }, () => this.nav?.hoverAt(1));
     const mainMenu = this.createButton(WORLD_WIDTH / 2, LAYOUT.BTN_MAIN_MENU_Y, 'main menu', () => {
-      this.scene.start(SceneKey.MainMenu);
-    }, () => nav?.hoverAt(1));
-    nav = new MenuNav(this, [playAgain, mainMenu]);
+      this.submitAndNavigate(() => this.scene.start(SceneKey.MainMenu));
+    }, () => this.nav?.hoverAt(2));
+    this.nav = new MenuNav(this, [inputNavItem, playAgain, mainMenu]);
+  }
+
+  private buildNameEntry(): MenuNavItem {
+    const saved = HighScoreManager.getDisplayName() ?? '';
+
+    this.add.text(WORLD_WIDTH / 2, LAYOUT.NAME_LABEL_Y, 'enter your name', {
+      fontFamily: 'FoxwhelpFont',
+      fontSize:   '46px',
+      color:      COLORS.UI_SECONDARY,
+    }).setOrigin(0.5);
+
+    const canvas = this.game.canvas;
+    const bounds = canvas.getBoundingClientRect();
+    const scaleX = bounds.width  / this.scale.width;
+    const scaleY = bounds.height / this.scale.height;
+
+    const inputX = bounds.left + (WORLD_WIDTH / 2 - LAYOUT.NAME_INPUT_W / 2) * scaleX;
+    const inputY = bounds.top  + (LAYOUT.NAME_INPUT_Y - LAYOUT.NAME_INPUT_H / 2) * scaleY;
+
+    const el = document.createElement('input');
+    el.type          = 'text';
+    el.value         = saved;
+    el.maxLength     = 24;
+    el.placeholder   = 'your name';
+    el.autocomplete  = 'off';
+    el.spellcheck    = false;
+    el.setAttribute('autocorrect',    'off');
+    el.setAttribute('autocapitalize', 'off');
+    Object.assign(el.style, {
+      position:     'fixed',
+      left:         `${inputX}px`,
+      top:          `${inputY}px`,
+      width:        `${LAYOUT.NAME_INPUT_W * scaleX}px`,
+      height:       `${LAYOUT.NAME_INPUT_H * scaleY}px`,
+      fontSize:     `${Math.round(30 * scaleY)}px`,
+      fontFamily:   'monospace',
+      background:   'rgba(255,255,255,0.12)',
+      border:       '2px solid rgba(255,255,255,0.4)',
+      borderRadius: '6px',
+      color:        '#ffffff',
+      padding:      '0 12px',
+      outline:      'none',
+      textAlign:    'center',
+      zIndex:       '99998',
+      boxSizing:    'border-box',
+      transition:   'border-color 0.15s ease, box-shadow 0.15s ease',
+    });
+    document.body.appendChild(el);
+    el.focus();
+    if (saved) el.select();
+
+    el.addEventListener('focus', () => {
+      if (!this.inputErrorActive) {
+        el.style.borderColor = '#3a6ae8';
+        el.style.boxShadow   = '0 0 12px 3px rgba(58,106,232,0.6)';
+      }
+    });
+    el.addEventListener('blur', () => {
+      if (!this.inputErrorActive) {
+        el.style.borderColor = 'rgba(255,255,255,0.4)';
+        el.style.boxShadow   = 'none';
+      }
+    });
+    el.addEventListener('input', () => {
+      this.setInputGlow(false);
+      this.updateLiveUsernameLabel(sanitizeName(el.value));
+    });
+    el.addEventListener('keydown', (e) => {
+      // Stop all keys from bubbling to Phaser's window-level handler,
+      // which would call preventDefault() on WASD / Space and swallow them.
+      e.stopPropagation();
+      if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+        e.preventDefault();
+        el.blur();
+        this.nav?.move(e.key === 'ArrowDown' ? 1 : -1);
+        return;
+      }
+      if (e.key === 'ArrowRight') {
+        const atEnd = el.selectionStart === el.value.length && el.selectionEnd === el.value.length;
+        if (atEnd && !el.disabled) {
+          e.preventDefault();
+          el.blur();
+          this.setConfirmBtnFocus?.(true);
+        }
+        return;
+      }
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        const ok = this.confirmName();
+        this.handleConfirmVisual?.(ok);
+      }
+    });
+
+    if (DEBUG.showInputGlow) this.setInputGlow(true);
+
+    this.nameInput = el;
+
+    return {
+      setFocus: (focused) => {
+        if (focused && !el.disabled) el.focus();
+        else if (!focused && document.activeElement === el) el.blur();
+      },
+      activate: () => {
+        if (!el.disabled) el.focus();
+      },
+    };
+  }
+
+  private buildConfirmButton(): void {
+    // Positioned inline to the right of the input field
+    const inputRightX = WORLD_WIDTH / 2 + LAYOUT.NAME_INPUT_W / 2;
+    const gap  = 16;
+    const w    = LAYOUT.CONFIRM_BTN_W;
+    const h    = LAYOUT.NAME_INPUT_H;
+    const x    = inputRightX + gap + w / 2;
+    const y    = LAYOUT.NAME_INPUT_Y;
+
+    const bg  = this.add.graphics();
+    const lbl = this.add.text(x, y, 'confirm', {
+      fontFamily: 'FoxwhelpFont',
+      fontSize:   LAYOUT.CONFIRM_BTN_FONT,
+      fontStyle:  'bold',
+      color:      '#ffffff',
+    }).setOrigin(0.5);
+
+    let kbFocused = false;
+
+    const draw = (state: 'default' | 'hover' | 'focused' | 'saved' | 'rejected'): void => {
+      bg.clear();
+      if (state === 'saved') {
+        bg.fillStyle(0x4caf50, 1);
+        lbl.setText('saved!');
+      } else if (state === 'rejected') {
+        bg.fillStyle(0xcc3333, 1);
+        lbl.setText('rejected');
+      } else {
+        bg.fillStyle(state === 'hover' || state === 'focused' ? COLORS.BTN_HOVER : COLORS.BTN, 1);
+        lbl.setText('confirm');
+      }
+      bg.fillRoundedRect(x - w / 2, y - h / 2, w, h, 10);
+    };
+    draw('default');
+
+    const activate = (): void => {
+      const ok = this.confirmName();
+      this.handleConfirmVisual?.(ok);
+    };
+
+    this.setConfirmBtnFocus = (focused: boolean) => {
+      kbFocused = focused;
+      draw(focused ? 'focused' : 'default');
+    };
+
+    this.input.keyboard?.on('keydown-ENTER', () => { if (kbFocused) activate(); });
+    this.input.keyboard?.on('keydown-LEFT',  () => {
+      if (!kbFocused) return;
+      this.setConfirmBtnFocus?.(false);
+      if (this.nameInput) {
+        const len = this.nameInput.value.length;
+        this.nameInput.focus();
+        this.nameInput.setSelectionRange(len, len);
+      }
+    });
+
+    const hit = this.add.rectangle(x, y, w, h).setInteractive({ useHandCursor: true });
+    hit.on('pointerover', () => { if (!kbFocused) draw('hover'); });
+    hit.on('pointerout',  () => { if (!kbFocused) draw('default'); });
+    hit.on('pointerdown', activate);
+
+    this.handleConfirmVisual = (ok: boolean): void => {
+      kbFocused = false;
+      if (ok) {
+        draw('saved');
+        hit.disableInteractive();
+        if (this.nameInput) this.nameInput.disabled = true;
+        // Move keyboard focus to "play again" (nav index 1)
+        this.nav?.focusAt(1);
+      } else {
+        draw('rejected');
+        this.time.delayedCall(1200, () => draw('default'));
+      }
+    };
+  }
+
+  private confirmName(): boolean {
+    const raw  = this.nameInput?.value ?? '';
+    const name = sanitizeName(raw);
+
+    if (name.length === 0) {
+      this.setInputGlow(true);
+      return false;
+    }
+    if (hasProfanity(name)) {
+      this.setInputGlow(true);
+      return false;
+    }
+
+    this.setInputGlow(false);
+    HighScoreManager.setDisplayName(name);
+
+    if (this.pendingLeaderboardScore !== null) {
+      submitRun(name, this.summary.session.mode, this.pendingLeaderboardScore, getDailySeed())
+        .catch(() => {});
+      this.pendingLeaderboardScore = null;
+    }
+    return true;
+  }
+
+  private submitAndNavigate(next: () => void): void {
+    const ok = this.confirmName();
+    this.handleConfirmVisual?.(ok);
+    if (ok) {
+      this.cleanupNameInput();
+      next();
+    }
+  }
+
+  private buildLiveUsernameLabel(color: string): void {
+    const name = HighScoreManager.getDisplayName();
+    this.liveDotText = this.add.text(27, GAME_HEIGHT - 27, '● ', {
+      fontFamily: 'monospace',
+      fontSize:   '26px',
+      color:      name ? '#4caf50' : '#888888',
+    }).setOrigin(0, 1);
+    this.liveNameText = this.add.text(27 + this.liveDotText.displayWidth, GAME_HEIGHT - 27, name ?? '', {
+      fontFamily: 'monospace',
+      fontSize:   '26px',
+      color,
+    }).setOrigin(0, 1);
+  }
+
+  private updateLiveUsernameLabel(name: string): void {
+    this.liveDotText?.setColor(name.length > 0 ? '#4caf50' : '#888888');
+    this.liveNameText?.setText(name);
+  }
+
+  private setInputGlow(error: boolean): void {
+    if (!this.nameInput) return;
+    this.inputErrorActive = error;
+    if (error) {
+      this.nameInput.style.borderColor = '#ff4444';
+      this.nameInput.style.boxShadow   = '0 0 12px 3px rgba(255,68,68,0.7)';
+    } else {
+      const focused = document.activeElement === this.nameInput;
+      this.nameInput.style.borderColor = focused ? '#3a6ae8'                       : 'rgba(255,255,255,0.4)';
+      this.nameInput.style.boxShadow   = focused ? '0 0 12px 3px rgba(58,106,232,0.6)' : 'none';
+    }
+  }
+
+  private cleanupNameInput(): void {
+    if (this.nameInput) {
+      this.nameInput.remove();
+      this.nameInput = null;
+    }
   }
 
   private createButton(x: number, y: number, label: string, onClick: () => void, onHover?: () => void): MenuNavItem {

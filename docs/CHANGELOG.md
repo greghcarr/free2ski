@@ -5,6 +5,28 @@ Format: newest first, grouped by version/date.
 
 ---
 
+## v0.3.8-pre-alpha — 2026-03-11
+
+### Changed
+- "Play again" button is automatically focused after confirming a username — keyboard users can immediately press Enter to replay
+
+---
+
+## v0.3.7-pre-alpha — 2026-03-11
+
+### Changed
+- Username is now player-chosen on the GameOver screen, replacing the auto-generated adjective-noun-0000 scheme
+- Leaderboard submission deferred until the player confirms a valid name
+- Name entry uses a DOM `<input>` overlay with profanity filtering (`bad-words`) and character sanitization
+- Inline confirm button shows "saved!" (green) or "rejected" (red) with a 1.2s reset on rejection
+- Input and confirm button lock after a successful save
+- Red glow on the input field replaces text error messages for invalid names
+- Bottom-left username label updates live as the player types
+- `autocorrect`, `autocapitalize`, `spellcheck`, and `autocomplete` all disabled on the name input
+- Debug features consolidated into `src/data/DebugConfig.ts` — single `ENABLED` boolean controls all
+
+---
+
 ## v0.1.1-pre-alpha — 2026-03-07
 
 ### Added

@@ -40,7 +40,15 @@ export class MenuNav {
     this.index = index;
   }
 
-  private move(delta: number): void {
+  /** Directly focus a specific item by index, entering keyboard mode. */
+  focusAt(index: number): void {
+    if (this.hasFocus) this.items[this.index]!.setFocus(false);
+    this.index    = (index + this.items.length) % this.items.length;
+    this.hasFocus = true;
+    this.items[this.index]!.setFocus(true);
+  }
+
+  move(delta: number): void {
     if (!this.hasFocus) {
       this.index = 0;
       this.hasFocus = true;

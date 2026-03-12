@@ -1,10 +1,9 @@
 import Phaser from 'phaser';
 import { SceneKey } from '@/config/SceneKeys';
-import { WORLD_WIDTH, GAME_HEIGHT, COLORS, DEBUG_GAME_OVER_MODE, PX_PER_METER } from '@/data/constants';
-import { GameMode } from '@/config/GameModes';
-import type { GameOverData } from '@/scenes/GameOverScene';
+import { WORLD_WIDTH, GAME_HEIGHT, COLORS } from '@/data/constants';
 import { HighScoreManager } from '@/data/HighScoreManager';
-import { claimUsername, submitRun } from '@/services/LeaderboardService';
+import { submitRun } from '@/services/LeaderboardService';
+import { DEBUG, buildDebugGameOverData } from '@/data/DebugConfig';
 
 export class PreloadScene extends Phaser.Scene {
   constructor() {
@@ -42,49 +41,11 @@ export class PreloadScene extends Phaser.Scene {
   }
 
   create(): void {
-    HighScoreManager.initUsername(claimUsername)
-      .then(() => HighScoreManager.submitLegacyScores(submitRun))
-      .catch(() => { /* network unavailable */ });
-    if (DEBUG_GAME_OVER_MODE !== null) {
-      this.scene.start(SceneKey.GameOver, buildDebugGameOverData(DEBUG_GAME_OVER_MODE));
+    HighScoreManager.submitLegacyScores(submitRun).catch(() => {});
+    if (DEBUG.gameOverMode !== null) {
+      this.scene.start(SceneKey.GameOver, buildDebugGameOverData(DEBUG.gameOverMode));
       return;
     }
     this.scene.start(SceneKey.MainMenu);
   }
-}
-
-function buildDebugGameOverData(mode: string): GameOverData {
-  const session = { mode: mode as GameMode };
-  if (mode === GameMode.Slalom) {
-    // Simulate a completed slalom run: 1 missed gate, 24 passed, +5s penalty
-    return {
-      session,
-      distancePx:      0,
-      score:           1200,
-      caughtByYeti:    false,
-      courseComplete:  true,
-      finishTimeMs:    94200,
-      penaltyMs:       5000,
-      gatesPassed:     24,
-      gatesMissed:     1,
-    };
-  }
-  if (mode === GameMode.Jump) {
-    // Simulate a completed jump run
-    return {
-      session,
-      distancePx:     5000 * PX_PER_METER,
-      score:          2400,
-      caughtByYeti:   false,
-      courseComplete: true,
-    };
-  }
-  // FreeSki default: wipeout at 3500m, 2 yetis evaded
-  return {
-    session,
-    distancePx:   3600 * PX_PER_METER,
-    score:        2,
-    caughtByYeti: true,
-    yetisEvaded:  2,
-  };
 }

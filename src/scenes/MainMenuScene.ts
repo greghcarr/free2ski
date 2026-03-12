@@ -135,9 +135,9 @@ export class MainMenuScene extends Phaser.Scene {
     // Buttons — staggered slide + fade entrance
     let nav: MenuNav | undefined;
     const playItem        = this.createButton(WORLD_WIDTH / 2, 610, 650, 145, 'play',         100, 'bold', () => { this.scene.start(SceneKey.ModeSelect); },   () => nav?.hoverAt(0), 150);
-    const leaderboardItem = this.createButton(WORLD_WIDTH / 2, 750, 410, 105, 'leaderboard',   50, 'bold', () => { this.scene.start(SceneKey.Leaderboard); }, () => nav?.hoverAt(1), 260);
+    const leaderboardItem = this.createButton(WORLD_WIDTH / 2, 750, 410, 105, 'leaderboard',   60, 'bold', () => { this.scene.start(SceneKey.Leaderboard); }, () => nav?.hoverAt(1), 260);
     const settingsItem    = this.createButton(WORLD_WIDTH / 2, 880, 410,  105, 'settings',      60, 'bold', () => { this.scene.start(SceneKey.Settings); },    () => nav?.hoverAt(2), 370);
-    const patchNotesItem  = this.createButton(WORLD_WIDTH / 2, 1010, 410,  105, 'patch notes',   44, 'bold', () => { this.scene.start(SceneKey.PatchNotes); }, () => nav?.hoverAt(3), 480);
+    const patchNotesItem  = this.createButton(WORLD_WIDTH / 2, 1010, 410,  105, 'patch notes',   60, 'bold', () => { this.scene.start(SceneKey.PatchNotes); }, () => nav?.hoverAt(3), 480);
     nav = new MenuNav(this, [playItem, leaderboardItem, settingsItem, patchNotesItem]);
 
     addVersionLabel(this);
