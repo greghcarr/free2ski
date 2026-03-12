@@ -9,13 +9,16 @@ const ENABLED = false;
 export const DEBUG = {
   /** Jump straight to GameOverScene for rapid UI iteration.
    *  Change gameOverMode to simulate a different mode's data. */
-  gameOverMode: ENABLED ? GameMode.FreeSki : null as GameMode | null,
+  gameOverMode: ENABLED ? GameMode.Slalom : null as GameMode | null,
 
   /** Skip localStorage write on GameOver; always show "first run on record". */
   forceNewBest: ENABLED,
 
   /** Pre-show red glow on the name entry input field. */
   showInputGlow: ENABLED,
+
+  /** Show a time-of-day slider on the main menu to preview sky effects. */
+  skyDebugHour: false,
 };
 
 /** Builds synthetic GameOverData for the given mode (debug only). */
@@ -38,7 +41,7 @@ export function buildDebugGameOverData(mode: GameMode): GameOverData {
     return {
       session,
       distancePx:     5000 * PX_PER_METER,
-      score:          2400,
+      score:          1,
       caughtByYeti:   false,
       courseComplete: true,
     };

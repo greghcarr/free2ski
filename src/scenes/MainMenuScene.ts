@@ -2,8 +2,9 @@ import Phaser from 'phaser';
 import { SceneKey } from '@/config/SceneKeys';
 import { WORLD_WIDTH, GAME_HEIGHT, COLORS, MAIN_MENU_BADGE_TEXT } from '@/data/constants';
 import { addVersionLabel, addUsernameLabel } from '@/ui/versionLabel';
-import { MenuNav, type MenuNavItem } from '@/ui/MenuNav';
+import { type MenuNavItem } from '@/ui/MenuNav';
 import { fetchTotalRuns } from '@/services/LeaderboardService';
+import { DEBUG } from '@/data/DebugConfig';
 
 const BADGE_PHRASES = [
   'skis freed',
@@ -43,8 +44,13 @@ interface SnowFlake {
 }
 
 export class MainMenuScene extends Phaser.Scene {
-  private snowGfx!: Phaser.GameObjects.Graphics;
-  private flakes: SnowFlake[] = [];
+  private snowGfx!:         Phaser.GameObjects.Graphics;
+  private flakes:           SnowFlake[] = [];
+  private skyLayer:         Phaser.GameObjects.Container | null = null;
+  private mountainTintGfx:  Phaser.GameObjects.Graphics  | null = null;
+  private debugPanelEl:     HTMLDivElement | null = null;
+  private sunContainer:     Phaser.GameObjects.Container | null = null;
+  private moonContainer:    Phaser.GameObjects.Container | null = null;
 
   constructor() {
     super({ key: SceneKey.MainMenu });
@@ -133,15 +139,78 @@ export class MainMenuScene extends Phaser.Scene {
       .catch(() => revealBadge(MAIN_MENU_BADGE_TEXT));
 
     // Buttons — staggered slide + fade entrance
-    let nav: MenuNav | undefined;
-    const playItem        = this.createButton(WORLD_WIDTH / 2, 610, 650, 145, 'play',         100, 'bold', () => { this.scene.start(SceneKey.ModeSelect); },   () => nav?.hoverAt(0), 150);
-    const leaderboardItem = this.createButton(WORLD_WIDTH / 2, 750, 410, 105, 'leaderboard',   60, 'bold', () => { this.scene.start(SceneKey.Leaderboard); }, () => nav?.hoverAt(1), 260);
-    const settingsItem    = this.createButton(WORLD_WIDTH / 2, 880, 410,  105, 'settings',      60, 'bold', () => { this.scene.start(SceneKey.Settings); },    () => nav?.hoverAt(2), 370);
-    const patchNotesItem  = this.createButton(WORLD_WIDTH / 2, 1010, 410,  105, 'patch notes',   60, 'bold', () => { this.scene.start(SceneKey.PatchNotes); }, () => nav?.hoverAt(3), 480);
-    nav = new MenuNav(this, [playItem, leaderboardItem, settingsItem, patchNotesItem]);
+    // Layout: Play (hero, centered) → Leaderboard + Settings (side by side) → Patch Notes (small, centered)
+    // Title sits at y≈420 with a 280px font; buttons start below it at ~640.
+    const SEC_W   = 460;
+    const SEC_H   = 108;
+    const SEC_GAP = 24;
+    const SEC_Y   = 810;
+    const SEC_L_X = WORLD_WIDTH / 2 - SEC_W / 2 - SEC_GAP / 2;
+    const SEC_R_X = WORLD_WIDTH / 2 + SEC_W / 2 + SEC_GAP / 2;
+
+    // 2D keyboard nav — layout:
+    //        [0: play]
+    // [1: leaderboard]  [2: settings]
+    //     [3: patch notes]
+    const navItems: MenuNavItem[] = [];
+    let focusIdx   = -1;  // -1 = no keyboard focus
+    let lastMidIdx =  1;  // which of leaderboard(1)/settings(2) was last visited
+
+    const setNavFocus = (idx: number): void => {
+      if (focusIdx >= 0) navItems[focusIdx]!.setFocus(false);
+      focusIdx = idx;
+      navItems[focusIdx]!.setFocus(true);
+      if (focusIdx === 1 || focusIdx === 2) lastMidIdx = focusIdx;
+    };
+    const clearNavFocus = (hoverIdx: number): void => {
+      if (focusIdx >= 0) navItems[focusIdx]!.setFocus(false);
+      focusIdx = -1;
+      if (hoverIdx === 1 || hoverIdx === 2) lastMidIdx = hoverIdx;
+    };
+
+    type NavDir = 'up' | 'down' | 'left' | 'right';
+    const NAV: Record<number, Partial<Record<NavDir, number | (() => number)>>> = {
+      0: { up: 3, down: () => lastMidIdx, left: 1, right: 2 },
+      1: { up: 0, right: 2, down: 3                         },
+      2: { up: 0, left:  1, down: 3                         },
+      3: { up: () => lastMidIdx, down: 0, left: 1, right: 2 },
+    };
+    const handleNavKey = (dir: NavDir): void => {
+      if (focusIdx < 0) { setNavFocus(0); return; }
+      const dest = NAV[focusIdx]?.[dir];
+      if (dest !== undefined) setNavFocus(typeof dest === 'function' ? dest() : dest);
+    };
+    const kb = this.input.keyboard!;
+    kb.on('keydown-UP',    () => handleNavKey('up'));
+    kb.on('keydown-DOWN',  () => handleNavKey('down'));
+    kb.on('keydown-LEFT',  () => handleNavKey('left'));
+    kb.on('keydown-RIGHT', () => handleNavKey('right'));
+    kb.on('keydown-SPACE', () => { if (focusIdx >= 0) navItems[focusIdx]!.activate(); });
+    kb.on('keydown-ENTER', () => { if (focusIdx >= 0) navItems[focusIdx]!.activate(); });
+
+    const playItem        = this.createButton(WORLD_WIDTH / 2, 650,    730, 150, 'play',        100, 'bold', () => { this.scene.start(SceneKey.ModeSelect); },   () => clearNavFocus(0), 150);
+    const leaderboardItem = this.createButton(SEC_L_X,         SEC_Y,  SEC_W, SEC_H, 'leaderboard', 58, 'bold', () => { this.scene.start(SceneKey.Leaderboard); }, () => clearNavFocus(1), 260);
+    const settingsItem    = this.createButton(SEC_R_X,         SEC_Y,  SEC_W, SEC_H, 'settings',    58, 'bold', () => { this.scene.start(SceneKey.Settings); },    () => clearNavFocus(2), 260);
+    const patchNotesItem  = this.createButton(WORLD_WIDTH / 2, 940,    360,   85,   'patch notes',  50, 'bold', () => { this.scene.start(SceneKey.PatchNotes); }, () => clearNavFocus(3), 370);
+    navItems.push(playItem, leaderboardItem, settingsItem, patchNotesItem);
+
+    // Rebuild sky gradient + star brightness every 5 min (handles period transitions).
+    // Sun/moon positions are updated every frame in update() so this is only needed
+    // for color/style changes (sunrise→day, day→golden, etc.).
+    this.time.addEvent({
+      delay:    5 * 60 * 1000,
+      callback: () => {
+        if (!DEBUG.skyDebugHour) {
+          const d = new Date();
+          this.rebuildSkyForHour(d.getHours() + d.getMinutes() / 60);
+        }
+      },
+      loop: true,
+    });
 
     addVersionLabel(this);
     addUsernameLabel(this);
+    if (DEBUG.skyDebugHour) this.buildDebugSlider();
   }
 
   update(_time: number, delta: number): void {
@@ -157,19 +226,32 @@ export class MainMenuScene extends Phaser.Scene {
       this.snowGfx.fillStyle(0xffffff, f.alpha);
       this.snowGfx.fillCircle(f.x, f.y, f.r);
     }
+
+    // Smoothly reposition sun/moon in real time (skip when debug slider is active)
+    if (!DEBUG.skyDebugHour) {
+      const d    = new Date();
+      const hour = d.getHours() + d.getMinutes() / 60 + d.getSeconds() / 3600;
+      if (this.sunContainer?.active) {
+        const p = this.sunPosForHour(hour);
+        if (p) this.sunContainer.setPosition(p.x, p.y);
+      }
+      if (this.moonContainer?.active) {
+        const p = this.moonPosForHour(hour);
+        if (p) this.moonContainer.setPosition(p.x, p.y);
+      }
+    }
   }
 
   // ─── Background ──────────────────────────────────────────────────────────────
 
   private buildBackground(): void {
-    // Sky: deep navy at top → horizon blue at bottom
-    const sky = this.add.graphics();
-    sky.fillGradientStyle(0x1e3d6e, 0x1e3d6e, 0x6a9ecc, 0x6a9ecc, 1);
-    sky.fillRect(0, 0, WORLD_WIDTH, GAME_HEIGHT);
+    const now  = new Date();
+    const hour = now.getHours() + now.getMinutes() / 60;
+    this.buildSky(hour);
 
     // Far mountains (lighter, tall peaks)
     const farMtn = this.add.graphics();
-    farMtn.fillStyle(0x8ab0cc, 0.85);
+    farMtn.fillStyle(0x8ab0cc, 1);
     this.fillMountainPath(farMtn, [
       [0, 770], [320, 180], [620, 400], [960, 100], [1300, 350], [1600, 160], [1920, 770],
     ], 775);
@@ -188,6 +270,8 @@ export class MainMenuScene extends Phaser.Scene {
       [0, 810], [220, 490], [520, 590], [840, 430], [1120, 545], [1420, 465], [1700, 550], [1920, 810],
     ], 820);
 
+    this.addMountainTint(hour);
+
     // Snowy ground
     const ground = this.add.graphics();
     ground.fillGradientStyle(0xc8dde8, 0xc8dde8, 0xe8f4fc, 0xe8f4fc, 1);
@@ -195,23 +279,324 @@ export class MainMenuScene extends Phaser.Scene {
     ground.lineStyle(1, 0xffffff, 0.4);
     ground.lineBetween(0, 820, WORLD_WIDTH, 820);
 
-    // Trees — left cluster
-    this.drawMenuTree( 40,  895, 0.80);
-    this.drawMenuTree(120,  870, 1.05);
-    this.drawMenuTree(210,  898, 0.90);
-    this.drawMenuTree(285,  882, 0.65);
+    // Ski lifts — drawn before trees so they sit behind the foreground clusters
+    this.drawSkiLifts();
 
-    // Trees — right cluster
-    this.drawMenuTree(WORLD_WIDTH -  40, 895, 0.80);
-    this.drawMenuTree(WORLD_WIDTH - 120, 870, 1.05);
-    this.drawMenuTree(WORLD_WIDTH - 210, 898, 0.90);
-    this.drawMenuTree(WORLD_WIDTH - 285, 882, 0.65);
+    // Trees — back layer (trees 2, 4, 5, 7), drawn first so front trees overlap them
+    this.drawMenuTree(120,              870, 1.05);  // 2
+    this.drawMenuTree(285,              882, 0.65);  // 4
+    this.drawMenuTree(WORLD_WIDTH - 285, 882, 0.65); // 5
+    this.drawMenuTree(WORLD_WIDTH - 120, 870, 1.05); // 7
+
+    // Humorous "YETI XING" crossing sign — between layers so it sits behind front trees
+    this.drawYetiXingSign(WORLD_WIDTH - 1700, 898);
+
+    // Trees — front layer (trees 1, 3, 6, 8), drawn after so they appear in front
+    this.drawMenuTree( 40,              895, 0.80);  // 1
+    this.drawMenuTree(210,              898, 0.90);  // 3
+    this.drawMenuTree(WORLD_WIDTH - 210, 898, 0.90); // 6
+    this.drawMenuTree(WORLD_WIDTH -  40, 895, 0.80); // 8
 
     // v0.3.5 — star on the tallest left tree
-    this.drawTreeStar(120, 870, 1.05);
+    this.drawTreeStar(1800, 870, 1.05);
+
+    // Sleeping cat — left side, opposite the campfire scene
+    this.drawSleepingCat();
 
     // Campfire scene — skier sitting in the snow on the right side
-    this.drawLodgeScene();
+    this.drawLodgeScene(hour);
+  }
+
+  // ─── Sky helpers ─────────────────────────────────────────────────────────────
+
+  private buildSky(hour: number): void {
+    // All sky graphics go into a container at depth -10 so they always render
+    // behind mountains (depth 0) even when rebuilt after scene creation.
+    this.skyLayer = this.add.container(0, 0).setDepth(-10);
+
+    // Pick gradient end-points based on time of day
+    let topC = 0x1e3d6e;
+    let botC = 0x6a9ecc;
+    const lh = this.lerpHex.bind(this);
+    if      (hour >= 22 || hour < 5)  { topC = 0x03081a; botC = 0x0c1535; }
+    else if (hour < 6)  { const t = hour - 5;        topC = lh(0x03081a, 0x0d1535, t); botC = lh(0x0c1535, 0x3a1208, t); }
+    else if (hour < 7.5){ const t = (hour-6)/1.5;    topC = lh(0x0d1535, 0x1a2e6e, t); botC = lh(0x3a1208, 0xe87020, t); }
+    else if (hour < 10) { const t = (hour-7.5)/2.5;  topC = lh(0x1a2e6e, 0x1a4a8a, t); botC = lh(0xe87020, 0x78bce0, t); }
+    else if (hour < 15) { topC = 0x1565c0; botC = 0x7ab8f0; }
+    else if (hour < 17) { const t = (hour-15)/2;     topC = lh(0x1565c0, 0x1e3d6e, t); botC = lh(0x7ab8f0, 0x6a9ecc, t); }
+    else if (hour < 18.5){ const t = (hour-17)/1.5;  topC = lh(0x1e3d6e, 0x1a237e, t); botC = lh(0x6a9ecc, 0xfb8c00, t); }
+    else if (hour < 20) { const t = (hour-18.5)/1.5; topC = lh(0x1a237e, 0x4a0e8f, t); botC = lh(0xfb8c00, 0xe64010, t); }
+    else if (hour < 21.5){ const t = (hour-20)/1.5;  topC = lh(0x4a0e8f, 0x0e0a2e, t); botC = lh(0xe64010, 0x6a1a7e, t); }
+    else                { const t = (hour-21.5)/0.5; topC = lh(0x0e0a2e, 0x060818, t); botC = lh(0x6a1a7e, 0x1a1235, t); }
+
+    const sky = new Phaser.GameObjects.Graphics(this);
+    sky.fillGradientStyle(topC, topC, botC, botC, 1);
+    sky.fillRect(0, 0, WORLD_WIDTH, GAME_HEIGHT);
+    this.skyLayer.add(sky);
+
+    // Warm horizon glow during sunrise / golden hour / sunset
+    if ((hour >= 6 && hour < 9) || (hour >= 17 && hour < 21)) {
+      let glowAlpha = 0;
+      if      (hour < 7)   glowAlpha = (hour - 6)  * 0.28;
+      else if (hour < 8)   glowAlpha = 0.28 - (hour - 7) * 0.14;
+      else if (hour < 9)   glowAlpha = 0.14 - (hour - 8) * 0.14;
+      else if (hour < 18)  glowAlpha = (hour - 17) * 0.28;
+      else if (hour < 19)  glowAlpha = 0.28;
+      else if (hour < 20)  glowAlpha = 0.28 - (hour - 19) * 0.14;
+      else                 glowAlpha = 0.14 - (hour - 20) * 0.14;
+      const glowColor = hour < 12 ? 0xff6600 : 0xff4400;
+      const hg = new Phaser.GameObjects.Graphics(this);
+      hg.fillStyle(glowColor, Math.max(0, glowAlpha));
+      hg.fillRect(0, 580, WORLD_WIDTH, 240);
+      this.skyLayer.add(hg);
+    }
+
+    // Stars
+    const starAlpha = this.starAlphaForHour(hour);
+    if (starAlpha > 0.02) this.drawMenuStars(starAlpha);
+
+    // Sun
+    const sunPos = this.sunPosForHour(hour);
+    if (sunPos) {
+      const style: 'day' | 'golden' | 'sunrise' =
+        (hour < 8 || hour >= 18.5) ? 'sunrise' :
+        (hour >= 17)               ? 'golden'  : 'day';
+      this.sunContainer = this.drawMenuSun(style);
+      this.sunContainer.setPosition(sunPos.x, sunPos.y);
+    }
+
+    // Moon
+    const moonAlpha = this.moonAlphaForHour(hour);
+    const moonPos   = moonAlpha > 0.02 ? this.moonPosForHour(hour) : null;
+    if (moonPos) {
+      this.moonContainer = this.drawMenuMoon(moonAlpha);
+      this.moonContainer.setPosition(moonPos.x, moonPos.y);
+    }
+  }
+
+  private starAlphaForHour(hour: number): number {
+    if (hour >= 22 || hour < 5)  return 1.0;
+    if (hour < 6)                return 1.0 - (hour - 5);
+    if (hour >= 21.5)            return (hour - 21.5) / 0.5;
+    if (hour >= 20)              return (hour - 20) / 1.5 * 0.6;
+    if (hour >= 19)              return (hour - 19) * 0.2;
+    return 0;
+  }
+
+  private moonAlphaForHour(hour: number): number {
+    if (hour >= 22 || hour < 5)  return 1.0;
+    if (hour < 6)                return 1.0 - (hour - 5);
+    if (hour >= 20)              return (hour - 20) / 2;
+    return 0;
+  }
+
+  private drawMenuStars(opacity: number): void {
+    let seed = 0xdeadbeef;
+    const rand = (): number => {
+      seed ^= seed << 13; seed ^= seed >> 17; seed ^= seed << 5;
+      return (seed >>> 0) / 0xffffffff;
+    };
+    const g = new Phaser.GameObjects.Graphics(this);
+    for (let i = 0; i < 120; i++) {
+      const x  = rand() * WORLD_WIDTH;
+      const y  = rand() * 740;
+      const r  = rand() * 1.5 + 0.4;
+      const br = rand() * 0.5 + 0.5;
+      g.fillStyle(0xffffff, br * opacity);
+      g.fillCircle(x, y, r);
+    }
+    this.skyLayer!.add(g);
+    // A handful of brighter twinkling stars with cross-sparkles
+    for (let i = 0; i < 10; i++) {
+      const x = rand() * WORLD_WIDTH;
+      const y = rand() * 580;
+      const s = new Phaser.GameObjects.Graphics(this);
+      s.fillStyle(0xffffff, opacity);
+      s.fillCircle(x, y, 2);
+      s.lineStyle(1, 0xffffff, opacity * 0.5);
+      s.lineBetween(x - 6, y, x + 6, y);
+      s.lineBetween(x, y - 6, x, y + 6);
+      this.skyLayer!.add(s);
+      this.tweens.add({
+        targets: s, alpha: 0.08,
+        duration: 1200 + i * 380, yoyo: true, repeat: -1,
+        ease: 'Sine.easeInOut', delay: i * 250,
+      });
+    }
+  }
+
+  private sunPosForHour(hour: number): { x: number; y: number } | null {
+    if (hour < 6.5 || hour >= 19.5) return null;
+    const t = (hour - 6) / 12;
+    return { x: 250 + t * (WORLD_WIDTH - 500), y: 580 - Math.sin(t * Math.PI) * 530 };
+  }
+
+  private moonPosForHour(hour: number): { x: number; y: number } | null {
+    if (this.moonAlphaForHour(hour) <= 0.02) return null;
+    const mh = hour >= 20 ? hour - 20 : hour + 4;
+    const t  = mh / 12;
+    if (t < 0 || t > 1) return null;
+    return { x: WORLD_WIDTH - 250 - t * (WORLD_WIDTH - 500), y: 580 - Math.sin(t * Math.PI) * 530 };
+  }
+
+  private drawMenuSun(style: 'day' | 'golden' | 'sunrise'): Phaser.GameObjects.Container {
+    const c = new Phaser.GameObjects.Container(this, 0, 0);
+    const g = new Phaser.GameObjects.Graphics(this);
+    if (style === 'sunrise' || style === 'golden') {
+      const hue = style === 'sunrise' ? 0xff7700 : 0xffaa00;
+      g.fillStyle(hue,      0.06); g.fillCircle(0, 0, 100);
+      g.fillStyle(hue,      0.13); g.fillCircle(0, 0, 72);
+      g.fillStyle(0xff5500, 0.38); g.fillCircle(0, 0, 46);
+      g.fillStyle(0xffcc44, 0.90); g.fillCircle(0, 0, 32);
+      g.fillStyle(0xffffff, 0.80); g.fillCircle(0, 0, 17);
+    } else {
+      g.fillStyle(0xfff5cc, 0.12); g.fillCircle(0, 0, 62);
+      g.fillStyle(0xffeedd, 0.25); g.fillCircle(0, 0, 48);
+      g.fillStyle(0xffe066, 1.00); g.fillCircle(0, 0, 36);
+      g.fillStyle(0xfff9dd, 1.00); g.fillCircle(0, 0, 26);
+      for (let i = 0; i < 8; i++) {
+        const a = (i / 8) * Math.PI * 2;
+        g.lineStyle(2.5, 0xffe066, 0.45);
+        g.lineBetween(Math.cos(a) * 40, Math.sin(a) * 40, Math.cos(a) * 56, Math.sin(a) * 56);
+      }
+    }
+    c.add(g);
+    this.skyLayer!.add(c);
+    return c;
+  }
+
+  private drawMenuMoon(alpha: number): Phaser.GameObjects.Container {
+    const c = new Phaser.GameObjects.Container(this, 0, 0);
+    const g = new Phaser.GameObjects.Graphics(this);
+    g.setAlpha(alpha);
+    g.fillStyle(0x8899cc, 0.10); g.fillCircle(0,   0,  52);
+    g.fillStyle(0xaabbdd, 0.18); g.fillCircle(0,   0,  38);
+    g.fillStyle(0xe0e8f5, 1.00); g.fillCircle(0,   0,  26);
+    g.fillStyle(0x060818, 0.94); g.fillCircle(10, -3,  22);   // crescent shadow
+    g.fillStyle(0x8899aa, 0.50);
+    g.fillEllipse(-7,  5, 11, 7);
+    g.fillEllipse(-12,-3,  7, 5);
+    g.fillEllipse(-5, -9,  5, 4);
+    c.add(g);
+    this.skyLayer!.add(c);
+    return c;
+  }
+
+  private addMountainTint(hour: number): void {
+    let tintColor = 0;
+    let tintAlpha = 0;
+    if      (hour >= 22 || hour < 5)           { tintColor = 0x0a1535; tintAlpha = 0.50; }
+    else if (hour < 6)                         { tintColor = 0x0a1535; tintAlpha = 0.50 - (hour - 5) * 0.30; }
+    else if (hour < 8)                         { tintColor = 0xff4400; tintAlpha = (hour - 6) / 2 * 0.15; }
+    else if (hour >= 17 && hour < 18.5)        { tintColor = 0xff8800; tintAlpha = (hour - 17) / 1.5 * 0.12; }
+    else if (hour >= 18.5 && hour < 20)        { tintColor = 0xff2200; tintAlpha = 0.12 + (hour - 18.5) / 1.5 * 0.12; }
+    else if (hour >= 20 && hour < 21.5)        { tintColor = 0x4a0a8f; tintAlpha = 0.24 + (hour - 20) / 1.5 * 0.15; }
+    else if (hour >= 21.5)                     { tintColor = 0x08082a; tintAlpha = 0.39; }
+    if (tintAlpha <= 0.01) return;
+    const tint = this.add.graphics();
+    tint.setDepth(1);
+    tint.fillStyle(tintColor, tintAlpha);
+    tint.fillRect(0, 0, WORLD_WIDTH, GAME_HEIGHT);
+    this.mountainTintGfx = tint;
+  }
+
+  private rebuildSkyForHour(hour: number): void {
+    this.skyLayer?.destroy(true);
+    this.skyLayer      = null;
+    this.sunContainer  = null;
+    this.moonContainer = null;
+    this.mountainTintGfx?.destroy();
+    this.mountainTintGfx = null;
+    this.buildSky(hour);
+    this.addMountainTint(hour);
+  }
+
+  private buildDebugSlider(): void {
+    const canvas = this.game.canvas;
+    const bounds = canvas.getBoundingClientRect();
+
+    const panel = document.createElement('div');
+    Object.assign(panel.style, {
+      position:       'fixed',
+      left:           bounds.left + 'px',
+      top:            bounds.top  + 'px',
+      width:          bounds.width + 'px',
+      height:         bounds.height + 'px',
+      display:        'flex',
+      alignItems:     'flex-end',
+      justifyContent: 'center',
+      paddingBottom:  '18px',
+      pointerEvents:  'none',
+      zIndex:         '99999',
+      boxSizing:      'border-box',
+    });
+
+    const inner = document.createElement('div');
+    Object.assign(inner.style, {
+      display:       'flex',
+      alignItems:    'center',
+      gap:           '12px',
+      padding:       '8px 18px',
+      background:    'rgba(0,0,0,0.65)',
+      borderRadius:  '8px',
+      pointerEvents: 'auto',
+    });
+
+    const now      = new Date();
+    const initHour = now.getHours() + now.getMinutes() / 60;
+
+    const formatHour = (h: number): string => {
+      const hh = Math.floor(h % 24);
+      const mm = Math.round((h % 1) * 60);
+      return `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
+    };
+
+    const title = document.createElement('span');
+    title.style.color      = '#88aaff';
+    title.style.fontFamily = 'monospace';
+    title.style.fontSize   = '13px';
+    title.textContent      = 'sky debug:';
+
+    const slider = document.createElement('input');
+    slider.type  = 'range';
+    slider.min   = '0';
+    slider.max   = '24';
+    slider.step  = '0.25';
+    slider.value = String(initHour);
+    Object.assign(slider.style, { width: '420px', cursor: 'pointer' });
+
+    const label = document.createElement('span');
+    Object.assign(label.style, {
+      color:      '#ffffff',
+      fontFamily: 'monospace',
+      fontSize:   '13px',
+      minWidth:   '44px',
+    });
+    label.textContent = formatHour(initHour);
+
+    slider.addEventListener('input', () => {
+      const h = parseFloat(slider.value) % 24;
+      label.textContent = formatHour(h);
+      this.rebuildSkyForHour(h);
+    });
+
+    inner.append(title, slider, label);
+    panel.appendChild(inner);
+    document.body.appendChild(panel);
+
+    this.debugPanelEl = panel;
+    this.events.once('shutdown', () => panel.remove());
+    this.events.once('destroy',  () => panel.remove());
+  }
+
+  private lerpHex(a: number, b: number, t: number): number {
+    const r0 = (a >> 16) & 0xff, g0 = (a >> 8) & 0xff, b0 = a & 0xff;
+    const r1 = (b >> 16) & 0xff, g1 = (b >> 8) & 0xff, b1 = b & 0xff;
+    return (
+      (Math.round(r0 + (r1 - r0) * t) << 16) |
+      (Math.round(g0 + (g1 - g0) * t) <<  8) |
+      (Math.round(b0 + (b1 - b0) * t))
+    );
   }
 
   /** Fill a mountain silhouette as a series of quads between consecutive peak points. */
@@ -259,6 +644,143 @@ export class MainMenuScene extends Phaser.Scene {
     });
   }
 
+  /** Two ski lifts going up the near-mountain slopes. */
+  private drawSkiLifts(): void {
+    // Lift endpoints sit on consecutive near-mountain path vertices so the
+    // cable follows the slope exactly and never dips through the silhouette.
+    const LIFTS = [
+      { ax: 525, ay: 590, bx: 838, by: 432 },   // centre-left slope → centre peak
+      { ax: 525, ay: 590, bx: 220, by: 490 },   // centre-left slope → left peak
+      { ax: 1122, ay: 546, bx: 1418, by: 466 },  // centre-right slope
+    ] as const;
+    const CABLE_LIFT = 48;   // px the cable sits above the slope surface
+    const NUM_CHAIRS = 3;
+    const TRIP_MS    = 14_000;
+
+    for (const { ax, ay, bx, by } of LIFTS) {
+      const dx  = bx - ax;
+      const dy  = by - ay;
+      const cay = ay - CABLE_LIFT;   // cable y at bottom terminal
+      const cby = by - CABLE_LIFT;   // cable y at top terminal
+
+      // ── Animated chairs (added first → rendered below cable) ─────────────
+      for (let i = 0; i < NUM_CHAIRS; i++) {
+        const t0    = i / NUM_CHAIRS;
+        const chairGfx = new Phaser.GameObjects.Graphics(this);
+        // Suspension rope
+        chairGfx.lineStyle(1.5, 0x1a2a3a, 1);
+        chairGfx.beginPath();
+        chairGfx.moveTo(0, 0);
+        chairGfx.lineTo(0, 18);
+        chairGfx.strokePath();
+        // Gondola body
+        chairGfx.fillStyle(0x3a6ab8, 1);
+        chairGfx.fillRoundedRect(-10, 18, 20, 12, 2);
+        // Window strip
+        chairGfx.fillStyle(0xaaccee, 0.75);
+        chairGfx.fillRect(-7, 20, 14, 5);
+
+        const chair = this.add.container(ax + dx * t0, cay + dy * t0, [chairGfx]);
+
+        // Phase 1: travel from staggered start to top terminal
+        this.tweens.add({
+          targets:  chair,
+          x:        bx,
+          y:        cby,
+          duration: TRIP_MS * (1 - t0),
+          ease:     'Linear',
+          onComplete: () => {
+            // Phase 2: loop from bottom to top indefinitely
+            this.tweens.add({
+              targets:  chair,
+              x:        { from: ax, to: bx },
+              y:        { from: cay, to: cby },
+              duration: TRIP_MS,
+              repeat:   -1,
+              ease:     'Linear',
+            });
+          },
+        });
+      }
+
+      // ── Towers + cable (added after chairs → renders on top) ─────────────
+      const g = this.add.graphics();
+
+      // Support towers — each CABLE_LIFT px tall (slope and cable are parallel)
+      for (const t of [0.25, 0.5, 0.75]) {
+        const tx   = Math.round(ax + dx * t);
+        const topY = Math.round(cay + dy * t);   // cable level = tower top
+        g.fillStyle(0x8899aa, 1);
+        g.fillRect(tx - 3, topY, 6, CABLE_LIFT + 2);  // pole down to slope
+        g.fillRect(tx - 14, topY - 4, 28, 5);          // crossbar
+        g.fillStyle(0x334455, 1);
+        g.fillCircle(tx - 7, topY - 2, 3);             // pulleys
+        g.fillCircle(tx + 7, topY - 2, 3);
+      }
+
+      // Main cable
+      g.lineStyle(2, 0x1a2a3a, 0.9);
+      g.beginPath();
+      g.moveTo(ax, cay);
+      g.lineTo(bx, cby);
+      g.strokePath();
+
+      // Return cable — parallel, offset ~5px toward the downslope side
+      const clen  = Math.sqrt(dx * dx + dy * dy);
+      const perpX = (-dy / clen) * 5;
+      const perpY = ( dx / clen) * 5;
+      g.lineStyle(1.5, 0x1a2a3a, 0.5);
+      g.beginPath();
+      g.moveTo(ax + perpX, cay + perpY);
+      g.lineTo(bx + perpX, cby + perpY);
+      g.strokePath();
+
+      // Terminal buildings — drawn last, mask chairs at load/unload zones
+      for (const [tx, ty] of [[ax, ay], [bx, by]] as [number, number][]) {
+        const tw = 32; const th = 26;
+        g.fillStyle(0x6688aa, 1);
+        g.fillRoundedRect(tx - tw / 2, ty - th, tw, th, 4);
+        g.fillStyle(0x4a6688, 1);
+        g.fillTriangle(tx - tw / 2 - 4, ty - th, tx, ty - th - 16, tx + tw / 2 + 4, ty - th);
+        g.fillStyle(0x2a3a4a, 1);
+        g.fillRect(tx - 5, ty - 13, 10, 13);
+      }
+    }
+  }
+
+  /** Humorous "YETI XING" crossing sign planted next to a tree. */
+  private drawYetiXingSign(treeCx: number, baseY: number): void {
+    const postX = treeCx + 52;
+    const gndY  = baseY;
+    const postH = 68;
+    const signW = 86;
+    const signH = 46;
+    const signCY = gndY - postH - signH / 2;
+
+    // Post
+    const g = this.add.graphics();
+    g.fillStyle(0xa0784a, 1);
+    g.fillRect(postX - 3, gndY - postH, 6, postH);
+
+    // Sign board — yellow, slight tilt
+    const container = this.add.container(postX, signCY);
+    const board = this.add.graphics();
+    board.fillStyle(0xf5e642, 1);
+    board.fillRoundedRect(-signW / 2, -signH / 2, signW, signH, 5);
+    board.lineStyle(2, 0xc8a800, 1);
+    board.strokeRoundedRect(-signW / 2, -signH / 2, signW, signH, 5);
+    container.add(board);
+
+    const line1 = this.add.text(0, -10, 'YETI', {
+      fontFamily: 'FoxwhelpFont', fontSize: '22px', fontStyle: 'bold', color: '#1a1a1a',
+    }).setOrigin(0.5);
+    const line2 = this.add.text(0, 12, 'XING', {
+      fontFamily: 'FoxwhelpFont', fontSize: '22px', fontStyle: 'bold', color: '#cc2222',
+    }).setOrigin(0.5);
+    container.add([line1, line2]);
+    container.setRotation(-0.08);
+  }
+
   /** Draw a simple layered pine tree centred at (cx, baseY). */
   private drawMenuTree(cx: number, baseY: number, scale: number): void {
     const g = this.add.graphics();
@@ -291,7 +813,93 @@ export class MainMenuScene extends Phaser.Scene {
    *   crossed skis  →  skier sitting  →  campfire
    * All elements are purely vector Graphics with tween-based fire animation.
    */
-  private drawLodgeScene(): void {
+  private drawSleepingCat(): void {
+    const cx   = 450;
+    const gndY = 1003;
+    const g    = this.add.graphics();
+
+    // Ground shadow
+    g.fillStyle(0x000020, 0.10);
+    g.fillEllipse(cx, gndY - 2, 110, 16);
+
+    // Tail — crescent wrapping to the left of the body (drawn first, behind body)
+    g.fillStyle(0x8888a2, 1);
+    g.fillPoints([
+      { x: cx - 10, y: gndY - 46 },
+      { x: cx - 38, y: gndY - 55 },
+      { x: cx - 50, y: gndY - 43 },
+      { x: cx - 25, y: gndY - 34 },
+    ], true);
+
+    // Body
+    g.fillStyle(0xa0a0b8, 1);
+    g.fillEllipse(cx, gndY - 26, 88, 50);
+
+    // Belly (lighter patch)
+    g.fillStyle(0xbcbccc, 0.75);
+    g.fillEllipse(cx + 12, gndY - 20, 52, 28);
+
+    // Head
+    g.fillStyle(0xa0a0b8, 1);
+    g.fillCircle(cx + 34, gndY - 48, 23);
+
+    // Ears
+    g.fillStyle(0xa0a0b8, 1);
+    g.fillTriangle(cx + 21, gndY - 64, cx + 17, gndY - 79, cx + 32, gndY - 66);
+    g.fillTriangle(cx + 37, gndY - 67, cx + 48, gndY - 81, cx + 53, gndY - 63);
+
+    // Inner ear (pink)
+    g.fillStyle(0xcc8080, 1);
+    g.fillTriangle(cx + 23, gndY - 65, cx + 21, gndY - 75, cx + 29, gndY - 67);
+    g.fillTriangle(cx + 39, gndY - 67, cx + 47, gndY - 77, cx + 50, gndY - 64);
+
+    // Closed eyes (happy sleeping arcs)
+    g.lineStyle(2.5, 0x2a2a3a, 1);
+    g.beginPath();
+    g.arc(cx + 27, gndY - 49, 6, -Math.PI * 0.75, -Math.PI * 0.2);
+    g.strokePath();
+    g.beginPath();
+    g.arc(cx + 41, gndY - 49, 6, -Math.PI * 0.75, -Math.PI * 0.2);
+    g.strokePath();
+
+    // Nose
+    g.fillStyle(0xcc6666, 1);
+    g.fillTriangle(cx + 34, gndY - 43, cx + 31, gndY - 40, cx + 37, gndY - 40);
+
+    // Whiskers
+    g.lineStyle(1.5, 0xd8d8e8, 0.8);
+    g.beginPath(); g.moveTo(cx + 22, gndY - 41); g.lineTo(cx + 8,  gndY - 43); g.strokePath();
+    g.beginPath(); g.moveTo(cx + 22, gndY - 38); g.lineTo(cx + 9,  gndY - 35); g.strokePath();
+    g.beginPath(); g.moveTo(cx + 46, gndY - 41); g.lineTo(cx + 60, gndY - 43); g.strokePath();
+    g.beginPath(); g.moveTo(cx + 46, gndY - 38); g.lineTo(cx + 59, gndY - 35); g.strokePath();
+
+    // Paws peeking out from under the body
+    g.fillStyle(0x9292aa, 1);
+    g.fillRoundedRect(cx + 14, gndY - 11, 20, 11, 4);
+    g.fillRoundedRect(cx + 38, gndY - 11, 20, 11, 4);
+
+    // Light snow dusting on the cat's back
+    g.fillStyle(0xeef4fc, 0.55);
+    g.fillEllipse(cx - 6, gndY - 50, 36, 11);
+
+    // Floating zzz
+    const zzz = this.add.text(cx + 58, gndY - 68, 'zzz', {
+      fontFamily: 'FoxwhelpFont',
+      fontSize:   '28px',
+      color:      '#b8b8cc',
+    }).setOrigin(0, 1).setAlpha(0.8);
+    this.tweens.add({
+      targets:  zzz,
+      y:        { from: gndY - 68, to: gndY - 90 },
+      alpha:    { from: 0.8,       to: 0 },
+      duration: 2600,
+      repeat:   -1,
+      ease:     'Quad.easeOut',
+      delay:    800,
+    });
+  }
+
+  private drawLodgeScene(hour: number): void {
     const sX   = 1430;   // skier horizontal anchor
     const fX   = 1594;   // fire horizontal anchor
     const gndY = 983;    // shared ground level
@@ -314,9 +922,31 @@ export class MainMenuScene extends Phaser.Scene {
     };
 
     // ─── Warm fire glow (drawn first, behind everything) ─────────────────────
+    // Scale glow size and brightness based on how dark it is outside.
+    const ni        = hour >= 18 ? Math.min(1, (hour - 18) / 4)   // evening ramp
+                    : hour <  6  ? 1                                // deep night
+                    : hour <  7  ? 1 - (hour - 6)                  // dawn fade
+                    : 0;                                            // daytime
+    const glowW     = 230 + ni * 320;
+    const glowH     = 110 + ni * 130;
+    const glowAlpha = 0.13 + ni * 0.30;
+
+    // Ambient snow pool — visible only at night, spreads wide on the ground
+    if (ni > 0.05) {
+      const pool = this.add.graphics();
+      pool.fillStyle(0xff7700, 0.18 * ni);
+      pool.fillEllipse(fX - 40, gndY + 6, 760, 70);
+      pool.fillStyle(0xff5500, 0.22 * ni);
+      pool.fillEllipse(fX, gndY - 10, 480, 110);
+      this.tweens.add({
+        targets: pool, alpha: 0.55,
+        duration: 1800, yoyo: true, repeat: -1, ease: 'Sine.easeInOut', delay: 300,
+      });
+    }
+
     const warmGlow = this.add.graphics();
-    warmGlow.fillStyle(0xff6600, 0.13);
-    warmGlow.fillEllipse(fX, gndY - 42, 230, 110);
+    warmGlow.fillStyle(0xff6600, glowAlpha);
+    warmGlow.fillEllipse(fX, gndY - 42, glowW, glowH);
     this.tweens.add({
       targets: warmGlow, alpha: 0.5,
       duration: 1200, yoyo: true, repeat: -1, ease: 'Sine.easeInOut',
@@ -327,38 +957,33 @@ export class MainMenuScene extends Phaser.Scene {
     shadow.fillStyle(0x000020, 0.18);
     shadow.fillEllipse(sX + 20, gndY - 2, 155, 18);
 
-    // ─── Skis planted upright in snow ────────────────────────────────────────
-    const skiCX = sX - 168;
-    // At angle 1.1 rad, sin≈0.891 × hl 90 = 80 px vertical reach,
-    // so skiCY = gndY - 80 puts the tails exactly at the snow surface.
-    const skiCY = gndY - 80;
-    const ski1A =  1.1;   // leans top-left / tail enters snow to the right
-    const ski2A = -1.1;   // mirror
-    const skiHL = 90;
-    const skis  = this.add.graphics();
+    // ─── Skis laid flat on the snow beside the skier ─────────────────────────
+    // Two parallel skis resting on the ground, tips pointing toward the fire.
+    const skiCX  = sX - 155;   // centre x — tucked left of the log
+    const skiLen = 172;         // full length
+    const skiW   = 11;
+    const skiA   = 0.10;        // gentle diagonal angle
+    const tipOffX = (skiLen / 2 - 15) * Math.cos(skiA);
+    const tipOffY = (skiLen / 2 - 15) * Math.sin(skiA);
+    const skis   = this.add.graphics();
 
-    // Ski 1 body (behind ski 2)
+    // Soft shadow beneath both skis
+    skis.fillStyle(0x000020, 0.12);
+    skis.fillEllipse(skiCX, gndY + 17, skiLen + 10, 14);
+
+    // Ski bodies — bottom ski then top ski (slightly above)
     skis.fillStyle(0x0e0e18, 1);
-    rr(skis, skiCX, skiCY, skiHL * 2, 11, ski1A);
-    // Ski 2 body (in front, covers the crossing)
-    rr(skis, skiCX, skiCY, skiHL * 2, 11, ski2A);
+    rr(skis, skiCX, gndY + 15,      skiLen, skiW, skiA);
+    rr(skis, skiCX, gndY + 15 - 12, skiLen, skiW, skiA);
 
-    // Coloured tips — top ends sticking up out of the snow
-    // Ski 1 tip is in the negative direction (top-left)
+    // Coloured tips on the right-hand (fire-side) ends
     skis.fillStyle(COLORS.PLAYER, 1);
-    rr(skis,
-      skiCX - (skiHL - 15) * Math.cos(ski1A),
-      skiCY - (skiHL - 15) * Math.sin(ski1A),
-      30, 11, ski1A);
-    // Ski 2 tip is in the positive direction (top-right)
-    rr(skis,
-      skiCX + (skiHL - 15) * Math.cos(ski2A),
-      skiCY + (skiHL - 15) * Math.sin(ski2A),
-      30, 11, ski2A);
+    rr(skis, skiCX + tipOffX, gndY + 15      + tipOffY, 30, skiW, skiA);
+    rr(skis, skiCX + tipOffX, gndY + 15 - 12 + tipOffY, 30, skiW, skiA);
 
-    // Binding highlight at the crossing point
+    // Binding highlights at centre of each ski
     skis.fillStyle(COLORS.PLAYER_SUIT, 1);
-    skis.fillRect(skiCX - 9, skiCY - 6, 18, 12);
+    skis.fillRect(skiCX - 10, gndY - 6, 20, 24);
 
     // ─── Log the skier is sitting on ─────────────────────────────────────────
     const sitLog = this.add.graphics();

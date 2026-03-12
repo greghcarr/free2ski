@@ -267,7 +267,14 @@ export class LeaderboardScene extends Phaser.Scene {
       }
 
       const scoreStr = this.formatScore(row.score, mode!);
-      const seedStr  = new Date(row.playedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      const played     = new Date(row.playedAt);
+      const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
+      const daysAgo    = Math.floor((todayStart.getTime() - new Date(played.getFullYear(), played.getMonth(), played.getDate()).getTime()) / 86_400_000);
+      const seedStr    = daysAgo === 0 ? 'today'
+                       : daysAgo === 1 ? 'yesterday'
+                       : daysAgo === 2 ? '2 days ago'
+                       : daysAgo === 3 ? '3 days ago'
+                       : played.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 
       const usernameText = this.add.text(COL_USERNAME, y, row.username, rowStyle).setOrigin(0, 0.5);
       const items: Phaser.GameObjects.GameObject[] = [
@@ -280,12 +287,10 @@ export class LeaderboardScene extends Phaser.Scene {
       if (row.username === myUsername) {
         items.push(
           this.add.text(COL_USERNAME + usernameText.displayWidth + 20, y, '← this is you', {
-            fontFamily:      'FoxwhelpFont',
-            fontSize:        '36px',
-            letterSpacing:   2,
-            color:           '#FFD700',
-            stroke:          this.modeColorStr(mode!),
-            strokeThickness: 10,
+            fontFamily:    'FoxwhelpFont',
+            fontSize:      '44px',
+            letterSpacing: 1,
+            color:         '#000000',
           }).setOrigin(0, 0.5),
         );
       }

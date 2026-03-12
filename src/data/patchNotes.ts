@@ -6,6 +6,19 @@ export interface PatchEntry {
 
 export const PATCH_NOTES: PatchEntry[] = [
   {
+    version: 'v0.3.9-pre-alpha',
+    date:    'Mar 12, 2026',
+    notes: [
+      'main menu sky now matches the real-world time of day — sunrise, daytime, golden hour, sunset, and night all look different',
+      'the sun and moon move across the sky in real time as you watch',
+      'campfire glow on the main menu brightens and widens at night',
+      'game-over screen now shows exactly how far above or below your personal best each run was',
+      'tied personal best gets its own badge',
+      'leaderboard dates shown as "today", "yesterday", or "2 days ago" for recent runs',
+      'fixed main menu keyboard navigation — arrow keys now correctly move through the 2D button layout',
+    ],
+  },
+  {
     version: 'v0.3.8-pre-alpha',
     date:    'Mar 11, 2026',
     notes: [
