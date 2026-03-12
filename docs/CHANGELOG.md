@@ -5,6 +5,13 @@ Format: newest first, grouped by version/date.
 
 ---
 
+## v0.3.9.1-pre-alpha — 2026-03-12
+
+### Added
+- Fullscreen toggle in the settings screen
+
+---
+
 ## v0.3.9-pre-alpha — 2026-03-12
 
 ### Added
