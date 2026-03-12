@@ -1,6 +1,6 @@
 {
   "name": "skifree-js",
-  "version": "0.3.6-pre-alpha",
+  "version": "0.3.8-pre-alpha",
   "private": true,
   "description": "A SkiFree-inspired endless skiing game for web and Steam",
   "main": "dist/electron/main.js",
@@ -17,9 +17,11 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.99.0",
+    "bad-words": "^4.0.0",
     "phaser": "^3.87.0"
   },
   "devDependencies": {
+    "@types/bad-words": "^3.0.3",
     "@types/node": "^22.0.0",
     "@typescript-eslint/eslint-plugin": "^8.0.0",
     "@typescript-eslint/parser": "^8.0.0",

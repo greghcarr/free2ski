@@ -254,7 +254,7 @@ export class LeaderboardScene extends Phaser.Scene {
 
     const rowStyle   = { fontFamily: 'FoxwhelpFont', fontSize: '44px', color: this.modeColorStr(mode!) };
     const mutedStyle = { fontFamily: 'FoxwhelpFont', fontSize: '40px', color: COLORS.UI_SECONDARY };
-    const myUsername = HighScoreManager.getOrCreateUsername();
+    const myUsername = HighScoreManager.getDisplayName() ?? '';
 
     rows.forEach((row, i) => {
       const y = ROW_START_Y + i * ROW_H;

@@ -1,7 +1,6 @@
 import { GameMode } from '@/config/GameModes';
 import { EMPTY_SAVE, type RunRecord, type SaveData } from './SaveData';
 import { getDailySeed } from '@/utils/MathUtils';
-import { generateUsername } from '@/utils/UsernameGenerator';
 
 const STORAGE_KEY = 'skifree_save_v1';
 
@@ -63,53 +62,14 @@ export class HighScoreManager {
     return this.load().totalRuns;
   }
 
-  static getOrCreateUsername(): string {
-    const data = this.load();
-    if (data.username) return data.username;
-    const name = generateUsername();
-    data.username = name;
-    this.persist(data);
-    return name;
+  static getDisplayName(): string | null {
+    return this.load().username ?? null;
   }
 
-  /**
-   * Ensures the stored username is uniquely reserved in Supabase.
-   * Loops generating new candidates if the current one is already taken.
-   * If the network is unavailable the username is saved locally as unclaimed
-   * and this method will retry on the next call.
-   *
-   * Pass `claimFn` from LeaderboardService to avoid a circular import.
-   */
-  static async initUsername(
-    claimFn: (username: string) => Promise<boolean>,
-  ): Promise<void> {
+  static setDisplayName(name: string): void {
     const data = this.load();
-    if (data.usernameClaimed) return;
-
-    let candidate = data.username ?? generateUsername();
-
-    for (let attempt = 0; attempt < 20; attempt++) {
-      let claimed: boolean;
-      try {
-        claimed = await claimFn(candidate);
-      } catch {
-        // Network unavailable — save the candidate locally and retry next session
-        data.username = candidate;
-        data.usernameClaimed = false;
-        this.persist(data);
-        return;
-      }
-
-      if (claimed) {
-        data.username = candidate;
-        data.usernameClaimed = true;
-        this.persist(data);
-        return;
-      }
-
-      // Username taken — generate a fresh candidate and retry
-      candidate = generateUsername();
-    }
+    data.username = name;
+    this.persist(data);
   }
 
   static getDailyBest(mode: GameMode): RunRecord | null {
@@ -230,11 +190,11 @@ export class HighScoreManager {
 
   /** Clears all saved data — useful for testing. Preserves username. */
   static reset(): void {
-    const username = this.getOrCreateUsername();
+    const username = this.getDisplayName();
     this.cache = null;
     try { localStorage.removeItem(STORAGE_KEY); } catch { /* ignore */ }
     const fresh = this.load();
-    fresh.username = username;
+    if (username) fresh.username = username;
     this.persist(fresh);
   }
 }

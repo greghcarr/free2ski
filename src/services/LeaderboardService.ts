@@ -15,28 +15,8 @@ export interface LeaderboardRow {
 }
 
 /**
- * Attempts to reserve `username` in Supabase with an INSERT (not upsert).
- * Returns true if the username was claimed, false if already taken (unique conflict).
- * Throws on network errors so the caller can decide how to handle them.
- */
-export async function claimUsername(username: string): Promise<boolean> {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 5000);
-  try {
-    const { error } = await supabase
-      .from('users')
-      .insert({ username })
-      .abortSignal(controller.signal);
-    if (!error) return true;
-    if (error.code === '23505') return false; // unique_violation — username taken
-    throw new Error(error.message);
-  } finally {
-    clearTimeout(timeout);
-  }
-}
-
-/**
  * Records a completed run in the `runs` table.
+ * Upserts the username into `users` first to satisfy any FK constraint.
  * score meaning varies by mode: distanceM (FreeSki), finishTimeMs (Slalom), score (Jump).
  * Fire-and-forget — caller should .catch(() => {}).
  */
@@ -49,6 +29,10 @@ export async function submitRun(
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 5000);
   try {
+    await supabase
+      .from('users')
+      .upsert([{ username }], { onConflict: 'username', ignoreDuplicates: true })
+      .abortSignal(controller.signal);
     await supabase
       .from('runs')
       .insert({ username, mode, score, seed, played_at: new Date().toISOString() })

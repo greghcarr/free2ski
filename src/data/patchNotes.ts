@@ -6,6 +6,23 @@ export interface PatchEntry {
 
 export const PATCH_NOTES: PatchEntry[] = [
   {
+    version: 'v0.3.8-pre-alpha',
+    date:    'Mar 11, 2026',
+    notes: [
+      '"play again" is automatically selected after you confirm your username — just hit enter to go again',
+    ],
+  },
+  {
+    version: 'v0.3.7-pre-alpha',
+    date:    'Mar 11, 2026',
+    notes: [
+      'you now choose your own username — enter it on the game-over screen after each run',
+      'your name is submitted to the leaderboard once you confirm it',
+      'the bottom-left username display updates live as you type',
+      'names are filtered for profanity and stripped of unsupported characters',
+    ],
+  },
+  {
     version: 'v0.3.6-pre-alpha',
     date:    'Mar 11, 2026',
     notes: [

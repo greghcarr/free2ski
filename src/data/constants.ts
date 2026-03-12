@@ -1,17 +1,6 @@
 // Main menu badge fallback text — shown when the DB is unreachable
 export const MAIN_MENU_BADGE_TEXT = 'no more auto-fullscreen';
 
-// Debug: set to a GameMode string to skip straight to GameOverScene on startup.
-
-import { GAME_MODE_CONFIGS } from "@/config/GameModes";
-
-// Set to null to run the game normally.
-export const DEBUG_GAME_OVER_MODE: string | null 
-  = null;
-  // = GAME_MODE_CONFIGS.slalom.displayName;
-  // = GAME_MODE_CONFIGS.free_ski.displayName;
-  // = GAME_MODE_CONFIGS.jump.displayName;
-
 // World / chunk sizing
 export const WORLD_WIDTH       = 1920;  // px
 export const GAME_HEIGHT       = 1080;  // px
