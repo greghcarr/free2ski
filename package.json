@@ -1,6 +1,6 @@
 {
   "name": "skifree-js",
-  "version": "0.3.5.1-pre-alpha",
+  "version": "0.3.6-pre-alpha",
   "private": true,
   "description": "A SkiFree-inspired endless skiing game for web and Steam",
   "main": "dist/electron/main.js",

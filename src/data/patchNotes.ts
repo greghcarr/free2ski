@@ -6,6 +6,13 @@ export interface PatchEntry {
 
 export const PATCH_NOTES: PatchEntry[] = [
   {
+    version: 'v0.3.6-pre-alpha',
+    date:    'Mar 11, 2026',
+    notes: [
+      'fixed canvas offset on iPhone — game now renders correctly centred in landscape',
+    ],
+  },
+  {
     version: 'v0.3.5-pre-alpha',
     date:    'Mar 11, 2026',
     notes: [
