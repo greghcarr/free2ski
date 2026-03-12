@@ -48,6 +48,23 @@ export class MenuNav {
     this.items[this.index]!.setFocus(true);
   }
 
+  /** Remove an item from the nav list by index. Adjusts current index if needed. */
+  removeItemAt(index: number): void {
+    if (index < 0 || index >= this.items.length) return;
+    if (this.hasFocus && this.index === index) {
+      this.items[index]!.setFocus(false);
+      this.hasFocus = false;
+    }
+    (this.items as MenuNavItem[]).splice(index, 1);
+    if (this.index >= this.items.length) this.index = Math.max(0, this.items.length - 1);
+  }
+
+  /** Remove keyboard focus from all items without activating any. */
+  clearFocus(): void {
+    if (this.hasFocus) this.items[this.index]!.setFocus(false);
+    this.hasFocus = false;
+  }
+
   move(delta: number): void {
     if (!this.hasFocus) {
       this.index = 0;

@@ -5,6 +5,25 @@ Format: newest first, grouped by version/date.
 
 ---
 
+## v0.3.9-pre-alpha — 2026-03-12
+
+### Added
+- Main menu sky adapts to real-world local time — distinct looks for sunrise, daytime, golden hour, sunset, and night
+- Sun and moon are positioned correctly for the time of day and move smoothly across the sky in real time
+- Sky gradient and star brightness rebuild every 5 minutes to handle period transitions (sunrise→day etc.)
+- Campfire glow on the main menu scales up in size and brightness at night
+- Tied personal best gets its own "★ tied personal best !!" pulsing badge on the game-over screen
+
+### Changed
+- Game-over personal best comparison now shows the exact delta: "X m more/less than personal best" and equivalent for time/score modes
+- Leaderboard run dates displayed as "today", "yesterday", "2 days ago", "3 days ago" for recent entries
+- Main menu keyboard navigation replaced with a 2D grid-aware system — all four arrow keys work correctly through the play / leaderboard+settings / patch notes layout
+
+### Fixed
+- Main menu arrow key navigation was linear (wrapping through all 4 buttons); now understands the 2D layout
+
+---
+
 ## v0.3.8-pre-alpha — 2026-03-11
 
 ### Changed
