@@ -146,7 +146,7 @@ export class GameOverScene extends Phaser.Scene {
     } else if (mode === GameMode.Jump) {
       leaderboardScore = this.summary.score;
     }
-    if (leaderboardScore !== null) {
+    if (leaderboardScore !== null && HighScoreManager.load().usernameClaimed) {
       submitRun(
         HighScoreManager.getOrCreateUsername(),
         mode,

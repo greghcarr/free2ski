@@ -15,8 +15,8 @@ const TAB_H       = 80;
 const TAB_GAP     = 30;
 const TAB_Y       = 230;
 const HEADER_Y    = 345;
-const ROW_START_Y = 460;   // well below the divider (HEADER_Y + header text + gap)
-const ROW_H       = 58;
+const ROW_START_Y = 430;   // well below the divider (HEADER_Y + header text + gap)
+const ROW_H       = 50;
 
 // Column x positions
 const COL_RANK     = 160;
@@ -252,8 +252,8 @@ export class LeaderboardScene extends Phaser.Scene {
       return;
     }
 
-    const rowStyle   = { fontFamily: 'FoxwhelpFont', fontSize: '50px', color: this.modeColorStr(mode!) };
-    const mutedStyle = { fontFamily: 'FoxwhelpFont', fontSize: '46px', color: COLORS.UI_SECONDARY };
+    const rowStyle   = { fontFamily: 'FoxwhelpFont', fontSize: '44px', color: this.modeColorStr(mode!) };
+    const mutedStyle = { fontFamily: 'FoxwhelpFont', fontSize: '40px', color: COLORS.UI_SECONDARY };
     const myUsername = HighScoreManager.getOrCreateUsername();
 
     rows.forEach((row, i) => {

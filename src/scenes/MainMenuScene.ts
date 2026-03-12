@@ -207,6 +207,9 @@ export class MainMenuScene extends Phaser.Scene {
     this.drawMenuTree(WORLD_WIDTH - 210, 898, 0.90);
     this.drawMenuTree(WORLD_WIDTH - 285, 882, 0.65);
 
+    // v0.3.5 — star on the tallest left tree
+    this.drawTreeStar(120, 870, 1.05);
+
     // Campfire scene — skier sitting in the snow on the right side
     this.drawLodgeScene();
   }
@@ -223,6 +226,37 @@ export class MainMenuScene extends Phaser.Scene {
       g.fillTriangle(ax, baseY, ax, ay, bx, by);
       g.fillTriangle(ax, baseY, bx, by, bx, baseY);
     }
+  }
+
+  /** Glowing star perched on the tip of a tree (matches drawMenuTree geometry). */
+  private drawTreeStar(cx: number, baseY: number, scale: number): void {
+    const tipY   = baseY - 160 * scale;
+    const cy     = tipY - 14;
+    const outerR = 13;
+    const innerR = 5;
+
+    const pts: { x: number; y: number }[] = [];
+    for (let i = 0; i < 10; i++) {
+      const angle = -Math.PI / 2 + i * (Math.PI / 5);
+      const r     = i % 2 === 0 ? outerR : innerR;
+      pts.push({ x: r * Math.cos(angle), y: r * Math.sin(angle) });
+    }
+
+    const glow = this.add.graphics().setPosition(cx, cy);
+    glow.fillStyle(0xffff99, 0.35);
+    glow.fillCircle(0, 0, 22);
+    this.tweens.add({
+      targets: glow, alpha: 0,
+      duration: 1700, yoyo: true, repeat: -1, ease: 'Sine.easeInOut',
+    });
+
+    const star = this.add.graphics().setPosition(cx, cy);
+    star.fillStyle(0xFFE44D, 1);
+    star.fillPoints(pts, true);
+    this.tweens.add({
+      targets: star, alpha: 0.55,
+      duration: 1700, yoyo: true, repeat: -1, ease: 'Sine.easeInOut', delay: 350,
+    });
   }
 
   /** Draw a simple layered pine tree centred at (cx, baseY). */
