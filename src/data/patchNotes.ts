@@ -6,6 +6,18 @@ export interface PatchEntry {
 
 export const PATCH_NOTES: PatchEntry[] = [
   {
+    version: 'v0.3.5-pre-alpha',
+    date:    'Mar 11, 2026',
+    notes: [
+      'iPhone home screen icon now shows the skier emoji on a dark background',
+      'game no longer serves a stale cached version after updates — a "tap to update" banner appears when a new version is available',
+      'username dot indicator (bottom-left) shows green when your scores are syncing to the leaderboard, gray when offline',
+      'pre-leaderboard personal bests are now automatically submitted to the global leaderboard on next login',
+      'runs are no longer submitted to the leaderboard until your username is fully claimed — prevents ghost entries',
+      'a star now glows on the tallest tree in the main menu',
+    ],
+  },
+  {
     version: 'v0.3.4-pre-alpha',
     date:    'Mar 11, 2026',
     notes: [

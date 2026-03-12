@@ -8,11 +8,12 @@
     <!-- PWA / Add-to-Home-Screen: hides browser chrome for a fullscreen feel -->
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-fullscreen" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
     <!-- Colours the browser address bar on Android Chrome -->
     <meta name="theme-color" content="#1a2a3a" />
     <title>free2ski</title>
     <script>
+      // Browser tab favicon
       const _c = document.createElement('canvas');
       _c.width = _c.height = 64;
       const _x = _c.getContext('2d');
@@ -21,6 +22,21 @@
       const _l = document.createElement('link');
       _l.rel = 'icon'; _l.href = _c.toDataURL();
       document.head.appendChild(_l);
+
+      // iPhone home screen icon (180×180, dark background so the emoji pops)
+      const _ic = document.createElement('canvas');
+      _ic.width = _ic.height = 180;
+      const _ix = _ic.getContext('2d');
+      _ix.fillStyle = '#1a2a3a';
+      _ix.fillRect(0, 0, 180, 180);
+      _ix.font = '130px serif';
+      _ix.textAlign = 'center';
+      _ix.textBaseline = 'middle';
+      _ix.fillText('⛷️', 90, 95);
+      const _il = document.createElement('link');
+      _il.rel = 'apple-touch-icon';
+      _il.href = _ic.toDataURL();
+      document.head.appendChild(_il);
     </script>
     <style>
       * {
@@ -50,14 +66,15 @@
         -webkit-user-select: none;
         -webkit-touch-callout: none;
       }
-      /* Phaser renders into this div. Inset by safe-area on left/right so
-         CENTER_BOTH centers within the notch-safe region, not the full viewport. */
+      /* Phaser renders into this div. "black" status bar style reserves its own
+         space at top, so top:0 is safe. Left/right/bottom still use safe-area
+         insets for the Dynamic Island notch (landscape) and home indicator. */
       #game-container {
         position: fixed;
-        top: env(safe-area-inset-top);
+        top: 0;
         left: env(safe-area-inset-left);
         right: env(safe-area-inset-right);
-        bottom: 0;
+        bottom: env(safe-area-inset-bottom);
         display: flex;
         align-items: center;
         justify-content: center;
