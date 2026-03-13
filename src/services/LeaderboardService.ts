@@ -64,6 +64,31 @@ export async function fetchTotalRuns(): Promise<number> {
 }
 
 /**
+ * Fetch only the #1 score for a given mode.
+ * Returns null if no runs exist or on network error.
+ */
+export async function fetchTopScore(mode: GameMode): Promise<number | null> {
+  const ascending = mode === GameMode.Slalom;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 5000);
+  try {
+    const { data, error } = await supabase
+      .from('runs')
+      .select('score')
+      .eq('mode', mode)
+      .order('score', { ascending })
+      .limit(1)
+      .abortSignal(controller.signal);
+    if (error || !data || data.length === 0) return null;
+    return (data[0] as Record<string, unknown>)['score'] as number;
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+/**
  * Fetch the top 10 runs for a given mode, across all players.
  * Returns an empty array on network error.
  */

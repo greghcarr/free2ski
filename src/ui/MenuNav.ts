@@ -1,8 +1,9 @@
 import Phaser from 'phaser';
 
 export interface MenuNavItem {
-  setFocus: (focused: boolean) => void;
-  activate: () => void;
+  setFocus:   (focused: boolean) => void;
+  activate:   () => void;
+  setVisible?: (visible: boolean) => void;
 }
 
 /**
