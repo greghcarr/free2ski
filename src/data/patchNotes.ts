@@ -6,6 +6,16 @@ export interface PatchEntry {
 
 export const PATCH_NOTES: PatchEntry[] = [
   {
+    version: 'v0.3.10.1-pre-alpha',
+    date:    'Mar 12, 2026',
+    notes: [
+      'main menu version label and username dot are now darker for better contrast against the sky',
+      'username dot now has an outline matching the label color',
+      'main menu buttons, title, and version label now always render above the night overlay',
+      'removed an orange campfire glow that was visible during daytime',
+    ],
+  },
+  {
     version: 'v0.3.10-pre-alpha',
     date:    'Mar 12, 2026',
     notes: [

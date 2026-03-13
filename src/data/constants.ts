@@ -178,7 +178,8 @@ export const COLORS = {
   ANNOUNCEMENT: '#222222',  // on-slope course announcement
 
   // --- Version label (CSS strings) ---
-  VERSION_DEFAULT:  '#6a8ab8',  // main menu / mode select (light bg)
+  VERSION_DEFAULT:  '#6a8ab8',  // mode select (light bg)
+  VERSION_MENU:     '#2a3a5a',  // main menu (darker for contrast against sky)
   VERSION_GAME:     '#8aaabb',  // game / pause (snow bg)
   VERSION_GAMEOVER: '#4a6a8a',  // game over (dark bg)
 } as const;
