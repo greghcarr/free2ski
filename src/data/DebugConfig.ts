@@ -17,6 +17,9 @@ export const DEBUG = {
   /** Pre-show red glow on the name entry input field. */
   showInputGlow: ENABLED,
 
+  /** Skip the leaderboard fetch and immediately show the world record badge. */
+  forceWorldRecord: ENABLED,
+
   /** Show a time-of-day slider on the main menu to preview sky effects. */
   skyDebugHour: false,
 };

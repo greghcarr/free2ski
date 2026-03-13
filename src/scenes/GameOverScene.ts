@@ -7,7 +7,7 @@ import type { SessionConfig } from '@/config/GameConfig';
 import { GameMode } from '@/config/GameModes';
 import { formatRaceTime } from '@/utils/MathUtils';
 import { MenuNav, type MenuNavItem } from '@/ui/MenuNav';
-import { submitRun } from '@/services/LeaderboardService';
+import { submitRun, fetchTopScore } from '@/services/LeaderboardService';
 import { getDailySeed } from '@/utils/MathUtils';
 import { hasProfanity, sanitizeName } from '@/utils/ProfanityFilter';
 import { DEBUG } from '@/data/DebugConfig';
@@ -46,6 +46,9 @@ const LAYOUT = {
   NEW_BEST_FONT:       '50px',
   NEW_BEST_PULSE_SCALE: 1.06,
   NEW_BEST_PULSE_MS:    700,
+
+  // World record badge (upgrades the personal best badge)
+  NEW_WR_FONT:         '58px',
 
   // Existing personal best row
   BEST_Y:    526,
@@ -318,13 +321,14 @@ export class GameOverScene extends Phaser.Scene {
     // div.strokePath();
 
     if (isNewBest) {
-      this.buildNewBestTimeBadge(finishTimeMs!, prevBest?.timeMs ?? null);
+      const badge = this.buildNewBestTimeBadge(finishTimeMs!, prevBest?.timeMs ?? null);
+      this.checkWorldRecord(badge, finishTimeMs!);
     } else {
       this.buildExistingBestTimeRow(finishTimeMs!, prevBest?.timeMs ?? null);
     }
   }
 
-  private buildNewBestTimeBadge(timeMs: number, prevMs: number | null): void {
+  private buildNewBestTimeBadge(timeMs: number, prevMs: number | null): Phaser.GameObjects.Text {
     const badge = this.add.text(LAYOUT.NEW_BEST_X, LAYOUT.NEW_BEST_Y, '★  new personal best !!  ★', {
       fontFamily: 'FoxwhelpFont',
       fontSize: LAYOUT.NEW_BEST_FONT,
@@ -343,6 +347,8 @@ export class GameOverScene extends Phaser.Scene {
       repeat: -1,
       ease: 'Sine.easeInOut',
     });
+
+    return badge;
 
     // const sub = prevMs !== null
     //   ? `${formatRaceTime(prevMs)}  →  ${formatRaceTime(timeMs)}`
@@ -410,13 +416,14 @@ export class GameOverScene extends Phaser.Scene {
     // div.strokePath();
 
     if (isNewBest) {
-      this.buildNewBestDistanceBadge(distanceM, prevBest?.distance ?? null);
+      const badge = this.buildNewBestDistanceBadge(distanceM, prevBest?.distance ?? null);
+      this.checkWorldRecord(badge, distanceM);
     } else {
       this.buildExistingBestDistanceRow(distanceM, prevBest?.distance ?? null);
     }
   }
 
-  private buildNewBestDistanceBadge(distanceM: number, prevM: number | null): void {
+  private buildNewBestDistanceBadge(distanceM: number, prevM: number | null): Phaser.GameObjects.Text {
     const badge = this.add.text(LAYOUT.NEW_BEST_X, LAYOUT.NEW_BEST_Y, '★  new personal best !!  ★', {
       fontFamily: 'FoxwhelpFont',
       fontSize: LAYOUT.NEW_BEST_FONT,
@@ -444,6 +451,8 @@ export class GameOverScene extends Phaser.Scene {
     //   fontSize: LAYOUT.DETAIL_FONT,
     //   color: COLORS.UI_DETAIL,
     // }).setOrigin(0.5);
+
+    return badge;
   }
 
   private buildExistingBestDistanceRow(distanceM: number, bestM: number | null): void {
@@ -502,13 +511,14 @@ export class GameOverScene extends Phaser.Scene {
     // div.strokePath();
 
     if (isNewBest) {
-      this.buildNewBestJumpBadge(score, prevBest?.score ?? null);
+      const badge = this.buildNewBestJumpBadge(score, prevBest?.score ?? null);
+      this.checkWorldRecord(badge, score);
     } else {
       this.buildExistingBestJumpRow(score, prevBest?.score ?? null);
     }
   }
 
-  private buildNewBestJumpBadge(score: number, prevScore: number | null): void {
+  private buildNewBestJumpBadge(score: number, prevScore: number | null): Phaser.GameObjects.Text {
     const badge = this.add.text(LAYOUT.NEW_BEST_X, LAYOUT.NEW_BEST_Y, '★  new personal best !!  ★', {
       fontFamily: 'FoxwhelpFont',
       fontSize:   LAYOUT.NEW_BEST_FONT,
@@ -536,6 +546,8 @@ export class GameOverScene extends Phaser.Scene {
     //   fontSize:   LAYOUT.DETAIL_FONT,
     //   color:      COLORS.UI_DETAIL,
     // }).setOrigin(0.5);
+
+    return badge;
   }
 
   private buildExistingBestJumpRow(score: number, bestScore: number | null): void {
@@ -562,6 +574,122 @@ export class GameOverScene extends Phaser.Scene {
         color: delta < 0 ? COLORS.SCORE_WORSE : COLORS.SCORE_BETTER,
       }).setOrigin(0.5);
     }
+  }
+
+  // ---------------------------------------------------------------------------
+  // World record check
+  // ---------------------------------------------------------------------------
+
+  private checkWorldRecord(badge: Phaser.GameObjects.Text, playerScore: number): void {
+    if (DEBUG.forceWorldRecord) {
+      this.upgradeToWorldRecord(badge);
+      return;
+    }
+    const mode = this.summary.session.mode;
+    fetchTopScore(mode)
+      .then(topScore => {
+        if (!this.sys.isActive() || !badge.active) return;
+        const isWR = topScore === null
+          || (mode === GameMode.Slalom ? playerScore < topScore : playerScore > topScore);
+        if (isWR) this.upgradeToWorldRecord(badge);
+      })
+      .catch(() => {});
+  }
+
+  private upgradeToWorldRecord(badge: Phaser.GameObjects.Text): void {
+    badge.setText('★  NEW WORLD RECORD  ★');
+    badge.setFontSize(LAYOUT.NEW_WR_FONT);
+    badge.setStroke('#000000', 3);
+
+    this.cameras.main.flash(500, 255, 255, 255);
+    this.cameras.main.shake(350, 0.009);
+
+    this.tweens.killTweensOf(badge);
+
+    // Scale pulse
+    this.tweens.add({
+      targets:  badge,
+      scaleX:   1.15,
+      scaleY:   1.15,
+      duration: 380,
+      yoyo:     true,
+      repeat:   -1,
+      ease:     'Sine.easeInOut',
+    });
+
+    // Gentle rotation rock
+    const rockTween = this.tweens.add({
+      targets:  badge,
+      angle:    { from: -8, to: 8 },
+      duration: 900,
+      yoyo:     true,
+      repeat:   -1,
+      ease:     'Sine.easeInOut',
+    });
+
+    // Occasional crazy full spin
+    const scheduleSpin = (): void => {
+      this.time.delayedCall(Phaser.Math.Between(2200, 5000), () => {
+        if (!badge.active) return;
+        rockTween.pause();
+        badge.setAngle(0);
+        this.tweens.add({
+          targets:    badge,
+          angle:      720,
+          duration:   480,
+          ease:       'Quad.easeInOut',
+          onComplete: () => {
+            badge.setAngle(0);
+            rockTween.restart();
+            scheduleSpin();
+          },
+        });
+      });
+    };
+    scheduleSpin();
+
+    // Occasional parabolic jump to the other side of the screen
+    const originX = LAYOUT.NEW_BEST_X;
+    const otherX  = WORLD_WIDTH - LAYOUT.NEW_BEST_X;
+    const scheduleJump = (): void => {
+      this.time.delayedCall(Phaser.Math.Between(1800, 4000), () => {
+        if (!badge.active) return;
+        const startX = badge.x;
+        const endX   = Math.abs(badge.x - originX) < 20 ? otherX : originX;
+        const startY = badge.y;
+        const arcH   = 260;
+        const prog   = { t: 0 };
+        this.tweens.add({
+          targets:    prog,
+          t:          1,
+          duration:   550,
+          ease:       'Linear',
+          onUpdate:   () => {
+            badge.x = startX + (endX - startX) * prog.t;
+            badge.y = startY - arcH * 4 * prog.t * (1 - prog.t);
+          },
+          onComplete: () => {
+            badge.x = endX;
+            badge.y = startY;
+            scheduleJump();
+          },
+        });
+      });
+    };
+    scheduleJump();
+
+    // Rainbow color cycling
+    const RAINBOW = ['#ff4444', '#ff8c00', '#ffee00', '#44ff88', '#44aaff', '#aa44ff', '#ff44cc'];
+    let ri = 0;
+    this.time.addEvent({
+      delay:    70,
+      loop:     true,
+      callback: () => {
+        if (!badge.active) return;
+        badge.setColor(RAINBOW[ri % RAINBOW.length]!);
+        ri++;
+      },
+    });
   }
 
   private buildButtons(inputNavItem: MenuNavItem): void {
@@ -689,41 +817,80 @@ export class GameOverScene extends Phaser.Scene {
     const x    = inputRightX + gap + w / 2;
     const y    = LAYOUT.NAME_INPUT_Y;
 
-    const bg  = this.add.graphics();
-    const lbl = this.add.text(x, y, 'confirm', {
+    const GLOW_LAYERS = [
+      { pad: 24, alpha: 0.04 },
+      { pad: 16, alpha: 0.08 },
+      { pad: 10, alpha: 0.13 },
+      { pad:  6, alpha: 0.18 },
+      { pad:  2, alpha: 0.24 },
+    ] as const;
+
+    const container = this.add.container(x, y);
+    const glowGfx   = this.add.graphics();
+    const bg        = this.add.graphics();
+    const lbl       = this.add.text(0, 0, 'confirm', {
       fontFamily: 'FoxwhelpFont',
       fontSize:   LAYOUT.CONFIRM_BTN_FONT,
       fontStyle:  'bold',
       color:      '#ffffff',
     }).setOrigin(0.5);
+    container.add([glowGfx, bg, lbl]);
 
-    let kbFocused = false;
+    let kbFocused    = false;
+    let pulseTween: Phaser.Tweens.Tween | null = null;
 
+    const drawGlow = (on: boolean): void => {
+      glowGfx.clear();
+      if (!on) return;
+      for (const { pad, alpha } of GLOW_LAYERS) {
+        glowGfx.fillStyle(0xaaddff, alpha);
+        glowGfx.fillRoundedRect(-w / 2 - pad, -h / 2 - pad, w + pad * 2, h + pad * 2, 10 + pad);
+      }
+    };
     const draw = (state: 'default' | 'hover' | 'focused' | 'saved' | 'rejected'): void => {
       bg.clear();
       if (state === 'saved') {
         bg.fillStyle(0x4caf50, 1);
         lbl.setText('saved!');
+        lbl.setColor('#ffffff');
       } else if (state === 'rejected') {
         bg.fillStyle(0xcc3333, 1);
         lbl.setText('rejected');
+        lbl.setColor('#ffffff');
       } else {
         bg.fillStyle(state === 'hover' || state === 'focused' ? COLORS.BTN_HOVER : COLORS.BTN, 1);
         lbl.setText('confirm');
+        lbl.setColor('#ffffff');
       }
-      bg.fillRoundedRect(x - w / 2, y - h / 2, w, h, 10);
+      bg.fillRoundedRect(-w / 2, -h / 2, w, h, 10);
     };
     draw('default');
 
     const activate = (): void => {
       const ok = this.confirmName();
       this.handleConfirmVisual?.(ok);
+      this.tweens.add({
+        targets:  container,
+        scaleX:   1.07,
+        scaleY:   1.07,
+        duration: 55,
+        ease:     'Quad.easeOut',
+        yoyo:     true,
+      });
     };
 
     this.setConfirmBtnFocus = (focused: boolean) => {
       kbFocused = focused;
+      drawGlow(focused);
       draw(focused ? 'focused' : 'default');
-      if (focused) this.nav?.clearFocus();
+      if (focused) {
+        this.nav?.clearFocus();
+        if (!pulseTween) {
+          pulseTween = this.tweens.add({ targets: container, scaleX: 1.05, scaleY: 1.05, duration: 550, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+        }
+      } else if (pulseTween) {
+        pulseTween.stop(); pulseTween = null; container.setScale(1);
+      }
     };
 
     this.input.keyboard?.on('keydown-ENTER', () => { if (kbFocused) activate(); });
@@ -739,12 +906,20 @@ export class GameOverScene extends Phaser.Scene {
     });
 
     const hit = this.add.rectangle(x, y, w, h).setInteractive({ useHandCursor: true });
-    hit.on('pointerover', () => { if (!kbFocused) draw('hover'); });
-    hit.on('pointerout',  () => { if (!kbFocused) draw('default'); });
+    hit.on('pointerover', () => {
+      if (!kbFocused) { drawGlow(true); draw('hover'); }
+      if (!pulseTween) pulseTween = this.tweens.add({ targets: container, scaleX: 1.05, scaleY: 1.05, duration: 550, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+    });
+    hit.on('pointerout', () => {
+      if (!kbFocused) { drawGlow(false); draw('default'); }
+      if (pulseTween && !kbFocused) { pulseTween.stop(); pulseTween = null; container.setScale(1); }
+    });
     hit.on('pointerdown', activate);
 
     this.handleConfirmVisual = (ok: boolean): void => {
       kbFocused = false;
+      drawGlow(false);
+      if (pulseTween) { pulseTween.stop(); pulseTween = null; container.setScale(1); }
       if (ok) {
         draw('saved');
         hit.disableInteractive();
@@ -836,30 +1011,82 @@ export class GameOverScene extends Phaser.Scene {
   }
 
   private createButton(x: number, y: number, label: string, onClick: () => void, onHover?: () => void): MenuNavItem {
-    const bg = this.add.graphics();
-    const labelText = this.add.text(x, y, label, {
+    const GLOW_LAYERS = [
+      { pad: 42, alpha: 0.04 },
+      { pad: 28, alpha: 0.08 },
+      { pad: 18, alpha: 0.13 },
+      { pad: 10, alpha: 0.18 },
+      { pad:  4, alpha: 0.24 },
+    ] as const;
+
+    const container = this.add.container(x, y);
+    const glowGfx   = this.add.graphics();
+    const bg        = this.add.graphics();
+    const labelText = this.add.text(0, 0, label, {
       fontFamily: 'FoxwhelpFont',
       fontSize: LAYOUT.BTN_FONT,
       fontStyle: 'bold',
       color: '#ffffff',
     }).setOrigin(0.5);
+    container.add([glowGfx, bg, labelText]);
 
-    const draw = (hovered: boolean): void => {
+    const drawGlow = (on: boolean): void => {
+      glowGfx.clear();
+      if (!on) return;
+      for (const { pad, alpha } of GLOW_LAYERS) {
+        glowGfx.fillStyle(0xaaddff, alpha);
+        glowGfx.fillRoundedRect(-LAYOUT.BTN_W / 2 - pad, -LAYOUT.BTN_H / 2 - pad, LAYOUT.BTN_W + pad * 2, LAYOUT.BTN_H + pad * 2, LAYOUT.BTN_RADIUS + pad);
+      }
+    };
+    const drawBg = (hovered: boolean): void => {
       bg.clear();
       bg.fillStyle(hovered ? COLORS.BTN_HOVER : COLORS.BTN, 1);
-      bg.fillRoundedRect(x - LAYOUT.BTN_W / 2, y - LAYOUT.BTN_H / 2, LAYOUT.BTN_W, LAYOUT.BTN_H, LAYOUT.BTN_RADIUS);
+      bg.fillRoundedRect(-LAYOUT.BTN_W / 2, -LAYOUT.BTN_H / 2, LAYOUT.BTN_W, LAYOUT.BTN_H, LAYOUT.BTN_RADIUS);
       labelText.setText(hovered ? `~ ${label} ~` : label);
+      labelText.setColor('#ffffff');
     };
-    draw(false);
+    drawBg(false);
+
+    let pulseTween: Phaser.Tweens.Tween | null = null;
+
+    const flashAndGo = (): void => {
+      if (pulseTween) { pulseTween.stop(); pulseTween = null; container.setScale(1); }
+      bg.clear();
+      bg.fillStyle(0xddf4ff, 1);
+      bg.fillRoundedRect(-LAYOUT.BTN_W / 2, -LAYOUT.BTN_H / 2, LAYOUT.BTN_W, LAYOUT.BTN_H, LAYOUT.BTN_RADIUS);
+      labelText.setColor('#2a5ab8');
+      this.tweens.add({
+        targets:    container,
+        scaleX:     1.07,
+        scaleY:     1.07,
+        duration:   55,
+        ease:       'Quad.easeOut',
+        yoyo:       true,
+        onComplete: onClick,
+      });
+    };
 
     const hit = this.add.rectangle(x, y, LAYOUT.BTN_W, LAYOUT.BTN_H).setInteractive({ useHandCursor: true });
-    hit.on('pointerover', () => { onHover?.(); draw(true); });
-    hit.on('pointerout',  () => draw(false));
-    hit.on('pointerdown', onClick);
+    hit.on('pointerover', () => {
+      onHover?.(); drawGlow(true); drawBg(true);
+      if (!pulseTween) pulseTween = this.tweens.add({ targets: container, scaleX: 1.05, scaleY: 1.05, duration: 550, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+    });
+    hit.on('pointerout', () => {
+      drawGlow(false); drawBg(false);
+      if (pulseTween) { pulseTween.stop(); pulseTween = null; container.setScale(1); }
+    });
+    hit.on('pointerdown', flashAndGo);
 
     return {
-      setFocus: (f) => draw(f),
-      activate: onClick,
+      setFocus: (f) => {
+        drawGlow(f); drawBg(f);
+        if (f && !pulseTween) {
+          pulseTween = this.tweens.add({ targets: container, scaleX: 1.05, scaleY: 1.05, duration: 550, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+        } else if (!f && pulseTween) {
+          pulseTween.stop(); pulseTween = null; container.setScale(1);
+        }
+      },
+      activate: flashAndGo,
     };
   }
 }

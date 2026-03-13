@@ -90,44 +90,74 @@ export class SettingsScene extends Phaser.Scene {
   private createToggle(x: number, y: number, label: string, onToggle: () => void): MenuNavItem {
     const W = 700, H = 90;
 
-    const rowBg = this.add.graphics();
+    const GLOW_LAYERS = [
+      { pad: 42, alpha: 0.04 },
+      { pad: 28, alpha: 0.08 },
+      { pad: 18, alpha: 0.13 },
+      { pad: 10, alpha: 0.18 },
+      { pad:  4, alpha: 0.24 },
+    ] as const;
 
-    const labelText = this.add.text(x - W / 2 + 30, y, label, {
+    const container = this.add.container(x, y);
+    const glowGfx   = this.add.graphics();
+    const rowBg     = this.add.graphics();
+    const labelText = this.add.text(-W / 2 + 30, 0, label, {
       fontFamily: 'FoxwhelpFont',
       fontSize:   '54px',
       color:      '#ffffff',
     }).setOrigin(0, 0.5);
-
-    const stateText = this.add.text(x + W / 2 - 30, y, '', {
+    const stateText = this.add.text(W / 2 - 30, 0, '', {
       fontFamily: 'FoxwhelpFont',
       fontSize:   '54px',
     }).setOrigin(1, 0.5);
+    container.add([glowGfx, rowBg, labelText, stateText]);
+
+    let isFocused  = false;
+    let pulseTween: Phaser.Tweens.Tween | null = null;
+
+    const drawGlow = (on: boolean): void => {
+      glowGfx.clear();
+      if (!on) return;
+      for (const { pad, alpha } of GLOW_LAYERS) {
+        glowGfx.fillStyle(0xaaddff, alpha);
+        glowGfx.fillRoundedRect(-W / 2 - pad, -H / 2 - pad, W + pad * 2, H + pad * 2, 12 + pad);
+      }
+    };
+    const startPulse = (): void => {
+      if (!pulseTween) pulseTween = this.tweens.add({ targets: container, scaleX: 1.05, scaleY: 1.05, duration: 550, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+    };
+    const stopPulse = (): void => {
+      if (pulseTween) { pulseTween.stop(); pulseTween = null; container.setScale(1); }
+    };
 
     const draw = (focused: boolean): void => {
+      isFocused = focused;
       rowBg.clear();
       rowBg.fillStyle(focused ? COLORS.BTN_HOVER : COLORS.BTN, 1);
-      rowBg.fillRoundedRect(x - W / 2, y - H / 2, W, H, 12);
-      // Read current state after the toggle has had a chance to apply
+      rowBg.fillRoundedRect(-W / 2, -H / 2, W, H, 12);
       const isOn = this.scale.isFullscreen;
       stateText.setText(isOn ? 'on' : 'off');
       stateText.setColor(isOn ? '#4caf50' : '#888888');
-      // suppress TS unused-var warning
-      void labelText;
     };
     draw(false);
 
-    const activate = (): void => {
-      onToggle();
-      // Delay one frame so scale.isFullscreen reflects the new state
-      this.time.delayedCall(50, () => draw(true));
-    };
+    this.scale.on(Phaser.Scale.Events.ENTER_FULLSCREEN, () => draw(isFocused));
+    this.scale.on(Phaser.Scale.Events.LEAVE_FULLSCREEN,  () => draw(isFocused));
+
+    const activate = (): void => { onToggle(); };
 
     const hit = this.add.rectangle(x, y, W, H).setInteractive({ useHandCursor: true });
-    hit.on('pointerover',  () => draw(true));
-    hit.on('pointerout',   () => draw(false));
+    hit.on('pointerover',  () => { draw(true);  drawGlow(true);  startPulse(); });
+    hit.on('pointerout',   () => { draw(false); drawGlow(false); stopPulse();  });
     hit.on('pointerdown',  activate);
 
-    return { setFocus: draw, activate };
+    return {
+      setFocus: (f) => {
+        draw(f); drawGlow(f);
+        if (f) startPulse(); else stopPulse();
+      },
+      activate,
+    };
   }
 
   // ─── Destructive confirm button ──────────────────────────────────────────────

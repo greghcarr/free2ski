@@ -6,6 +6,19 @@ export interface PatchEntry {
 
 export const PATCH_NOTES: PatchEntry[] = [
   {
+    version: 'v0.3.10-pre-alpha',
+    date:    'Mar 12, 2026',
+    notes: [
+      'if you set a new world record, the game-over screen now shows a special "NEW WORLD RECORD" badge instead of "new personal best"',
+      'the world record badge cycles through rainbow colors, rocks back and forth, occasionally spins, and leaps across the screen',
+      'world record status is checked live against the leaderboard — the badge upgrades a moment after the screen loads',
+      'fixed a freeze that could occur when quitting to the main menu from pause and clicking play again',
+      'mode select screen now shows the main menu scene behind it as a backdrop',
+      'mode select back button is now centered and styled to match the mode cards',
+      'main menu buttons and title are hidden while the mode select overlay is visible',
+    ],
+  },
+  {
     version: 'v0.3.9.1-pre-alpha',
     date:    'Mar 12, 2026',
     notes: [

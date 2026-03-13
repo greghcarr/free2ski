@@ -15,9 +15,9 @@ export class ModeSelectScene extends Phaser.Scene {
   }
 
   create(): void {
-    // Background
+    // Dim overlay over the main menu scene running behind
     const bg = this.add.graphics();
-    bg.fillGradientStyle(COLORS.SNOW_LIGHT, COLORS.SNOW_LIGHT, COLORS.SNOW_SHADOW, COLORS.SNOW_SHADOW, 1);
+    bg.fillStyle(0x00081a, 0.62);
     bg.fillRect(0, 0, WORLD_WIDTH, GAME_HEIGHT);
 
     // this.add.text(WORLD_WIDTH / 2, 220, 'modes', {
@@ -44,48 +44,33 @@ export class ModeSelectScene extends Phaser.Scene {
       const cy = GAME_HEIGHT / 2 + 10;
       return this.createModeCard(cx, cy, cardW, cardH, mode, cfg.displayName, cfg.description, () => {
         const session: SessionConfig = { mode, seed: Date.now() };
+        this.scene.stop(SceneKey.MainMenu);
         this.scene.start(SceneKey.Game, { session });
       }, () => { cardIndex = i; isBack = false; cardFocused = false; });
     });
 
-    // Back button
-    const backGoTo = () => this.scene.start(SceneKey.MainMenu);
-    const backText = this.add.text(60, BACK_BTN_Y, '← back', {
-      fontFamily: 'FoxwhelpFont',
-      fontSize: '50px',
-      color: COLORS.UI_TITLE,
-    }).setInteractive({ useHandCursor: true })
-      .on('pointerdown', backGoTo);
-
-    const backUlY = BACK_BTN_Y + backText.displayHeight - 6;
-    const prefixMeasure = this.add.text(0, 0, '← ', { fontFamily: 'FoxwhelpFont', fontSize: '50px' }).setVisible(false);
-    const backWordX = 60 + prefixMeasure.displayWidth;
-    const backWordW = backText.displayWidth - prefixMeasure.displayWidth;
-    prefixMeasure.destroy();
-    const backUnderline = this.add.graphics();
-    backUnderline.fillStyle(parseInt(COLORS.UI_TITLE.slice(1), 16), 1);
-    backUnderline.fillRect(backWordX, backUlY, backWordW, 4);
-    backUnderline.setVisible(false);
-
-    backText.on('pointerover', () => {
+    // Back button — centred, full styled button
+    const backItem = this.createNavButton(WORLD_WIDTH / 2, BACK_BTN_Y + 40, 400, 110, 'back', () => {
+      this.scene.stop(); this.scene.resume(SceneKey.MainMenu);
+    }, () => {
       cardItems.forEach(item => item.setFocus(false));
-      backUnderline.setVisible(true);
-      isBack = true;
+      isBack = true; cardFocused = false;
     });
-    backText.on('pointerout', () => {
-      backUnderline.setVisible(false);
-      isBack = false;
-    });
-
-    // this.add.text(WORLD_WIDTH / 2, 880, `total runs: ${HighScoreManager.getTotalRuns()}`, {
-    //   fontFamily: 'FoxwhelpFont',
-    //   fontSize: '50px',
-    //   fontStyle: 'bold italic',
-    //   color: COLORS.UI_SUBTITLE,
-    // }).setOrigin(0.5);
 
     if (this.input.keyboard) {
       const kb = this.input.keyboard;
+
+      const focusBack = (): void => {
+        cardItems[cardIndex]!.setFocus(false);
+        backItem.setFocus(true);
+        isBack = true; cardFocused = false;
+      };
+      const focusCards = (): void => {
+        backItem.setFocus(false);
+        cardFocused = true; isBack = false;
+        cardItems[cardIndex]!.setFocus(true);
+      };
+
       kb.on('keydown-LEFT', () => {
         if (isBack) return;
         if (!cardFocused) { cardFocused = true; cardItems[cardIndex]!.setFocus(true); return; }
@@ -101,42 +86,96 @@ export class ModeSelectScene extends Phaser.Scene {
         cardItems[cardIndex]!.setFocus(true);
       });
       kb.on('keydown-DOWN', () => {
-        if (isBack) {
-          backUnderline.setVisible(false);
-          isBack = false;
-          cardFocused = true;
-          cardItems[cardIndex]!.setFocus(true);
-        } else if (cardFocused) {
-          cardItems[cardIndex]!.setFocus(false);
-          backUnderline.setVisible(true);
-          isBack = true;
-        } else {
-          cardFocused = true;
-          cardItems[cardIndex]!.setFocus(true);
-        }
+        if (isBack)         focusCards();
+        else if (cardFocused) focusBack();
+        else                { cardFocused = true; cardItems[cardIndex]!.setFocus(true); }
       });
       kb.on('keydown-UP', () => {
-        if (isBack) {
-          backUnderline.setVisible(false);
-          isBack = false;
-          cardFocused = true;
-          cardItems[cardIndex]!.setFocus(true);
-        } else if (cardFocused) {
-          cardItems[cardIndex]!.setFocus(false);
-          backUnderline.setVisible(true);
-          isBack = true;
-        } else {
-          cardFocused = true;
-          cardItems[cardIndex]!.setFocus(true);
-        }
+        if (isBack)         focusCards();
+        else if (cardFocused) focusBack();
+        else                { cardFocused = true; cardItems[cardIndex]!.setFocus(true); }
       });
-      kb.on('keydown-SPACE', () => { isBack ? backGoTo() : cardItems[cardIndex]!.activate(); });
-      kb.on('keydown-ENTER', () => { isBack ? backGoTo() : cardItems[cardIndex]!.activate(); });
-      kb.on('keydown-ESC',   () => this.scene.start(SceneKey.MainMenu));
+      kb.on('keydown-SPACE', () => { isBack ? backItem.activate() : cardItems[cardIndex]!.activate(); });
+      kb.on('keydown-ENTER', () => { isBack ? backItem.activate() : cardItems[cardIndex]!.activate(); });
+      kb.on('keydown-ESC',   () => { this.scene.stop(); this.scene.resume(SceneKey.MainMenu); });
     }
 
     addVersionLabel(this);
     addUsernameLabel(this);
+  }
+
+  private createNavButton(
+    x: number, y: number,
+    w: number, h: number,
+    label: string,
+    onClick: () => void,
+    onHover?: () => void,
+  ): MenuNavItem {
+    const GLOW_LAYERS = [
+      { pad: 42, alpha: 0.04 },
+      { pad: 28, alpha: 0.08 },
+      { pad: 18, alpha: 0.13 },
+      { pad: 10, alpha: 0.18 },
+      { pad:  4, alpha: 0.24 },
+    ] as const;
+
+    const container = this.add.container(x, y);
+    const glowGfx   = this.add.graphics();
+    const bg        = this.add.graphics();
+    const labelText = this.add.text(0, 0, label, {
+      fontFamily: 'FoxwhelpFont',
+      fontSize:   '70px',
+      fontStyle:  'bold',
+      color:      COLORS.UI_TITLE,
+    }).setOrigin(0.5);
+    container.add([glowGfx, bg, labelText]);
+
+    const drawGlow = (on: boolean): void => {
+      glowGfx.clear();
+      if (!on) return;
+      for (const { pad, alpha } of GLOW_LAYERS) {
+        glowGfx.fillStyle(0xaaddff, alpha);
+        glowGfx.fillRoundedRect(-w / 2 - pad, -h / 2 - pad, w + pad * 2, h + pad * 2, 15 + pad);
+      }
+    };
+    const drawBg = (hovered: boolean): void => {
+      bg.clear();
+      bg.fillStyle(hovered ? COLORS.CARD_HOVER : COLORS.CARD, 1);
+      bg.lineStyle(3, COLORS.BTN, 1);
+      bg.fillRoundedRect(-w / 2, -h / 2, w, h, 15);
+      bg.strokeRoundedRect(-w / 2, -h / 2, w, h, 15);
+      labelText.setText(hovered ? `~ ${label} ~` : label);
+    };
+    drawBg(false);
+
+    let pulseTween: Phaser.Tweens.Tween | null = null;
+    const startPulse = (): void => {
+      if (!pulseTween) pulseTween = this.tweens.add({ targets: container, scaleX: 1.05, scaleY: 1.05, duration: 550, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+    };
+    const stopPulse = (): void => {
+      if (pulseTween) { pulseTween.stop(); pulseTween = null; container.setScale(1); }
+    };
+    const flashAndGo = (): void => {
+      stopPulse();
+      bg.clear();
+      bg.fillStyle(0xddf4ff, 1);
+      bg.fillRoundedRect(-w / 2, -h / 2, w, h, 15);
+      labelText.setColor('#2a5ab8');
+      this.tweens.add({ targets: container, scaleX: 1.07, scaleY: 1.07, duration: 55, ease: 'Quad.easeOut', yoyo: true, onComplete: onClick });
+    };
+
+    const hit = this.add.rectangle(x, y, w, h).setInteractive({ useHandCursor: true });
+    hit.on('pointerover', () => { onHover?.(); drawGlow(true); drawBg(true); startPulse(); });
+    hit.on('pointerout',  () => { drawGlow(false); drawBg(false); stopPulse(); });
+    hit.on('pointerdown', flashAndGo);
+
+    return {
+      setFocus: (f) => {
+        drawGlow(f); drawBg(f);
+        if (f) startPulse(); else stopPulse();
+      },
+      activate: flashAndGo,
+    };
   }
 
   private createModeCard(
@@ -150,60 +189,93 @@ export class ModeSelectScene extends Phaser.Scene {
     onClick: () => void,
     onHover?: () => void,
   ): MenuNavItem {
-    const bg = this.add.graphics();
-    const titleText = this.add.text(cx, cy - h / 2 + 145, title, {
+    const GLOW_LAYERS = [
+      { pad: 42, alpha: 0.04 },
+      { pad: 28, alpha: 0.08 },
+      { pad: 18, alpha: 0.13 },
+      { pad: 10, alpha: 0.18 },
+      { pad:  4, alpha: 0.24 },
+    ] as const;
+
+    const container  = this.add.container(cx, cy);
+    const glowGfx    = this.add.graphics();
+    const bg         = this.add.graphics();
+    const titleText  = this.add.text(0, -h / 2 + 145, title, {
       fontFamily: 'FoxwhelpFont',
       fontSize: '100px',
       fontStyle: 'bold',
       color: COLORS.UI_TITLE,
     }).setOrigin(0.5);
-
-    const draw = (hovered: boolean): void => {
-      bg.clear();
-      bg.fillStyle(hovered ? COLORS.CARD_HOVER : COLORS.CARD, 1);
-      bg.lineStyle(3, COLORS.BTN, 1);
-      bg.fillRoundedRect(cx - w / 2, cy - h / 2, w, h, 12);
-      bg.strokeRoundedRect(cx - w / 2, cy - h / 2, w, h, 12);
-      titleText.setText(hovered ? `~ ${title} ~` : title);
-    };
-    draw(false);
-
-    this.add.text(cx, cy - h / 2 + 220, desc, {
+    const descText   = this.add.text(0, -h / 2 + 220, desc, {
       fontFamily: 'FoxwhelpFont',
       fontSize: '50px',
       color: COLORS.UI_SUBTITLE,
       wordWrap: { width: w - 100 },
       align: 'center',
     }).setOrigin(0.5, 0);
-
-    // Mode illustration in the lower half of the card
-    this.drawModeIllustration(mode, cx, cy);
-
-    this.add.text(cx, cy + 225, this.bestLabel(mode), {
+    const illustGfx  = this.drawModeIllustration(mode);
+    const bestText   = this.add.text(0, 225, this.bestLabel(mode), {
       fontFamily: 'FoxwhelpFont',
       fontSize: '38px',
       fontStyle: 'bold italic',
       color: COLORS.UI_SUBTITLE,
       align: 'center',
     }).setOrigin(0.5, 1);
-
-    this.add.text(cx, cy + 275, this.dailyLabel(mode), {
+    const dailyText  = this.add.text(0, 275, this.dailyLabel(mode), {
       fontFamily: 'FoxwhelpFont',
       fontSize: '38px',
       fontStyle: 'bold italic',
       color: COLORS.UI_SUBTITLE,
       align: 'center',
     }).setOrigin(0.5, 1);
+    container.add([glowGfx, bg, illustGfx, titleText, descText, bestText, dailyText]);
 
-    const hit = this.add.rectangle(cx, cy, w, h)
-      .setInteractive({ useHandCursor: true });
-    hit.on('pointerover', () => { onHover?.(); draw(true); });
-    hit.on('pointerout',  () => draw(false));
-    hit.on('pointerdown', onClick);
+    const drawGlow = (on: boolean): void => {
+      glowGfx.clear();
+      if (!on) return;
+      for (const { pad, alpha } of GLOW_LAYERS) {
+        glowGfx.fillStyle(0xaaddff, alpha);
+        glowGfx.fillRoundedRect(-w / 2 - pad, -h / 2 - pad, w + pad * 2, h + pad * 2, 18 + pad);
+      }
+    };
+    const draw = (hovered: boolean): void => {
+      bg.clear();
+      bg.fillStyle(hovered ? COLORS.CARD_HOVER : COLORS.CARD, 1);
+      bg.lineStyle(3, COLORS.BTN, 1);
+      bg.fillRoundedRect(-w / 2, -h / 2, w, h, 12);
+      bg.strokeRoundedRect(-w / 2, -h / 2, w, h, 12);
+      titleText.setText(hovered ? `~ ${title} ~` : title);
+    };
+    draw(false);
+
+    let pulseTween: Phaser.Tweens.Tween | null = null;
+    const startPulse = (): void => {
+      if (!pulseTween) pulseTween = this.tweens.add({ targets: container, scaleX: 1.05, scaleY: 1.05, duration: 550, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+    };
+    const stopPulse = (): void => {
+      if (pulseTween) { pulseTween.stop(); pulseTween = null; container.setScale(1); }
+    };
+    const flashAndGo = (): void => {
+      stopPulse();
+      bg.clear();
+      bg.fillStyle(0xddf4ff, 1);
+      bg.fillRoundedRect(-w / 2, -h / 2, w, h, 12);
+      titleText.setColor('#2a5ab8');
+      this.tweens.add({ targets: container, scaleX: 1.07, scaleY: 1.07, duration: 55, ease: 'Quad.easeOut', yoyo: true, onComplete: onClick });
+    };
+
+    // Hit area stays outside the container so it doesn't scale with it
+    const hit = this.add.rectangle(cx, cy, w, h).setInteractive({ useHandCursor: true });
+    hit.on('pointerover', () => { onHover?.(); drawGlow(true); draw(true); startPulse(); });
+    hit.on('pointerout',  () => { drawGlow(false); draw(false); stopPulse(); });
+    hit.on('pointerdown', flashAndGo);
 
     return {
-      setFocus: (f) => draw(f),
-      activate: onClick,
+      setFocus: (f) => {
+        drawGlow(f); draw(f);
+        if (f) startPulse(); else stopPulse();
+      },
+      activate: flashAndGo,
     };
   }
 
@@ -232,92 +304,84 @@ export class ModeSelectScene extends Phaser.Scene {
   // scaled to fit the lower half of a 360×390 card.
   // ---------------------------------------------------------------------------
 
-  private drawModeIllustration(mode: GameMode, cx: number, cy: number): void {
-    const illustrationOffsetY = 0;
+  private drawModeIllustration(mode: GameMode): Phaser.GameObjects.Graphics {
     switch (mode) {
-      case GameMode.FreeSki: this.drawTree(cx, cy + illustrationOffsetY);  break;
-      case GameMode.Slalom:  this.drawGate(cx, cy + illustrationOffsetY);  break;
-      case GameMode.Jump:    this.drawRamp(cx, cy + illustrationOffsetY);  break;
+      case GameMode.FreeSki: return this.drawTree();
+      case GameMode.Slalom:  return this.drawGate();
+      case GameMode.Jump:    return this.drawRamp();
     }
   }
 
   /**
    * Pine tree — matches Tree.ts drawTree() at scale 3.0.
-   * Origin placed so the visual mass is centred in the lower card half.
+   * Drawn relative to (0, 0) — place inside a Container at (cx, cy).
    */
-  private drawTree(cx: number, cy: number): void {
+  private drawTree(): Phaser.GameObjects.Graphics {
     const g  = this.add.graphics();
     const s  = 3.0;
-    // Shift origin so the tree sits comfortably in the lower card half.
-    const oy = cy + 115;
+    const cx = 0;
+    const oy = 115;  // shift so visual mass sits in lower card half
 
-    // Drop shadow
     g.fillStyle(0x000000, 0.12);
     g.fillEllipse(cx + 4 * s, oy + 10 * s, 28 * s, 10 * s);
 
-    // Trunk
     g.fillStyle(COLORS.TREE_TRUNK, 1);
     g.fillRect(cx - 3 * s, oy + 4 * s, 6 * s, 10 * s);
 
-    // Base layer (widest, darkest green)
     g.fillStyle(COLORS.TREE_DARK, 1);
     g.fillTriangle(cx - 15 * s, oy + 8 * s, cx + 15 * s, oy + 8 * s, cx, oy - 6 * s);
 
-    // Mid layer
     g.fillStyle(COLORS.TREE_MID, 1);
     g.fillTriangle(cx - 11 * s, oy + 1 * s, cx + 11 * s, oy + 1 * s, cx, oy - 16 * s);
 
-    // Top layer
     g.fillStyle(COLORS.TREE_TOP, 1);
     g.fillTriangle(cx - 7 * s, oy - 7 * s, cx + 7 * s, oy - 7 * s, cx, oy - 22 * s);
 
+    return g;
   }
 
   /**
    * Slalom gate — matches SlalomGate.ts at a scaled-down half-gap so it fits
    * within the 360 px card width.
+   * Drawn relative to (0, 0) — place inside a Container at (cx, cy).
    */
-  private drawGate(cx: number, cy: number): void {
+  private drawGate(): Phaser.GameObjects.Graphics {
     const g        = this.add.graphics();
-    const halfGap  = 82;    // scaled from in-game 165 to fit card
-    const halfPole = GATE_POLE_RADIUS;   // 12 px — same as game
-    const poleH    = 84;    // close to in-game POLE_H=96, trimmed slightly
-    const bannerH  = 21;    // same as in-game BANNER_H
-    // Centre vertically in the lower card half
-    const oy = cy + 110;
+    const halfGap  = 82;
+    const halfPole = GATE_POLE_RADIUS;
+    const poleH    = 84;
+    const bannerH  = 21;
+    const cx       = 0;
+    const oy       = 110;
 
-    // Drop shadows under poles
     g.fillStyle(0x000000, 0.12);
     g.fillEllipse(cx - halfGap, oy + poleH / 2 + 4, halfPole * 4, 8);
     g.fillEllipse(cx + halfGap, oy + poleH / 2 + 4, halfPole * 4, 8);
 
-    const colorVal = COLORS.GATE_LEFT; // red gate
+    const colorVal = COLORS.GATE_LEFT;
 
-    // Left pole body
     g.fillStyle(colorVal, 1);
     g.fillRect(cx - halfGap - halfPole, oy - poleH / 2, halfPole * 2, poleH);
-
-    // Right pole body
     g.fillRect(cx + halfGap - halfPole, oy - poleH / 2, halfPole * 2, poleH);
 
-    // White stripe on each pole
     g.fillStyle(0xffffff, 1);
     g.fillRect(cx - halfGap - halfPole, oy - poleH / 2 + 4, halfPole * 2, 10);
     g.fillRect(cx + halfGap - halfPole, oy - poleH / 2 + 4, halfPole * 2, 10);
 
-    // Horizontal banner connecting the poles
     g.fillStyle(colorVal, 0.80);
     g.fillRect(cx - halfGap, oy - bannerH / 2, halfGap * 2, bannerH);
 
-    // Banner centre stripe (white) for visibility
     g.fillStyle(0xffffff, 0.50);
     g.fillRect(cx - halfGap + 8, oy - 3, halfGap * 2 - 16, 6);
+
+    return g;
   }
 
   /**
    * Jump ramp — matches Ramp.ts at scale 3×.
+   * Drawn relative to (0, 0) — place inside a Container at (cx, cy).
    */
-  private drawRamp(cx: number, cy: number): void {
+  private drawRamp(): Phaser.GameObjects.Graphics {
     const g = this.add.graphics();
     const s = 3;
 
@@ -325,27 +389,21 @@ export class ModeSelectScene extends Phaser.Scene {
     const hw   = (RAMP_W / 2) * s;
     const hd   = (RAMP_D / 2) * s;
     const lipH = 7 * s;
+    const cx   = 0;
+    const oy   = 105;
 
-    // Centre vertically in the lower card half
-    const oy = cy + 105;
-
-    // Drop shadow
     g.fillStyle(0x000000, 0.18);
     g.fillRoundedRect(cx - hw + 4 * s, oy + hd - 2 * s, RAMP_W * s, 10 * s, 4);
 
-    // Main ramp platform
     g.fillStyle(COLORS.RAMP_SURFACE, 1);
     g.fillRoundedRect(cx - hw, oy - hd, RAMP_W * s, RAMP_D * s, CORNER * s);
 
-    // Upper highlight
     g.fillStyle(COLORS.RAMP_HIGHLIGHT, 0.70);
     g.fillRoundedRect(cx - hw + 4 * s, oy - hd + 2 * s, (RAMP_W - 8) * s, RAMP_D * 0.45 * s, (CORNER - 2) * s);
 
-    // Front launch lip
     g.fillStyle(COLORS.RAMP_LIP, 1);
     g.fillRoundedRect(cx - hw, oy + hd - lipH, RAMP_W * s, lipH, { tl: 0, tr: 0, bl: CORNER * s, br: CORNER * s });
 
-    // Yellow direction arrow (same path as Ramp.ts)
     const asx  = 3 * s;
     const asy1 = oy - hd + 5 * s;
     const asy2 = oy - hd + 14 * s;
@@ -372,8 +430,9 @@ export class ModeSelectScene extends Phaser.Scene {
     drawArrow();
     g.strokePath();
 
-    // Platform outline
     g.lineStyle(1.5, COLORS.RAMP_OUTLINE, 0.8);
     g.strokeRoundedRect(cx - hw, oy - hd, RAMP_W * s, RAMP_D * s, CORNER * s);
+
+    return g;
   }
 }

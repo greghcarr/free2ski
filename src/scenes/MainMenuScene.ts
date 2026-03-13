@@ -188,11 +188,26 @@ export class MainMenuScene extends Phaser.Scene {
     kb.on('keydown-SPACE', () => { if (focusIdx >= 0) navItems[focusIdx]!.activate(); });
     kb.on('keydown-ENTER', () => { if (focusIdx >= 0) navItems[focusIdx]!.activate(); });
 
-    const playItem        = this.createButton(WORLD_WIDTH / 2, 650,    730, 150, 'play',        100, 'bold', () => { this.scene.start(SceneKey.ModeSelect); },   () => clearNavFocus(0), 150);
+    const playItem        = this.createButton(WORLD_WIDTH / 2, 650,    730, 150, 'play',        100, 'bold', () => { this.scene.launch(SceneKey.ModeSelect); this.scene.pause(); },   () => clearNavFocus(0), 150);
     const leaderboardItem = this.createButton(SEC_L_X,         SEC_Y,  SEC_W, SEC_H, 'leaderboard', 58, 'bold', () => { this.scene.start(SceneKey.Leaderboard); }, () => clearNavFocus(1), 260);
     const settingsItem    = this.createButton(SEC_R_X,         SEC_Y,  SEC_W, SEC_H, 'settings',    58, 'bold', () => { this.scene.start(SceneKey.Settings); },    () => clearNavFocus(2), 260);
     const patchNotesItem  = this.createButton(WORLD_WIDTH / 2, 940,    360,   85,   'patch notes',  50, 'bold', () => { this.scene.start(SceneKey.PatchNotes); }, () => clearNavFocus(3), 370);
     navItems.push(playItem, leaderboardItem, settingsItem, patchNotesItem);
+
+    // Hide/show UI when ModeSelect is layered on top
+    const setUiVisible = (v: boolean): void => {
+      title.setVisible(v);
+      badge.setVisible(v);
+      navItems.forEach(item => item.setVisible?.(v));
+    };
+    const onPause  = () => setUiVisible(false);
+    const onResume = () => setUiVisible(true);
+    this.events.on('pause',  onPause);
+    this.events.on('resume', onResume);
+    this.events.once('shutdown', () => {
+      this.events.off('pause',  onPause);
+      this.events.off('resume', onResume);
+    });
 
     // Rebuild sky gradient + star brightness every 5 min (handles period transitions).
     // Sun/moon positions are updated every frame in update() so this is only needed
@@ -1140,6 +1155,24 @@ export class MainMenuScene extends Phaser.Scene {
     // Container allows the whole button to slide + fade as one unit
     const container = this.add.container(x, y + 55).setAlpha(0);
 
+    const glowGfx = new Phaser.GameObjects.Graphics(this);
+    const GLOW_LAYERS = [
+      { pad: 42, alpha: 0.04 },
+      { pad: 28, alpha: 0.08 },
+      { pad: 18, alpha: 0.13 },
+      { pad: 10, alpha: 0.18 },
+      { pad:  4, alpha: 0.24 },
+    ] as const;
+    const drawGlow = (on: boolean): void => {
+      glowGfx.clear();
+      if (!on) return;
+      for (const { pad, alpha } of GLOW_LAYERS) {
+        glowGfx.fillStyle(0xaaddff, alpha);
+        glowGfx.fillRoundedRect(-w / 2 - pad, -h / 2 - pad, w + pad * 2, h + pad * 2, 15 + pad);
+      }
+    };
+    drawGlow(false);
+
     const bg = new Phaser.GameObjects.Graphics(this);
     const drawBg = (hovered: boolean): void => {
       bg.clear();
@@ -1158,11 +1191,36 @@ export class MainMenuScene extends Phaser.Scene {
     const hitArea = new Phaser.GameObjects.Rectangle(this, 0, 0, w, h)
       .setInteractive({ useHandCursor: true });
 
-    container.add([bg, labelText, hitArea]);
+    container.add([glowGfx, bg, labelText, hitArea]);
 
-    hitArea.on('pointerover', () => { onHover?.(); drawBg(true);  labelText.setText(`~ ${label} ~`); });
-    hitArea.on('pointerout',  () => {               drawBg(false); labelText.setText(label); });
-    hitArea.on('pointerdown', onClick);
+    let pulseTween: Phaser.Tweens.Tween | null = null;
+
+    const flashAndGo = (): void => {
+      if (pulseTween) { pulseTween.stop(); pulseTween = null; container.setScale(1); }
+      bg.clear();
+      bg.fillStyle(0xddf4ff, 1);
+      bg.fillRoundedRect(-w / 2, -h / 2, w, h, 15);
+      labelText.setColor('#2a5ab8');
+      this.tweens.add({
+        targets:    container,
+        scaleX:     1.07,
+        scaleY:     1.07,
+        duration:   55,
+        ease:       'Quad.easeOut',
+        yoyo:       true,
+        onComplete: () => { drawBg(false); drawGlow(false); labelText.setText(label); labelText.setColor('#ffffff'); onClick(); },
+      });
+    };
+
+    hitArea.on('pointerover', () => {
+      onHover?.(); drawGlow(true); drawBg(true); labelText.setText(`~ ${label} ~`);
+      if (!pulseTween) pulseTween = this.tweens.add({ targets: container, scaleX: 1.05, scaleY: 1.05, duration: 550, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+    });
+    hitArea.on('pointerout', () => {
+      drawGlow(false); drawBg(false); labelText.setText(label);
+      if (pulseTween) { pulseTween.stop(); pulseTween = null; container.setScale(1); }
+    });
+    hitArea.on('pointerdown', flashAndGo);
 
     this.tweens.add({
       targets:  container,
@@ -1174,8 +1232,20 @@ export class MainMenuScene extends Phaser.Scene {
     });
 
     return {
-      setFocus: (f) => { drawBg(f); labelText.setText(f ? `~ ${label} ~` : label); },
-      activate: onClick,
+      setFocus: (f) => {
+        drawGlow(f); drawBg(f); labelText.setText(f ? `~ ${label} ~` : label);
+        if (f && !pulseTween) {
+          pulseTween = this.tweens.add({ targets: container, scaleX: 1.05, scaleY: 1.05, duration: 550, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+        } else if (!f && pulseTween) {
+          pulseTween.stop(); pulseTween = null; container.setScale(1);
+        }
+      },
+      activate: flashAndGo,
+      setVisible: (v: boolean) => {
+        container.setVisible(v);
+        if (v) hitArea.setInteractive({ useHandCursor: true });
+        else   hitArea.disableInteractive();
+      },
     };
   }
 }
