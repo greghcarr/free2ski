@@ -81,7 +81,7 @@ export class MainMenuScene extends Phaser.Scene {
       color:           '#ffffff',
       stroke:          '#1a3a8a',
       strokeThickness: 14,
-    }).setOrigin(0.5).setAlpha(0);
+    }).setOrigin(0.5).setAlpha(0).setDepth(2);
 
     this.tweens.add({
       targets:  title,
@@ -109,7 +109,7 @@ export class MainMenuScene extends Phaser.Scene {
       color:           '#FFD700',
       stroke:          '#001a6e',
       strokeThickness: 10,
-    }).setOrigin(0.5).setAngle(12).setScale(0.01);
+    }).setOrigin(0.5).setAngle(12).setScale(0.01).setDepth(2);
 
     const revealBadge = (text: string): void => {
       badge.setText(text);
@@ -223,8 +223,8 @@ export class MainMenuScene extends Phaser.Scene {
       loop: true,
     });
 
-    addVersionLabel(this);
-    addUsernameLabel(this);
+    addVersionLabel(this, COLORS.VERSION_MENU);
+    addUsernameLabel(this, COLORS.VERSION_MENU);
     if (DEBUG.skyDebugHour) this.buildDebugSlider();
   }
 
@@ -942,10 +942,6 @@ export class MainMenuScene extends Phaser.Scene {
                     : hour <  6  ? 1                                // deep night
                     : hour <  7  ? 1 - (hour - 6)                  // dawn fade
                     : 0;                                            // daytime
-    const glowW     = 230 + ni * 320;
-    const glowH     = 110 + ni * 130;
-    const glowAlpha = 0.13 + ni * 0.30;
-
     // Ambient snow pool — visible only at night, spreads wide on the ground
     if (ni > 0.05) {
       const pool = this.add.graphics();
@@ -958,14 +954,6 @@ export class MainMenuScene extends Phaser.Scene {
         duration: 1800, yoyo: true, repeat: -1, ease: 'Sine.easeInOut', delay: 300,
       });
     }
-
-    const warmGlow = this.add.graphics();
-    warmGlow.fillStyle(0xff6600, glowAlpha);
-    warmGlow.fillEllipse(fX, gndY - 42, glowW, glowH);
-    this.tweens.add({
-      targets: warmGlow, alpha: 0.5,
-      duration: 1200, yoyo: true, repeat: -1, ease: 'Sine.easeInOut',
-    });
 
     // ─── Ground shadow beneath skier ─────────────────────────────────────────
     const shadow = this.add.graphics();
@@ -1153,7 +1141,7 @@ export class MainMenuScene extends Phaser.Scene {
     entranceDelay = 0,
   ): MenuNavItem {
     // Container allows the whole button to slide + fade as one unit
-    const container = this.add.container(x, y + 55).setAlpha(0);
+    const container = this.add.container(x, y + 55).setAlpha(0).setDepth(2);
 
     const glowGfx = new Phaser.GameObjects.Graphics(this);
     const GLOW_LAYERS = [
