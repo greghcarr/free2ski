@@ -3,7 +3,7 @@ import { WORLD_WIDTH, GAME_HEIGHT, COLORS } from '@/data/constants';
 import { HighScoreManager } from '@/data/HighScoreManager';
 import { DEBUG_ENABLED } from '@/data/DebugConfig';
 
-export const APP_VERSION = 'v0.4.0.1-pre-alpha';
+export const APP_VERSION = 'v0.4.0.2-pre-alpha';
 
 export function addVersionLabel(scene: Phaser.Scene, color: string = COLORS.VERSION_DEFAULT): void {
   const label = scene.add.text(WORLD_WIDTH - 27, GAME_HEIGHT - 27, APP_VERSION, {

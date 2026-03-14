@@ -251,7 +251,7 @@ export class ModeSelectScene extends Phaser.Scene {
           hasWR = true;
           const top = rows[0]!;
           wrText.setText(`world record: ${this.formatScore(mode, top.score)}`).setColor(WR_COLOR).setStroke('#000000', 6);
-          wrHolderText.setText(`by ${top.username}`).setColor(COLORS.UI_TITLE).setAlpha(0.5);
+          wrHolderText.setText(`by ${top.username}`).setColor(WR_COLOR).setStroke('#000000', 6);
         }
       })
       .catch(() => {
@@ -279,9 +279,7 @@ export class ModeSelectScene extends Phaser.Scene {
     const setDimmed = (dimmed: boolean): void => {
       for (const t of statTexts) {
         const noRecord = (t === dailyText && !hasDaily) || (t === bestText && !hasBest) || ((t === wrText || t === wrHolderText) && !hasWR);
-        const isHolder = t === wrHolderText && hasWR;
-        const baseAlpha = noRecord ? 0.5 : isHolder ? 0.5 : 1;
-        t.setAlpha(dimmed ? baseAlpha * 0.5 : baseAlpha);
+        t.setAlpha(dimmed ? (noRecord ? 0.25 : 0.5) : (noRecord ? 0.5 : 1));
       }
     };
     draw(false);
@@ -306,12 +304,12 @@ export class ModeSelectScene extends Phaser.Scene {
     // Hit area stays outside the container so it doesn't scale with it
     const hit = this.add.rectangle(cx, cy, w, h).setInteractive({ useHandCursor: true });
     hit.on('pointerover', () => { onHover?.(); drawGlow(true); draw(true); setDimmed(false); startPulse(); });
-    hit.on('pointerout',  () => { drawGlow(false); draw(false); setDimmed(false); stopPulse(); containerList?.forEach(c => c.setAlpha(1)); onLeave?.(); });
+    hit.on('pointerout',  () => { drawGlow(false); draw(false); stopPulse(); containerList?.forEach(c => c.setAlpha(1)); onLeave?.(); });
     hit.on('pointerdown', flashAndGo);
 
     return {
       setFocus: (f) => {
-        drawGlow(f); draw(f); setDimmed(!f);
+        drawGlow(f); draw(f); setDimmed(false);
         if (f) startPulse(); else stopPulse();
         container.setAlpha(1);
       },
