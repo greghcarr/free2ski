@@ -250,7 +250,7 @@ export class ModeSelectScene extends Phaser.Scene {
         } else {
           hasWR = true;
           const top = rows[0]!;
-          wrText.setText(`world record: ${this.formatScore(mode, top.score)}`).setColor(WR_COLOR).setStroke('#000000', 6);
+          wrText.setText(`world record: ${this.formatScore(mode, top.score)}`).setColor(WR_COLOR).setStroke('#000000', 6).setAlpha(1);
           wrHolderText.setText(`by ${top.username}`).setColor(WR_COLOR).setStroke('#000000', 6);
         }
       })
