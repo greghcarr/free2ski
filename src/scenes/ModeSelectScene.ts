@@ -250,8 +250,8 @@ export class ModeSelectScene extends Phaser.Scene {
         } else {
           hasWR = true;
           const top = rows[0]!;
-          wrText.setText(`world record: ${this.formatScore(mode, top.score)}`).setColor(WR_COLOR).setStroke('#000000', 4);
-          wrHolderText.setText(`by ${top.username}`).setColor(WR_COLOR).setStroke('#000000', 6);
+          wrText.setText(`world record: ${this.formatScore(mode, top.score)}`).setColor(WR_COLOR).setStroke('#000000', 6);
+          wrHolderText.setText(`by ${top.username}`).setColor(COLORS.UI_TITLE).setAlpha(0.5);
         }
       })
       .catch(() => {
@@ -279,7 +279,8 @@ export class ModeSelectScene extends Phaser.Scene {
     const setDimmed = (dimmed: boolean): void => {
       for (const t of statTexts) {
         const noRecord = (t === dailyText && !hasDaily) || (t === bestText && !hasBest) || ((t === wrText || t === wrHolderText) && !hasWR);
-        const baseAlpha = noRecord ? 0.5 : 1;
+        const isHolder = t === wrHolderText && hasWR;
+        const baseAlpha = noRecord ? 0.5 : isHolder ? 0.5 : 1;
         t.setAlpha(dimmed ? baseAlpha * 0.5 : baseAlpha);
       }
     };
