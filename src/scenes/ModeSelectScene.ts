@@ -236,7 +236,7 @@ export class ModeSelectScene extends Phaser.Scene {
     if (hasDaily) { dailyText.setColor(DB_COLOR); dailyText.setStroke('#000000', 6); }
     const bestText     = this.add.text(0, 205, bestLabel, statStyle).setOrigin(0.5, 1).setAlpha(hasBest ? 1 : 0.5);
     if (hasBest) { bestText.setColor(PB_COLOR); bestText.setStroke('#000000', 6); }
-    const wrText       = this.add.text(0, 255, 'world record: ...', statStyle).setOrigin(0.5, 1);
+    const wrText       = this.add.text(0, 255, 'world record: ...', statStyle).setOrigin(0.5, 1).setAlpha(0.5);
     const wrHolderText = this.add.text(0, 295, '', statStyle).setOrigin(0.5, 1);
     let hasWR = false;
     container.add([glowGfx, bg, illustGfx, titleText, descText, bestText, dailyText, wrText, wrHolderText]);
