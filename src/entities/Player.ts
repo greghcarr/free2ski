@@ -42,6 +42,17 @@ export class Player {
   // Jump state
   airTime: number = 0;    // ms of the CURRENT jump (resets each ramp hit)
 
+  // Invincibility (star powerup)
+  invincible = false;
+  private invincibleTimer: Phaser.Time.TimerEvent | null = null;
+  private rainbowTimer:    Phaser.Time.TimerEvent | null = null;
+  private rainbowIndex = 0;
+
+  // Speed boost (lightning powerup)
+  speedBoostMult = 1;
+  private boostTimer:      Phaser.Time.TimerEvent | null = null;
+  private boostFlashTimer: Phaser.Time.TimerEvent | null = null;
+
   // Internal jump counters
   private jumpElapsed: number = 0;
   private visualOffsetY: number = 0;
@@ -187,7 +198,7 @@ export class Player {
     // Turning reduces effective downhill component (cos²); brake key applies extra drag
     let speedMod = Math.max(Math.cos(angleRad) ** 2, 0.25);
     if (input.up)   speedMod *= (1 - BRAKE_RATE * dt * 6);   // active braking
-    if (input.down) speedMod *= TUCK_MULT;                    // tuck for speed
+    // down arrow no longer boosts speed
 
     // --- Update visual ---
     this.container.setPosition(this.x, this.screenY);
@@ -258,7 +269,124 @@ export class Player {
     });
   }
 
+  // ---------------------------------------------------------------------------
+  // Invincibility (star powerup)
+  // ---------------------------------------------------------------------------
+  private static readonly RAINBOW = [
+    0xff0000, 0xff8800, 0xffff00, 0x00ff44, 0x0088ff, 0x8800ff, 0xff00cc,
+  ] as const;
+
+  startInvincibility(durationMs: number): void {
+    this.invincible = true;
+    this.rainbowIndex = 0;
+
+    // Clear any existing timers (stacking stars resets duration)
+    this.invincibleTimer?.remove(false);
+    this.rainbowTimer?.remove(false);
+
+    // Cycle body color through rainbow
+    this.rainbowTimer = this.scene.time.addEvent({
+      delay: 60,
+      loop:  true,
+      callback: () => {
+        const c = Player.RAINBOW[this.rainbowIndex % Player.RAINBOW.length]!;
+        this.body.setFillStyle(c);
+        this.helmet.setFillStyle(c);
+        this.rainbowIndex++;
+      },
+    });
+
+    // End invincibility after duration
+    this.invincibleTimer = this.scene.time.delayedCall(durationMs, () => {
+      this.endInvincibility();
+    });
+
+    // Flash warning in last 2 seconds
+    this.scene.time.delayedCall(durationMs - 2000, () => {
+      if (!this.invincible) return;
+      this.rainbowTimer?.remove(false);
+      let flashOn = true;
+      this.rainbowTimer = this.scene.time.addEvent({
+        delay: 100,
+        loop:  true,
+        callback: () => {
+          if (!this.invincible) return;
+          if (flashOn) {
+            const c = Player.RAINBOW[this.rainbowIndex % Player.RAINBOW.length]!;
+            this.body.setFillStyle(c);
+            this.helmet.setFillStyle(c);
+            this.rainbowIndex++;
+          } else {
+            this.body.setFillStyle(COLORS.PLAYER_SUIT);
+            this.helmet.setFillStyle(COLORS.PLAYER);
+          }
+          flashOn = !flashOn;
+        },
+      });
+    });
+  }
+
+  private endInvincibility(): void {
+    this.invincible = false;
+    this.rainbowTimer?.remove(false);
+    this.rainbowTimer = null;
+    this.invincibleTimer = null;
+    this.body.setFillStyle(COLORS.PLAYER_SUIT);
+    this.helmet.setFillStyle(COLORS.PLAYER);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Speed boost (lightning powerup)
+  // ---------------------------------------------------------------------------
+  private static readonly BOLT_COLOR = 0xffdd00;
+
+  startSpeedBoost(durationMs: number, multiplier: number): void {
+    this.speedBoostMult = multiplier;
+
+    // Clear any existing timers (stacking resets duration)
+    this.boostTimer?.remove(false);
+    this.boostFlashTimer?.remove(false);
+
+    // Electric blue flash cycle
+    let flashOn = true;
+    this.boostFlashTimer = this.scene.time.addEvent({
+      delay: 80,
+      loop:  true,
+      callback: () => {
+        if (this.invincible) return; // rainbow takes priority
+        if (flashOn) {
+          this.body.setFillStyle(Player.BOLT_COLOR);
+          this.helmet.setFillStyle(Player.BOLT_COLOR);
+        } else {
+          this.body.setFillStyle(COLORS.PLAYER_SUIT);
+          this.helmet.setFillStyle(COLORS.PLAYER);
+        }
+        flashOn = !flashOn;
+      },
+    });
+
+    // End boost after duration
+    this.boostTimer = this.scene.time.delayedCall(durationMs, () => {
+      this.endSpeedBoost();
+    });
+  }
+
+  private endSpeedBoost(): void {
+    this.speedBoostMult = 1;
+    this.boostFlashTimer?.remove(false);
+    this.boostFlashTimer = null;
+    this.boostTimer = null;
+    if (!this.invincible) {
+      this.body.setFillStyle(COLORS.PLAYER_SUIT);
+      this.helmet.setFillStyle(COLORS.PLAYER);
+    }
+  }
+
   destroy(): void {
+    this.invincibleTimer?.remove(false);
+    this.rainbowTimer?.remove(false);
+    this.boostTimer?.remove(false);
+    this.boostFlashTimer?.remove(false);
     this.container.destroy();
   }
 

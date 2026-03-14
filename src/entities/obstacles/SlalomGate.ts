@@ -2,8 +2,12 @@ import Phaser from 'phaser';
 import { ObstacleBase } from './ObstacleBase';
 import { COLORS, DEPTH, GATE_GAP_WIDTH, GATE_POLE_RADIUS, GAME_HEIGHT } from '@/data/constants';
 
-const POLE_H       = 96;   // visual height of each pole
-const BANNER_H     = 21;   // horizontal flag/banner thickness
+const WIRE_H       = 144;  // visual height of each wire
+const WIRE_W       = 3;    // thickness of the wire line
+const FLAG_W       = 72;   // width of the triangular flag
+const FLAG_H       = 56;   // height of the triangular flag
+const FLAG_Y       = -WIRE_H + 12; // top of the flag (near top of wire)
+const BANNER_H     = 21;   // horizontal banner thickness
 const CULL_PADDING = 120;
 
 export type GateColor = 'red' | 'blue';
@@ -30,7 +34,6 @@ export class SlalomGate extends ObstacleBase {
     this.color = color;
 
     const halfGap  = this.gapWidth / 2;
-    const halfPole = GATE_POLE_RADIUS;
 
     // --- Banner layer (renders below the player) ---
     const bannerGfx = scene.add.graphics();
@@ -56,38 +59,64 @@ export class SlalomGate extends ObstacleBase {
     // --- Poles layer (renders above the player) ---
     const poleGfx = scene.add.graphics();
 
-    // Drop shadows just below the gate line
-    poleGfx.fillStyle(0x000000, 0.12);
-    poleGfx.fillEllipse(-halfGap, BANNER_H / 2 + 4, halfPole * 4, 8);
-    poleGfx.fillEllipse( halfGap, BANNER_H / 2 + 4, halfPole * 4, 8);
-
     if (isFinish) {
-      const stripeH = POLE_H / 4;
-      for (let i = 0; i < 4; i++) {
-        poleGfx.fillStyle(i % 2 === 0 ? 0x111111 : 0xffffff, 1);
-        const y = -POLE_H + i * stripeH;
-        poleGfx.fillRect(-halfGap - halfPole, y, halfPole * 2, stripeH);
-        poleGfx.fillRect( halfGap - halfPole, y, halfPole * 2, stripeH);
-      }
+      // Thin black wire
+      poleGfx.fillStyle(0x111111, 1);
+      poleGfx.fillRect(-halfGap - WIRE_W / 2, -WIRE_H, WIRE_W, WIRE_H);
+      poleGfx.fillRect( halfGap - WIRE_W / 2, -WIRE_H, WIRE_W, WIRE_H);
+
+      // Black flags facing inward
+      poleGfx.fillStyle(0x111111, 1);
+      poleGfx.beginPath();
+      poleGfx.moveTo(-halfGap, FLAG_Y);
+      poleGfx.lineTo(-halfGap + FLAG_W, FLAG_Y + FLAG_H / 2);
+      poleGfx.lineTo(-halfGap, FLAG_Y + FLAG_H);
+      poleGfx.closePath();
+      poleGfx.fillPath();
+      poleGfx.beginPath();
+      poleGfx.moveTo(halfGap, FLAG_Y);
+      poleGfx.lineTo(halfGap - FLAG_W, FLAG_Y + FLAG_H / 2);
+      poleGfx.lineTo(halfGap, FLAG_Y + FLAG_H);
+      poleGfx.closePath();
+      poleGfx.fillPath();
     } else {
       const colorVal = color === 'red' ? COLORS.GATE_LEFT : COLORS.GATE_RIGHT;
+
+      // Thin black wire
+      poleGfx.fillStyle(0x111111, 1);
+      poleGfx.fillRect(-halfGap - WIRE_W / 2, -WIRE_H, WIRE_W, WIRE_H);
+      poleGfx.fillRect( halfGap - WIRE_W / 2, -WIRE_H, WIRE_W, WIRE_H);
+
+      // Flags facing inward — left flag points right, right flag points left
       poleGfx.fillStyle(colorVal, 1);
-      poleGfx.fillRect(-halfGap - halfPole, -POLE_H, halfPole * 2, POLE_H);
-      poleGfx.fillRect( halfGap - halfPole, -POLE_H, halfPole * 2, POLE_H);
-      poleGfx.fillStyle(0xffffff, 1);
-      poleGfx.fillRect(-halfGap - halfPole, -POLE_H + 4, halfPole * 2, 10);
-      poleGfx.fillRect( halfGap - halfPole, -POLE_H + 4, halfPole * 2, 10);
+      // Left pole flag (points right toward gap)
+      poleGfx.beginPath();
+      poleGfx.moveTo(-halfGap, FLAG_Y);
+      poleGfx.lineTo(-halfGap + FLAG_W, FLAG_Y + FLAG_H / 2);
+      poleGfx.lineTo(-halfGap, FLAG_Y + FLAG_H);
+      poleGfx.closePath();
+      poleGfx.fillPath();
+      // Right pole flag (points left toward gap)
+      poleGfx.beginPath();
+      poleGfx.moveTo(halfGap, FLAG_Y);
+      poleGfx.lineTo(halfGap - FLAG_W, FLAG_Y + FLAG_H / 2);
+      poleGfx.lineTo(halfGap, FLAG_Y + FLAG_H);
+      poleGfx.closePath();
+      poleGfx.fillPath();
     }
 
     const poleChildren: Phaser.GameObjects.GameObject[] = [poleGfx];
 
     if (gateNumber !== undefined) {
       const numStr = String(gateNumber);
-      const style = { fontFamily: 'sans-serif', fontSize: '38px', fontStyle: 'bold', color: '#222222' };
-      const labelY = -POLE_H / 2;
+      const style: Phaser.Types.GameObjects.Text.TextStyle = {
+        fontFamily: 'sans-serif', fontSize: '44px', fontStyle: 'bold', color: '#ffffff',
+      };
+      const labelY = FLAG_Y + FLAG_H / 2;
+      // Offset labels inward onto the flags
       poleChildren.push(
-        scene.add.text(-halfGap, labelY, numStr, style).setOrigin(0.5, 0.5).setAlpha(0.55),
-        scene.add.text( halfGap, labelY, numStr, style).setOrigin(0.5, 0.5).setAlpha(0.55),
+        scene.add.text(-halfGap + FLAG_W * 0.4, labelY, numStr, style).setOrigin(0.5, 0.5),
+        scene.add.text( halfGap - FLAG_W * 0.4, labelY, numStr, style).setOrigin(0.5, 0.5),
       );
     }
 

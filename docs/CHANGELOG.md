@@ -5,6 +5,33 @@ Format: newest first, grouped by version/date.
 
 ---
 
+## v0.4.0-pre-alpha — 2026-03-14
+
+### Added
+- Star powerup grants temporary invincibility with rainbow color cycling and a flashing wind-down warning
+- Lightning bolt powerup grants a 6-second speed boost; stacking refreshes the timer
+- Live score tier badges in the HUD — text upgrades to green (daily best), gold with pulse (personal best), or rainbow with spin (world record) as you play
+- World record displayed in course announcement and on mode select cards (fetched from leaderboard)
+- Leaderboard daily filter checkbox — toggle to see only today's runs
+- Jump mode awards +1 bonus for each tree flown over mid-air; incomplete courses no longer save
+- Gear button (top-right) replaces the text pause button — vector icon with hover glow and click flash
+- Legacy score backfill — pre-leaderboard personal bests are automatically submitted with version tag `legacy`
+
+### Changed
+- Slalom gates redesigned: cylindrical poles replaced with thin wire poles and inward-facing triangular flags with gate numbers
+- HUD redesigned: removed dark background bar; score text is larger with stroke outlines and drop shadows
+- Mode select cards show mode-colored titles (red/blue/green), color-coded record texts (green daily, gold PB, red WR), and dim when unfocused
+- Leaderboard tabs use mode-colored fills and glow; divider recolors on tab switch; dates use UTC for consistency
+- Course announcement includes daily best, personal best, and world record lines with matching colors
+- Main menu: tree-top star replaced with in-game Star powerup style; YETI XING sign replaced with a slalom gate flag
+- Finish and course-complete text enlarged; gate pass shows checkmark; penalty popup appears at the gate
+
+### Fixed
+- World record badge now triggers correctly when no prior world record exists
+- Leaderboard version gate fixed — `v` prefix mismatch no longer hides valid runs
+
+---
+
 ## v0.3.9.1-pre-alpha — 2026-03-12
 
 ### Added

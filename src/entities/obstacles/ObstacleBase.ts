@@ -17,6 +17,9 @@ export abstract class ObstacleBase {
   /** The Phaser Container holding all visual parts */
   protected container!: Phaser.GameObjects.Container;
 
+  /** Provides read access to the container for external animation (e.g. shrink on smash). */
+  get visual(): Phaser.GameObjects.Container { return this.container; }
+
   constructor(worldX: number, worldY: number) {
     this.worldX = worldX;
     this.worldY = worldY;

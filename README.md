@@ -1,6 +1,8 @@
 # free2ski
 
-An endless skiing game inspired by the classic SkiFree. Built with Phaser 3, TypeScript, and Vite. Playable in the browser and coming to Steam.
+A retro skiing game inspired by the classic SkiFree, rebuilt from scratch with modern web tech. Three modes, an online leaderboard, powerups, and a yeti that never gives up. All art is vector — no sprites, no pixel art.
+
+Built with Phaser 3, TypeScript, and Vite. Playable in the browser and coming to Steam.
 
 **[Play now →](https://greghcarr.github.io/free2ski/)**
 
@@ -10,16 +12,15 @@ An endless skiing game inspired by the classic SkiFree. Built with Phaser 3, Typ
 
 | Mode | Description |
 |------|-------------|
-| **Free Ski** | Ski as far as you can. The yeti appears at 2000m and gets faster with every wave. |
+| **Free Ski** | Ski as far as you can. The yeti appears at 2000m and gets faster with every wave. Collect stars for invincibility and lightning bolts for a speed boost. |
 | **Slalom** | Race through 25 gates as fast as possible. Missed gates add a 5-second penalty. |
-| **Jump** | Hit ramps and score big air. |
+| **Jump** | Hit ramps to jump over trees and score points. Complete the course to save your score. |
 
 ## Controls
 
 | Input | Action |
 |-------|--------|
 | Arrow keys / WASD | Steer |
-| Down / S | Tuck (speed boost) |
 | Up / W | Brake |
 | Click / tap | Steer toward pointer |
 | ESC / P | Pause |
@@ -67,4 +68,4 @@ npm run dist:win   # Windows .exe
 
 ## Status
 
-**v0.1.1-pre-alpha** — early build, actively in development. Feedback welcome.
+**v0.4.0-pre-alpha** — actively in development. Feedback welcome.

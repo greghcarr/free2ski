@@ -1,15 +1,24 @@
 import Phaser from 'phaser';
 import { WORLD_WIDTH, GAME_HEIGHT, COLORS } from '@/data/constants';
 import { HighScoreManager } from '@/data/HighScoreManager';
+import { DEBUG_ENABLED } from '@/data/DebugConfig';
 
-export const APP_VERSION = 'v0.3.10.1-pre-alpha';
+export const APP_VERSION = 'v0.4.0-pre-alpha';
 
 export function addVersionLabel(scene: Phaser.Scene, color: string = COLORS.VERSION_DEFAULT): void {
-  scene.add.text(WORLD_WIDTH - 27, GAME_HEIGHT - 27, APP_VERSION, {
+  const label = scene.add.text(WORLD_WIDTH - 27, GAME_HEIGHT - 27, APP_VERSION, {
     fontFamily: 'monospace',
     fontSize:   '26px',
     color,
   }).setOrigin(1, 1).setDepth(2);
+
+  if (DEBUG_ENABLED) {
+    scene.add.text(WORLD_WIDTH - 27, GAME_HEIGHT - 27 - label.height - 4, '⚠ DEBUG', {
+      fontFamily: 'monospace',
+      fontSize:   '26px',
+      color:      '#ff2222',
+    }).setOrigin(1, 1).setDepth(2);
+  }
 }
 
 export function addUsernameLabel(scene: Phaser.Scene, color: string = COLORS.VERSION_DEFAULT): void {

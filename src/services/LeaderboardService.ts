@@ -1,6 +1,9 @@
 import { createClient } from '@supabase/supabase-js';
 import { GameMode } from '@/config/GameModes';
 
+/** Minimum version whose runs appear in leaderboards and world records. */
+const MIN_DISPLAY_VERSION = 'v0.4.0-pre-alpha';
+
 const supabase = createClient(
   import.meta.env.VITE_SUPABASE_URL  as string,
   import.meta.env.VITE_SUPABASE_ANON_KEY as string,
@@ -25,6 +28,7 @@ export async function submitRun(
   mode: GameMode,
   score: number,
   seed: number,
+  version: string,
 ): Promise<void> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 5000);
@@ -35,7 +39,7 @@ export async function submitRun(
       .abortSignal(controller.signal);
     await supabase
       .from('runs')
-      .insert({ username, mode, score, seed, played_at: new Date().toISOString() })
+      .insert({ username, mode, score, seed, played_at: new Date().toISOString(), version })
       .abortSignal(controller.signal);
   } catch {
     // Network unavailable — silently ignore
@@ -76,6 +80,7 @@ export async function fetchTopScore(mode: GameMode): Promise<number | null> {
       .from('runs')
       .select('score')
       .eq('mode', mode)
+      .gte('version', MIN_DISPLAY_VERSION)
       .order('score', { ascending })
       .limit(1)
       .abortSignal(controller.signal);
@@ -90,18 +95,28 @@ export async function fetchTopScore(mode: GameMode): Promise<number | null> {
 
 /**
  * Fetch the top 10 runs for a given mode, across all players.
+ * If dailyOnly is true, only returns runs from today (UTC midnight onwards).
  * Returns an empty array on network error.
  */
-export async function fetchTopScores(mode: GameMode): Promise<LeaderboardRow[]> {
+export async function fetchTopScores(mode: GameMode, dailyOnly = false): Promise<LeaderboardRow[]> {
   const ascending = mode === GameMode.Slalom; // lower time = better
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 5000);
 
   try {
-    const { data, error } = await supabase
+    let query = supabase
       .from('runs')
       .select('username, score, seed, played_at')
       .eq('mode', mode)
+      .gte('version', MIN_DISPLAY_VERSION);
+
+    if (dailyOnly) {
+      const now = new Date();
+      const todayUTC = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+      query = query.gte('played_at', todayUTC.toISOString());
+    }
+
+    const { data, error } = await query
       .order('score', { ascending })
       .limit(10)
       .abortSignal(controller.signal);

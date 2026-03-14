@@ -141,7 +141,7 @@ export class HighScoreManager {
    * Pass `submitFn` from LeaderboardService to avoid a circular import.
    */
   static async submitLegacyScores(
-    submitFn: (username: string, mode: GameMode, score: number, seed: number) => Promise<void>,
+    submitFn: (username: string, mode: GameMode, score: number, seed: number, version: string) => Promise<void>,
   ): Promise<void> {
     const data = this.load();
     if (data.legacyScoresSubmitted) return;
@@ -175,7 +175,7 @@ export class HighScoreManager {
 
       if (score === null) continue;
 
-      submissions.push(submitFn(username, modeKey, score, seed));
+      submissions.push(submitFn(username, modeKey, score, seed, 'legacy'));
     }
 
     await Promise.allSettled(submissions);

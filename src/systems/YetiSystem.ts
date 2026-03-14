@@ -91,6 +91,12 @@ export class YetiSystem {
     return 'none';
   }
 
+  /** Debug-only: spawn the yeti immediately regardless of distance. */
+  forceSpawn(playerX: number, playerScreenY: number): void {
+    if (this.yeti) return;
+    this.spawn(playerX, playerScreenY, YETI_INITIAL_WAVE_SPEED);
+  }
+
   destroy(): void {
     this.yeti?.destroy();
     this.yeti    = null;

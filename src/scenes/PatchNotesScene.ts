@@ -210,8 +210,8 @@ export class PatchNotesScene extends Phaser.Scene {
       this.applyScroll(dy * 0.8);
     });
 
-    addVersionLabel(this);
-    addUsernameLabel(this);
+    addVersionLabel(this, COLORS.VERSION_MENU);
+    addUsernameLabel(this, COLORS.VERSION_MENU);
   }
 
   // ---------------------------------------------------------------------------

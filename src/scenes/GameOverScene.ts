@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { SceneKey } from '@/config/SceneKeys';
 import { WORLD_WIDTH, GAME_HEIGHT, PX_PER_METER, JUMP_COURSE_DISTANCE_M, COLORS } from '@/data/constants';
-import { addVersionLabel } from '@/ui/versionLabel';
+import { addVersionLabel, APP_VERSION } from '@/ui/versionLabel';
 import { HighScoreManager, type SubmitResult } from '@/data/HighScoreManager';
 import type { SessionConfig } from '@/config/GameConfig';
 import { GameMode } from '@/config/GameModes';
@@ -151,23 +151,27 @@ export class GameOverScene extends Phaser.Scene {
 
   create(): void {
     // Submit run first so the result informs the whole UI
-    // In debug mode: skip the real save and always show "first run on record"
+    // Jump mode: only save completed courses (crashes don't count)
+    const { mode } = this.summary.session;
+    const skipSave = mode === GameMode.Jump && !this.summary.courseComplete;
+
     const result: SubmitResult = DEBUG.forceNewBest
       ? { isNewBest: true, prevBest: null, current: { distance: this.summary.distanceM, score: this.summary.score, timestamp: Date.now() } }
-      : HighScoreManager.submitRun(
-          this.summary.session.mode,
-          this.summary.distanceM,
-          this.summary.score,
-          this.summary.finishTimeMs,
-        );
+      : skipSave
+        ? { isNewBest: false, prevBest: HighScoreManager.getBest(mode), current: { distance: this.summary.distanceM, score: this.summary.score, timestamp: Date.now() } }
+        : HighScoreManager.submitRun(
+            mode,
+            this.summary.distanceM,
+            this.summary.score,
+            this.summary.finishTimeMs,
+          );
 
     // Compute the leaderboard score — will be submitted after the user enters their name
-    const { mode } = this.summary.session;
     if (mode === GameMode.FreeSki) {
       this.pendingLeaderboardScore = this.summary.distanceM;
     } else if (mode === GameMode.Slalom && this.summary.finishTimeMs !== undefined) {
       this.pendingLeaderboardScore = this.summary.finishTimeMs;
-    } else if (mode === GameMode.Jump) {
+    } else if (mode === GameMode.Jump && !skipSave) {
       this.pendingLeaderboardScore = this.summary.score;
     }
 
@@ -375,7 +379,7 @@ export class GameOverScene extends Phaser.Scene {
       this.tweens.add({ targets: badge, scaleX: LAYOUT.NEW_BEST_PULSE_SCALE, scaleY: LAYOUT.NEW_BEST_PULSE_SCALE, duration: LAYOUT.NEW_BEST_PULSE_MS, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
     } else {
       const label = deltaMs > 0
-        ? `${formatRaceTime(Math.abs(deltaMs))} slower than personal best`
+        ? `+${formatRaceTime(Math.abs(deltaMs))} slower than personal best`
         : `${formatRaceTime(Math.abs(deltaMs))} faster than personal best`;
       this.add.text(LAYOUT.NEW_BEST_X, LAYOUT.NEW_BEST_Y, label, {
         fontFamily: 'FoxwhelpFont',
@@ -747,7 +751,7 @@ export class GameOverScene extends Phaser.Scene {
       boxSizing:    'border-box',
       transition:   'border-color 0.15s ease, box-shadow 0.15s ease',
     });
-    document.body.appendChild(el);
+    (canvas.parentElement ?? document.body).appendChild(el);
     el.focus();
     if (saved) el.select();
 
@@ -955,7 +959,7 @@ export class GameOverScene extends Phaser.Scene {
     HighScoreManager.setDisplayName(name);
 
     if (this.pendingLeaderboardScore !== null) {
-      submitRun(name, this.summary.session.mode, this.pendingLeaderboardScore, getDailySeed())
+      submitRun(name, this.summary.session.mode, this.pendingLeaderboardScore, getDailySeed(), APP_VERSION)
         .catch(() => {});
       this.pendingLeaderboardScore = null;
     }
