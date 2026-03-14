@@ -24,10 +24,10 @@ export class SettingsScene extends Phaser.Scene {
 
     // Simple linear nav — UP/DOWN cycles through all items
     const navItems: MenuNavItem[] = [];
-    let focusIdx = 0;
+    let focusIdx = -1; // -1 = no keyboard focus until first keypress
 
     const setFocus = (idx: number): void => {
-      navItems[focusIdx]?.setFocus(false);
+      if (focusIdx >= 0) navItems[focusIdx]?.setFocus(false);
       focusIdx = (idx + navItems.length) % navItems.length;
       navItems[focusIdx]?.setFocus(true);
     };
@@ -38,10 +38,10 @@ export class SettingsScene extends Phaser.Scene {
       else                         this.scale.startFullscreen();
     }));
 
-    // ── Reset stats (debug) — hidden for now ────────────────────────────────
-    // navItems.push(this.createDebugButton(WORLD_WIDTH / 2, 700, 'DEBUG: Reset All Stats', () => {
-    //   HighScoreManager.reset();
-    // }));
+    // ── Reset stats (debug) ──────────────────────────────────────────────────
+    navItems.push(this.createDebugButton(WORLD_WIDTH / 2, 700, 'DEBUG: Reset All Stats', () => {
+      HighScoreManager.reset();
+    }));
 
     // ── Back button ──────────────────────────────────────────────────────────
     const backGoTo = () => this.scene.start(SceneKey.MainMenu);
@@ -66,22 +66,21 @@ export class SettingsScene extends Phaser.Scene {
       setFocus: (f) => backUnderline.setVisible(f),
       activate: backGoTo,
     });
-    backText.on('pointerover', () => setFocus(navItems.length - 1));
+    backText.on('pointerover', () => backUnderline.setVisible(true));
+    backText.on('pointerout',  () => backUnderline.setVisible(false));
 
-    // ── Initial focus + keyboard nav ─────────────────────────────────────────
-    setFocus(0);
-
+    // ── Keyboard nav (nothing focused until first keypress) ───────────────────
     if (this.input.keyboard) {
       const kb = this.input.keyboard;
-      kb.on('keydown-DOWN',  () => setFocus(focusIdx + 1));
-      kb.on('keydown-UP',    () => setFocus(focusIdx - 1));
-      kb.on('keydown-SPACE', () => navItems[focusIdx]?.activate());
-      kb.on('keydown-ENTER', () => navItems[focusIdx]?.activate());
+      kb.on('keydown-DOWN',  () => { if (focusIdx < 0) setFocus(0); else setFocus(focusIdx + 1); });
+      kb.on('keydown-UP',    () => { if (focusIdx < 0) setFocus(0); else setFocus(focusIdx - 1); });
+      kb.on('keydown-SPACE', () => { if (focusIdx >= 0) navItems[focusIdx]?.activate(); });
+      kb.on('keydown-ENTER', () => { if (focusIdx >= 0) navItems[focusIdx]?.activate(); });
       kb.on('keydown-ESC',   () => this.scene.start(SceneKey.MainMenu));
     }
 
-    addVersionLabel(this);
-    addUsernameLabel(this);
+    addVersionLabel(this, COLORS.VERSION_MENU);
+    addUsernameLabel(this, COLORS.VERSION_MENU);
   }
 
   // ─── Toggle row ─────────────────────────────────────────────────────────────

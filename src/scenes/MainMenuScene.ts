@@ -30,8 +30,13 @@ const BADGE_PHRASES = [
   'trees narrowly avoided',
   'poles abandoned mid-slope',
   'bindings blamed',
-  'beers justified',
   "pizza wedges pizza'd",
+];
+
+const STANDALONE_PHRASES = [
+  'stars = good!?',
+  'slalom gates = hittable!?',
+  'lightning speed!?',
 ];
 
 interface SnowFlake {
@@ -133,10 +138,15 @@ export class MainMenuScene extends Phaser.Scene {
       });
     };
 
-    const phrase = BADGE_PHRASES[Math.floor(Math.random() * BADGE_PHRASES.length)]!;
-    fetchTotalRuns()
-      .then(n  => revealBadge(`${phrase}: ${n.toLocaleString()}`))
-      .catch(() => revealBadge(MAIN_MENU_BADGE_TEXT));
+    if (Math.random() < 0.5) {
+      const pick = STANDALONE_PHRASES[Math.floor(Math.random() * STANDALONE_PHRASES.length)]!;
+      revealBadge(pick);
+    } else {
+      const phrase = BADGE_PHRASES[Math.floor(Math.random() * BADGE_PHRASES.length)]!;
+      fetchTotalRuns()
+        .then(n  => revealBadge(`${n.toLocaleString()} ${phrase}`))
+        .catch(() => revealBadge(MAIN_MENU_BADGE_TEXT));
+    }
 
     // Buttons — staggered slide + fade entrance
     // Layout: Play (hero, centered) → Leaderboard + Settings (side by side) → Patch Notes (small, centered)
@@ -269,7 +279,7 @@ export class MainMenuScene extends Phaser.Scene {
     farMtn.fillStyle(0x8ab0cc, 1);
     this.fillMountainPath(farMtn, [
       [0, 770], [320, 180], [620, 400], [960, 100], [1300, 350], [1600, 160], [1920, 770],
-    ], 775);
+    ], 820);
 
     // Snow caps on far mountain peaks
     const farCaps = this.add.graphics();
@@ -303,8 +313,8 @@ export class MainMenuScene extends Phaser.Scene {
     this.drawMenuTree(WORLD_WIDTH - 285, 882, 0.65); // 5
     this.drawMenuTree(WORLD_WIDTH - 120, 870, 1.05); // 7
 
-    // Humorous "YETI XING" crossing sign — between layers so it sits behind front trees
-    this.drawYetiXingSign(WORLD_WIDTH - 1700, 898);
+    // Slalom gate flag — between layers so it sits behind front trees
+    this.drawSlalomFlag(WORLD_WIDTH - 1660, 898);
 
     // Trees — front layer (trees 1, 3, 6, 8), drawn after so they appear in front
     this.drawMenuTree( 40,              895, 0.80);  // 1
@@ -312,7 +322,7 @@ export class MainMenuScene extends Phaser.Scene {
     this.drawMenuTree(WORLD_WIDTH - 210, 898, 0.90); // 6
     this.drawMenuTree(WORLD_WIDTH -  40, 895, 0.80); // 8
 
-    // v0.3.5 — star on the tallest left tree
+    // Star powerup on the tallest right tree
     this.drawTreeStar(1800, 870, 1.05);
 
     // Sleeping cat — left side, opposite the campfire scene
@@ -628,34 +638,78 @@ export class MainMenuScene extends Phaser.Scene {
     }
   }
 
-  /** Glowing star perched on the tip of a tree (matches drawMenuTree geometry). */
+  /** Star powerup perched on the tip of a tree (matches in-game Star entity style). */
   private drawTreeStar(cx: number, baseY: number, scale: number): void {
     const tipY   = baseY - 160 * scale;
     const cy     = tipY - 14;
-    const outerR = 13;
-    const innerR = 5;
+    const outerR = 16;
+    const innerR = 7;
+    const points = 5;
 
-    const pts: { x: number; y: number }[] = [];
-    for (let i = 0; i < 10; i++) {
-      const angle = -Math.PI / 2 + i * (Math.PI / 5);
-      const r     = i % 2 === 0 ? outerR : innerR;
-      pts.push({ x: r * Math.cos(angle), y: r * Math.sin(angle) });
+    const gfx = this.add.graphics();
+
+    // Glow layers (matches Star.ts)
+    const GLOW_LAYERS = [
+      { pad: 18, alpha: 0.06 },
+      { pad: 12, alpha: 0.10 },
+      { pad:  6, alpha: 0.16 },
+      { pad:  2, alpha: 0.22 },
+    ] as const;
+    for (const { pad, alpha } of GLOW_LAYERS) {
+      gfx.fillStyle(0xffee44, alpha);
+      gfx.fillCircle(0, 0, outerR + pad);
     }
 
-    const glow = this.add.graphics().setPosition(cx, cy);
-    glow.fillStyle(0xffff99, 0.35);
-    glow.fillCircle(0, 0, 22);
+    // Star body
+    gfx.fillStyle(0xffd700, 1);
+    gfx.beginPath();
+    for (let i = 0; i < points * 2; i++) {
+      const r     = i % 2 === 0 ? outerR : innerR;
+      const angle = (Math.PI / 2 * 3) + (Math.PI / points) * i;
+      const px    = Math.cos(angle) * r;
+      const py    = Math.sin(angle) * r;
+      if (i === 0) gfx.moveTo(px, py);
+      else         gfx.lineTo(px, py);
+    }
+    gfx.closePath();
+    gfx.fillPath();
+
+    // Star outline
+    gfx.lineStyle(1.5, 0xcc9900, 1);
+    gfx.beginPath();
+    for (let i = 0; i < points * 2; i++) {
+      const r     = i % 2 === 0 ? outerR : innerR;
+      const angle = (Math.PI / 2 * 3) + (Math.PI / points) * i;
+      const px    = Math.cos(angle) * r;
+      const py    = Math.sin(angle) * r;
+      if (i === 0) gfx.moveTo(px, py);
+      else         gfx.lineTo(px, py);
+    }
+    gfx.closePath();
+    gfx.strokePath();
+
+    // Smiley face
+    gfx.fillStyle(0x000000, 1);
+    gfx.fillCircle(-4, -2, 1.8);
+    gfx.fillCircle( 4, -2, 1.8);
+    gfx.lineStyle(1.5, 0x000000, 1);
+    gfx.beginPath();
+    gfx.arc(0, 0, 5, Phaser.Math.DegToRad(20), Phaser.Math.DegToRad(160), false);
+    gfx.strokePath();
+
+    const container = this.add.container(cx, cy, [gfx]);
+    container.setScale(1.5);
+
+    // Glow pulse (matches Star.ts)
     this.tweens.add({
-      targets: glow, alpha: 0,
-      duration: 1700, yoyo: true, repeat: -1, ease: 'Sine.easeInOut',
+      targets: container, scaleX: 1.7, scaleY: 1.7,
+      duration: 600, yoyo: true, repeat: -1, ease: 'Sine.easeInOut',
     });
 
-    const star = this.add.graphics().setPosition(cx, cy);
-    star.fillStyle(0xFFE44D, 1);
-    star.fillPoints(pts, true);
+    // Slow rotation (matches Star.ts)
     this.tweens.add({
-      targets: star, alpha: 0.55,
-      duration: 1700, yoyo: true, repeat: -1, ease: 'Sine.easeInOut', delay: 350,
+      targets: container, angle: 360,
+      duration: 3000, repeat: -1, ease: 'Linear',
     });
   }
 
@@ -764,36 +818,37 @@ export class MainMenuScene extends Phaser.Scene {
   }
 
   /** Humorous "YETI XING" crossing sign planted next to a tree. */
-  private drawYetiXingSign(treeCx: number, baseY: number): void {
-    const postX = treeCx + 52;
-    const gndY  = baseY;
-    const postH = 68;
-    const signW = 86;
-    const signH = 46;
-    const signCY = gndY - postH - signH / 2;
+  /** Single slalom gate pole with flag, matching in-game SlalomGate style. */
+  private drawSlalomFlag(cx: number, baseY: number): void {
+    const wireH = 130;
+    const flagW = 65;
+    const flagH = 50;
+    const flagY = -wireH + 10;
 
-    // Post
     const g = this.add.graphics();
-    g.fillStyle(0xa0784a, 1);
-    g.fillRect(postX - 3, gndY - postH, 6, postH);
 
-    // Sign board — yellow, slight tilt
-    const container = this.add.container(postX, signCY);
-    const board = this.add.graphics();
-    board.fillStyle(0xf5e642, 1);
-    board.fillRoundedRect(-signW / 2, -signH / 2, signW, signH, 5);
-    board.lineStyle(2, 0xc8a800, 1);
-    board.strokeRoundedRect(-signW / 2, -signH / 2, signW, signH, 5);
-    container.add(board);
+    // Thin black wire / pole
+    g.fillStyle(0x111111, 1);
+    g.fillRect(-1.5, -wireH, 3, wireH);
 
-    const line1 = this.add.text(0, -10, 'YETI', {
-      fontFamily: 'FoxwhelpFont', fontSize: '22px', fontStyle: 'bold', color: '#1a1a1a',
-    }).setOrigin(0.5);
-    const line2 = this.add.text(0, 12, 'XING', {
-      fontFamily: 'FoxwhelpFont', fontSize: '22px', fontStyle: 'bold', color: '#cc2222',
-    }).setOrigin(0.5);
-    container.add([line1, line2]);
-    container.setRotation(-0.08);
+    // Red flag pointing right
+    g.fillStyle(COLORS.GATE_LEFT, 1);
+    g.beginPath();
+    g.moveTo(0, flagY);
+    g.lineTo(flagW, flagY + flagH / 2);
+    g.lineTo(0, flagY + flagH);
+    g.closePath();
+    g.fillPath();
+
+    // Gate number label (matches in-game SlalomGate text style)
+    const midY = flagY + flagH / 2;
+    const gateNum = Phaser.Math.Between(1, 25);
+    const label = this.add.text(flagW * 0.4, midY, String(gateNum), {
+      fontFamily: 'sans-serif', fontSize: '44px', fontStyle: 'bold', color: '#ffffff',
+    }).setOrigin(0.5, 0.5);
+
+    const container = this.add.container(cx, baseY, [g, label]);
+    container.setRotation(-0.06);
   }
 
   /** Draw a simple layered pine tree centred at (cx, baseY). */

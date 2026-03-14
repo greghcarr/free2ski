@@ -6,6 +6,8 @@ import { Tree } from '@/entities/obstacles/Tree';
 import { Rock } from '@/entities/obstacles/Rock';
 import { Ramp } from '@/entities/obstacles/Ramp';
 import { SlalomGate } from '@/entities/obstacles/SlalomGate';
+import { Star } from '@/entities/obstacles/Star';
+import { Lightning } from '@/entities/obstacles/Lightning';
 import type { ObstacleBase } from '@/entities/obstacles/ObstacleBase';
 
 // Circular hit radius for the player body (torso, not ski tips)
@@ -15,15 +17,18 @@ const PLAYER_HIT_RADIUS = 18;
 const COLLISION_CHECK_RANGE = 120;
 
 export interface CollisionResult {
-  crashed:    boolean;  // player hit a tree, rock, or gate pole
-  gatePassed: boolean;  // player cleanly passed through a gate gap
-  gateX:      number;   // world X of the gate that was passed (only valid when gatePassed)
-  gateMissed: boolean;  // player crossed a gate's Y line outside the gap
-  rampHit:    boolean;  // player hit a ramp (triggers jump, not crash)
+  crashed:       boolean;  // player hit a tree or rock
+  gatePassed:    boolean;  // player cleanly passed through a gate gap
+  gateX:         number;   // world X of the gate (valid when gatePassed or gateMissed)
+  gateMissed:    boolean;  // player crossed a gate's Y line outside the gap
+  rampHit:       boolean;  // player hit a ramp (triggers jump, not crash)
+  treeFlyovers:  Array<{ x: number; screenY: number }>;  // trees the player flew over while jumping
+  starPickup:      boolean;  // player touched a star powerup
+  lightningPickup: boolean;  // player touched a lightning powerup
 }
 
 const NO_COLLISION: CollisionResult = {
-  crashed: false, gatePassed: false, gateX: 0, gateMissed: false, rampHit: false,
+  crashed: false, gatePassed: false, gateX: 0, gateMissed: false, rampHit: false, treeFlyovers: [], starPickup: false, lightningPickup: false,
 };
 
 interface ActiveChunk {
@@ -35,7 +40,9 @@ export class ChunkManager {
   private scene:    Phaser.Scene;
   private baseSeed: number;
   private mode:     GameMode;
-  private chunks    = new Map<number, ActiveChunk>();
+  private chunks       = new Map<number, ActiveChunk>();
+  private scoredTrees  = new Set<ObstacleBase>();
+  private shrinking: ObstacleBase[] = [];
 
   constructor(scene: Phaser.Scene, baseSeed: number, mode: GameMode) {
     this.scene    = scene;
@@ -53,15 +60,16 @@ export class ChunkManager {
    * @param playerAirborne  When true, ground collision is skipped entirely.
    */
   update(
-    worldOffsetY:   number,
-    playerX:        number,
-    playerScreenY:  number,
-    playerAirborne: boolean,
+    worldOffsetY:    number,
+    playerX:         number,
+    playerScreenY:   number,
+    playerAirborne:  boolean,
+    playerInvincible = false,
   ): CollisionResult {
     const currentChunk = Math.floor(worldOffsetY / CHUNK_HEIGHT);
 
     // --- Activate needed chunks ---
-    const firstNeeded = Math.max(0, currentChunk - CHUNKS_BEHIND);
+    const firstNeeded = currentChunk - CHUNKS_BEHIND;
     const lastNeeded  = currentChunk + CHUNKS_AHEAD;
 
     for (let i = firstNeeded; i <= lastNeeded; i++) {
@@ -73,18 +81,40 @@ export class ChunkManager {
       if (index < firstNeeded - 1) this.retireChunk(index);
     }
 
+    // --- Keep shrinking obstacles scrolling with the world ---
+    for (const obs of this.shrinking) {
+      obs.setScreenY(playerScreenY + (obs.worldY - worldOffsetY));
+    }
+
     // --- Update screen positions + collision ---
     if (playerAirborne) {
-      // Still update visuals so obstacles don't freeze, but skip all collision
+      // Still update visuals so obstacles don't freeze, but skip crash collision
+      const flyovers: Array<{ x: number; screenY: number }> = [];
       for (const chunk of this.chunks.values()) {
         for (const obs of chunk.obstacles) {
-          obs.setScreenY(playerScreenY + (obs.worldY - worldOffsetY));
+          const screenY = playerScreenY + (obs.worldY - worldOffsetY);
+          obs.setScreenY(screenY);
+
+          // Detect trees the player flies over
+          if (obs instanceof Tree && !this.scoredTrees.has(obs)) {
+            const dx = obs.worldX - playerX;
+            const dy = screenY - playerScreenY;
+            if (dx > -COLLISION_CHECK_RANGE && dx < COLLISION_CHECK_RANGE &&
+                dy > -COLLISION_CHECK_RANGE && dy < COLLISION_CHECK_RANGE) {
+              const dist = Math.sqrt(dx * dx + dy * dy);
+              if (dist < PLAYER_HIT_RADIUS + obs.hitRadius) {
+                this.scoredTrees.add(obs);
+                flyovers.push({ x: obs.worldX, screenY });
+              }
+            }
+          }
         }
       }
-      return { ...NO_COLLISION };
+      return { ...NO_COLLISION, treeFlyovers: flyovers };
     }
 
     const result: CollisionResult = { ...NO_COLLISION };
+    const toRemove: Array<{ chunk: ActiveChunk; obs: ObstacleBase }> = [];
 
     for (const chunk of this.chunks.values()) {
       for (const obs of chunk.obstacles) {
@@ -114,18 +144,78 @@ export class ChunkManager {
           continue;
         }
 
-        // ---- Tree / Rock (normal crash) ----
+        // ---- Star powerup ----
+        if (obs instanceof Star) {
+          if (!obs.isCollected()) {
+            const dy = screenY - playerScreenY;
+            if (dy >= -COLLISION_CHECK_RANGE && dy <= COLLISION_CHECK_RANGE) {
+              const dx = obs.worldX - playerX;
+              if (dx >= -COLLISION_CHECK_RANGE && dx <= COLLISION_CHECK_RANGE) {
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist < PLAYER_HIT_RADIUS + obs.hitRadius) {
+                  obs.collect();
+                  result.starPickup = true;
+                }
+              }
+            }
+          }
+          continue;
+        }
+
+        // ---- Lightning powerup ----
+        if (obs instanceof Lightning) {
+          if (!obs.isCollected()) {
+            const dy = screenY - playerScreenY;
+            if (dy >= -COLLISION_CHECK_RANGE && dy <= COLLISION_CHECK_RANGE) {
+              const dx = obs.worldX - playerX;
+              if (dx >= -COLLISION_CHECK_RANGE && dx <= COLLISION_CHECK_RANGE) {
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist < PLAYER_HIT_RADIUS + obs.hitRadius) {
+                  obs.collect();
+                  result.lightningPickup = true;
+                }
+              }
+            }
+          }
+          continue;
+        }
+
+        // ---- Tree / Rock (normal crash, unless invincible or already scored as flyover) ----
         if (!result.crashed) {
+          if (obs instanceof Tree && this.scoredTrees.has(obs)) continue;
           const dy = screenY - playerScreenY;
           if (dy < -COLLISION_CHECK_RANGE || dy > COLLISION_CHECK_RANGE) continue;
           const dx = obs.worldX - playerX;
           if (dx < -COLLISION_CHECK_RANGE || dx > COLLISION_CHECK_RANGE) continue;
           const dist = Math.sqrt(dx * dx + dy * dy);
           if (dist < PLAYER_HIT_RADIUS + obs.hitRadius) {
-            result.crashed = true;
+            if (playerInvincible) {
+              toRemove.push({ chunk, obs });
+            } else {
+              result.crashed = true;
+            }
           }
         }
       }
+    }
+
+    // Shrink-and-destroy obstacles smashed through while invincible
+    for (const { chunk, obs } of toRemove) {
+      const idx = chunk.obstacles.indexOf(obs);
+      if (idx >= 0) chunk.obstacles.splice(idx, 1);
+      this.shrinking.push(obs);
+      this.scene.tweens.add({
+        targets:    obs.visual,
+        scaleX:     0,
+        scaleY:     0,
+        duration:   125,
+        ease:       'Back.easeIn',
+        onComplete: () => {
+          obs.destroy();
+          const si = this.shrinking.indexOf(obs);
+          if (si >= 0) this.shrinking.splice(si, 1);
+        },
+      });
     }
 
     return result;
@@ -147,8 +237,9 @@ export class ChunkManager {
     playerScreenY: number,
     result:        CollisionResult,
   ): void {
-    // Pole collision — check each pole individually
-    if (!result.crashed) {
+    // Gate credit — pole collision or clean pass through the gap
+    if (!gate.isPassed) {
+      // Check pole collision first (credits the gate on contact)
       const screenY  = playerScreenY + (gate.worldY - worldOffsetY);
       const dy       = screenY - playerScreenY;
 
@@ -158,23 +249,26 @@ export class ChunkManager {
         const hitLeft  = Math.sqrt(dxLeft  * dxLeft  + dy * dy) < PLAYER_HIT_RADIUS + GATE_POLE_RADIUS;
         const hitRight = Math.sqrt(dxRight * dxRight + dy * dy) < PLAYER_HIT_RADIUS + GATE_POLE_RADIUS;
         if (hitLeft || hitRight) {
-          result.crashed = true;
+          gate.isPassed     = true;
+          result.gatePassed = true;
+          result.gateX      = gate.worldX;
           return;
         }
       }
-    }
 
-    // Gate crossing — fires once when the gate worldY scrolls behind the player
-    if (!gate.isPassed && gate.worldY < worldOffsetY) {
-      gate.isPassed = true;
-      const halfGap = gate.gapWidth / 2;
-      const inGap   = playerX >= gate.worldX - halfGap + PLAYER_HIT_RADIUS &&
-                      playerX <= gate.worldX + halfGap - PLAYER_HIT_RADIUS;
-      if (inGap) {
-        result.gatePassed = true;
-        result.gateX      = gate.worldX;
-      } else {
-        result.gateMissed = true;
+      // Clean pass — fires once when the gate worldY scrolls behind the player
+      if (gate.worldY < worldOffsetY) {
+        gate.isPassed = true;
+        const halfGap = gate.gapWidth / 2;
+        const inGap   = playerX >= gate.worldX - halfGap + PLAYER_HIT_RADIUS &&
+                        playerX <= gate.worldX + halfGap - PLAYER_HIT_RADIUS;
+        if (inGap) {
+          result.gatePassed = true;
+          result.gateX      = gate.worldX;
+        } else {
+          result.gateMissed = true;
+          result.gateX      = gate.worldX;
+        }
       }
     }
   }
@@ -205,6 +299,12 @@ export class ChunkManager {
         case 'ramp':
           obs = new Ramp(this.scene, pt.worldX, pt.worldY);
           break;
+        case 'star':
+          obs = new Star(this.scene, pt.worldX, pt.worldY);
+          break;
+        case 'lightning':
+          obs = new Lightning(this.scene, pt.worldX, pt.worldY);
+          break;
       }
       if (pt.renderDepth !== undefined) obs.setRenderDepth(pt.renderDepth);
       return obs;
@@ -216,7 +316,10 @@ export class ChunkManager {
   private retireChunk(index: number): void {
     const chunk = this.chunks.get(index);
     if (!chunk) return;
-    for (const obs of chunk.obstacles) obs.destroy();
+    for (const obs of chunk.obstacles) {
+      this.scoredTrees.delete(obs);
+      obs.destroy();
+    }
     this.chunks.delete(index);
   }
 }

@@ -31,10 +31,13 @@ export const GATE_GAP_WIDTH     = 330;   // px gap between the two poles
 export const GATE_POLE_RADIUS   = 12;    // collision radius for each pole
 
 // Jump / ramp
-export const JUMP_DURATION          = 1400; // ms the player stays airborne
-export const JUMP_VISUAL_HEIGHT     = 75;   // px the container rises at apex
-export const JUMP_COURSE_DISTANCE_M = 5000; // metres to the finish line
-export const FINISH_LINE_H          = 96;   // px height of the checkered band
+export const JUMP_DURATION          = 1400;  // ms the player stays airborne
+export const JUMP_VISUAL_HEIGHT     = 75;    // px the container rises at apex
+export const JUMP_COURSE_DISTANCE_M = 5000;  // metres to the finish line
+export const FINISH_LINE_H          = 96;    // px height of the checkered band
+export const STAR_DURATION_MS       = 10000; // ms of invincibility from star powerup
+export const LIGHTNING_DURATION_MS  = 6000;  // ms of speed boost from lightning powerup
+export const LIGHTNING_SPEED_MULT   = 1.5;   // speed multiplier during lightning boost
 
 // UI layout
 export const BACK_BTN_Y = GAME_HEIGHT - 140;  // y position of "← back" buttons across scenes

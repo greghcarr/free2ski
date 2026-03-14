@@ -5,7 +5,7 @@ import type { TreeVariant } from '@/entities/obstacles/Tree';
 import type { RockVariant } from '@/entities/obstacles/Rock';
 import type { GateColor } from '@/entities/obstacles/SlalomGate';
 
-export type ObstacleKind = 'tree' | 'rock' | 'gate' | 'ramp';
+export type ObstacleKind = 'tree' | 'rock' | 'gate' | 'ramp' | 'star' | 'lightning';
 export type ObstacleVariant = TreeVariant | RockVariant | GateColor | 'normal';
 
 export interface ObstacleSpawnPoint {
@@ -104,6 +104,14 @@ function spawnFreeSki(
 
     tryAdd(points, { kind, variant, worldX, worldY });
   }
+
+  // Rare star powerup — ~30% chance per chunk
+  if (rng.next() < 0.30) {
+    const starX = rng.range(X_MIN + 60, X_MAX - 60);
+    const starY = worldYStart + CHUNK_GRACE_Y + rng.range(0, CHUNK_HEIGHT - CHUNK_GRACE_Y * 2);
+    tryAdd(points, { kind: 'star', variant: 'normal', worldX: starX, worldY: starY });
+  }
+
   points.sort((a, b) => a.worldY - b.worldY);
   return points;
 }
@@ -122,6 +130,8 @@ function spawnSlalom(
 
   const gatesInChunk = Math.floor((CHUNK_HEIGHT - CHUNK_GRACE_Y * 2) / GATE_SPACING);
 
+  const gatePositions: Array<{ worldX: number; worldY: number }> = [];
+
   for (let g = 0; g < gatesInChunk; g++) {
     const absGateIndex = chunkIndex * gatesInChunk + g;
     // Chunk 0 is always skipped for slalom, so gate indices start at gatesInChunk.
@@ -136,6 +146,17 @@ function spawnSlalom(
     const worldY           = worldYStart + CHUNK_GRACE_Y + g * GATE_SPACING + rng.range(-GATE_Y_JITTER, GATE_Y_JITTER);
     const isFinish         = gateNumber === totalGates - 1;
     points.push({ kind: 'gate', variant: color, worldX, worldY, gateNumber: gateNumber + 1, ...(isFinish && { isFinish: true }) });
+    gatePositions.push({ worldX, worldY });
+  }
+
+  // Lightning speed powerup — ~30% chance per gate, placed below the gate
+  for (const gate of gatePositions) {
+    if (rng.next() < 0.30) {
+      const lightningY = gate.worldY + GATE_SPACING + rng.range(-60, 60);
+      const centreX = WORLD_WIDTH / 2;
+      const lightningX = centreX + rng.range(-150, 150);
+      tryAdd(points, { kind: 'lightning', variant: 'normal', worldX: lightningX, worldY: lightningY });
+    }
   }
 
   points.sort((a, b) => a.worldY - b.worldY);
@@ -249,13 +270,13 @@ export function spawnObstacles(
   let course: ObstacleSpawnPoint[];
   switch (mode) {
     case GameMode.Slalom:
-      course = chunkIndex === 0 ? [] : spawnSlalom(chunkIndex, chunkSeed, totalSlalomGates);
+      course = chunkIndex <= 0 ? [] : spawnSlalom(chunkIndex, chunkSeed, totalSlalomGates);
       break;
     case GameMode.Jump:
       course = spawnJump(chunkIndex, chunkSeed, rampFrequency);
       break;
     default: // FreeSki
-      course = chunkIndex === 0 ? [] : spawnFreeSki(chunkIndex, chunkSeed);
+      course = chunkIndex <= 0 ? [] : spawnFreeSki(chunkIndex, chunkSeed);
       break;
   }
 

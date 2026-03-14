@@ -7,6 +7,7 @@ import { addVersionLabel, addUsernameLabel } from '@/ui/versionLabel';
 import { HighScoreManager } from '@/data/HighScoreManager';
 import { formatRaceTime } from '@/utils/MathUtils';
 import { type MenuNavItem } from '@/ui/MenuNav';
+import { fetchTopScores } from '@/services/LeaderboardService';
 
 const MODES = [GameMode.Slalom, GameMode.FreeSki, GameMode.Jump];
 export class ModeSelectScene extends Phaser.Scene {
@@ -38,6 +39,15 @@ export class ModeSelectScene extends Phaser.Scene {
     let isBack = false;
     let cardFocused = false;
 
+    const cardContainers: Phaser.GameObjects.Container[] = [];
+
+    const dimOtherCards = (activeIdx: number): void => {
+      cardContainers.forEach((c, j) => c.setAlpha(j === activeIdx ? 1 : 0.75));
+      backContainer.setAlpha(0.6);
+    };
+    const dimAllCards = (): void => {
+      cardContainers.forEach(c => c.setAlpha(0.6));
+    };
     const cardItems: MenuNavItem[] = MODES.map((mode, i) => {
       const cfg = GAME_MODE_CONFIGS[mode];
       const cx = startX + i * (cardW + spacing);
@@ -46,16 +56,75 @@ export class ModeSelectScene extends Phaser.Scene {
         const session: SessionConfig = { mode, seed: Date.now() };
         this.scene.stop(SceneKey.MainMenu);
         this.scene.start(SceneKey.Game, { session });
-      }, () => { cardIndex = i; isBack = false; cardFocused = false; });
+      }, () => {
+        backItem.setFocus(false);
+        cardItems.forEach((item, j) => { if (j !== i) item.setFocus(false); });
+        cardIndex = i; isBack = false; cardFocused = false;
+        dimOtherCards(i);
+      }, () => {
+        cardItems.forEach(item => item.setFocus(false));
+        backContainer.setAlpha(1);
+      }, cardContainers);
     });
 
-    // Back button — centred, full styled button
-    const backItem = this.createNavButton(WORLD_WIDTH / 2, BACK_BTN_Y + 40, 400, 110, 'back', () => {
-      this.scene.stop(); this.scene.resume(SceneKey.MainMenu);
-    }, () => {
+    // Back button — card-styled with pulse + underline (no glow)
+    const backGoTo = () => { this.scene.stop(); this.scene.resume(SceneKey.MainMenu); };
+    const backW = 350;
+    const backH = 90;
+    const backX = startX - cardW / 2 + backW / 2;
+    const backBtnY = BACK_BTN_Y + 15;
+    const backContainer = this.add.container(backX, backBtnY);
+    const backBg = this.add.graphics();
+    const backLabel = this.add.text(0, 0, '← back', {
+      fontFamily: 'FoxwhelpFont',
+      fontSize:   '60px',
+      color:      COLORS.UI_TITLE,
+    }).setOrigin(0.5);
+    backContainer.add([backBg, backLabel]);
+
+    let backPulseTween: Phaser.Tweens.Tween | null = null;
+    const startBackPulse = (): void => {
+      if (!backPulseTween) backPulseTween = this.tweens.add({ targets: backContainer, scaleX: 1.05, scaleY: 1.05, duration: 550, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+    };
+    const stopBackPulse = (): void => {
+      if (backPulseTween) { backPulseTween.stop(); backPulseTween = null; backContainer.setScale(1); }
+    };
+
+    const drawBackBg = (hovered: boolean): void => {
+      backBg.clear();
+      backBg.fillStyle(hovered ? COLORS.CARD_HOVER : COLORS.CARD, 1);
+      backBg.lineStyle(3, COLORS.BTN, 1);
+      backBg.fillRoundedRect(-backW / 2, -backH / 2, backW, backH, 12);
+      backBg.strokeRoundedRect(-backW / 2, -backH / 2, backW, backH, 12);
+      backLabel.setFontStyle(hovered ? 'bold' : '');
+    };
+    drawBackBg(false);
+
+    const backHit = this.add.rectangle(backX, backBtnY, backW, backH).setInteractive({ useHandCursor: true });
+    backHit.on('pointerover', () => {
       cardItems.forEach(item => item.setFocus(false));
       isBack = true; cardFocused = false;
+      drawBackBg(true); startBackPulse();
+      dimAllCards();
+      backContainer.setAlpha(1);
     });
+    backHit.on('pointerout',  () => { drawBackBg(false); stopBackPulse(); cardContainers.forEach(c => c.setAlpha(1)); backContainer.setAlpha(1); });
+    const flashAndGoBack = (): void => {
+      stopBackPulse();
+      backBg.clear();
+      backBg.fillStyle(0xffffff, 1);
+      backBg.fillRoundedRect(-backW / 2, -backH / 2, backW, backH, 12);
+      this.tweens.add({ targets: backContainer, scaleX: 1.07, scaleY: 1.07, duration: 55, ease: 'Quad.easeOut', yoyo: true, onComplete: backGoTo });
+    };
+    backHit.on('pointerdown', flashAndGoBack);
+
+    const backItem: MenuNavItem = {
+      setFocus: (f) => {
+        drawBackBg(f);
+        if (f) startBackPulse(); else stopBackPulse();
+      },
+      activate: flashAndGoBack,
+    };
 
     if (this.input.keyboard) {
       const kb = this.input.keyboard;
@@ -64,118 +133,49 @@ export class ModeSelectScene extends Phaser.Scene {
         cardItems[cardIndex]!.setFocus(false);
         backItem.setFocus(true);
         isBack = true; cardFocused = false;
+        dimAllCards();
+        backContainer.setAlpha(1);
       };
       const focusCards = (): void => {
         backItem.setFocus(false);
         cardFocused = true; isBack = false;
         cardItems[cardIndex]!.setFocus(true);
+        dimOtherCards(cardIndex);
       };
 
       kb.on('keydown-LEFT', () => {
         if (isBack) return;
-        if (!cardFocused) { cardFocused = true; cardItems[cardIndex]!.setFocus(true); return; }
+        if (!cardFocused) { cardFocused = true; cardItems[cardIndex]!.setFocus(true); dimOtherCards(cardIndex); return; }
         cardItems[cardIndex]!.setFocus(false);
         cardIndex = (cardIndex - 1 + MODES.length) % MODES.length;
         cardItems[cardIndex]!.setFocus(true);
+        dimOtherCards(cardIndex);
       });
       kb.on('keydown-RIGHT', () => {
         if (isBack) return;
-        if (!cardFocused) { cardFocused = true; cardItems[cardIndex]!.setFocus(true); return; }
+        if (!cardFocused) { cardFocused = true; cardItems[cardIndex]!.setFocus(true); dimOtherCards(cardIndex); return; }
         cardItems[cardIndex]!.setFocus(false);
         cardIndex = (cardIndex + 1) % MODES.length;
         cardItems[cardIndex]!.setFocus(true);
+        dimOtherCards(cardIndex);
       });
       kb.on('keydown-DOWN', () => {
         if (isBack)         focusCards();
         else if (cardFocused) focusBack();
-        else                { cardFocused = true; cardItems[cardIndex]!.setFocus(true); }
+        else                { cardFocused = true; cardItems[cardIndex]!.setFocus(true); dimOtherCards(cardIndex); }
       });
       kb.on('keydown-UP', () => {
         if (isBack)         focusCards();
         else if (cardFocused) focusBack();
-        else                { cardFocused = true; cardItems[cardIndex]!.setFocus(true); }
+        else                { cardFocused = true; cardItems[cardIndex]!.setFocus(true); dimOtherCards(cardIndex); }
       });
       kb.on('keydown-SPACE', () => { isBack ? backItem.activate() : cardItems[cardIndex]!.activate(); });
       kb.on('keydown-ENTER', () => { isBack ? backItem.activate() : cardItems[cardIndex]!.activate(); });
       kb.on('keydown-ESC',   () => { this.scene.stop(); this.scene.resume(SceneKey.MainMenu); });
     }
 
-    addVersionLabel(this);
-    addUsernameLabel(this);
-  }
-
-  private createNavButton(
-    x: number, y: number,
-    w: number, h: number,
-    label: string,
-    onClick: () => void,
-    onHover?: () => void,
-  ): MenuNavItem {
-    const GLOW_LAYERS = [
-      { pad: 42, alpha: 0.04 },
-      { pad: 28, alpha: 0.08 },
-      { pad: 18, alpha: 0.13 },
-      { pad: 10, alpha: 0.18 },
-      { pad:  4, alpha: 0.24 },
-    ] as const;
-
-    const container = this.add.container(x, y);
-    const glowGfx   = this.add.graphics();
-    const bg        = this.add.graphics();
-    const labelText = this.add.text(0, 0, label, {
-      fontFamily: 'FoxwhelpFont',
-      fontSize:   '70px',
-      fontStyle:  'bold',
-      color:      COLORS.UI_TITLE,
-    }).setOrigin(0.5);
-    container.add([glowGfx, bg, labelText]);
-
-    const drawGlow = (on: boolean): void => {
-      glowGfx.clear();
-      if (!on) return;
-      for (const { pad, alpha } of GLOW_LAYERS) {
-        glowGfx.fillStyle(0xaaddff, alpha);
-        glowGfx.fillRoundedRect(-w / 2 - pad, -h / 2 - pad, w + pad * 2, h + pad * 2, 15 + pad);
-      }
-    };
-    const drawBg = (hovered: boolean): void => {
-      bg.clear();
-      bg.fillStyle(hovered ? COLORS.CARD_HOVER : COLORS.CARD, 1);
-      bg.lineStyle(3, COLORS.BTN, 1);
-      bg.fillRoundedRect(-w / 2, -h / 2, w, h, 15);
-      bg.strokeRoundedRect(-w / 2, -h / 2, w, h, 15);
-      labelText.setText(hovered ? `~ ${label} ~` : label);
-    };
-    drawBg(false);
-
-    let pulseTween: Phaser.Tweens.Tween | null = null;
-    const startPulse = (): void => {
-      if (!pulseTween) pulseTween = this.tweens.add({ targets: container, scaleX: 1.05, scaleY: 1.05, duration: 550, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
-    };
-    const stopPulse = (): void => {
-      if (pulseTween) { pulseTween.stop(); pulseTween = null; container.setScale(1); }
-    };
-    const flashAndGo = (): void => {
-      stopPulse();
-      bg.clear();
-      bg.fillStyle(0xddf4ff, 1);
-      bg.fillRoundedRect(-w / 2, -h / 2, w, h, 15);
-      labelText.setColor('#2a5ab8');
-      this.tweens.add({ targets: container, scaleX: 1.07, scaleY: 1.07, duration: 55, ease: 'Quad.easeOut', yoyo: true, onComplete: onClick });
-    };
-
-    const hit = this.add.rectangle(x, y, w, h).setInteractive({ useHandCursor: true });
-    hit.on('pointerover', () => { onHover?.(); drawGlow(true); drawBg(true); startPulse(); });
-    hit.on('pointerout',  () => { drawGlow(false); drawBg(false); stopPulse(); });
-    hit.on('pointerdown', flashAndGo);
-
-    return {
-      setFocus: (f) => {
-        drawGlow(f); drawBg(f);
-        if (f) startPulse(); else stopPulse();
-      },
-      activate: flashAndGo,
-    };
+    addVersionLabel(this, COLORS.VERSION_GAME);
+    addUsernameLabel(this, COLORS.VERSION_GAME);
   }
 
   private createModeCard(
@@ -188,6 +188,8 @@ export class ModeSelectScene extends Phaser.Scene {
     desc: string,
     onClick: () => void,
     onHover?: () => void,
+    onLeave?: () => void,
+    containerList?: Phaser.GameObjects.Container[],
   ): MenuNavItem {
     const GLOW_LAYERS = [
       { pad: 42, alpha: 0.04 },
@@ -198,15 +200,16 @@ export class ModeSelectScene extends Phaser.Scene {
     ] as const;
 
     const container  = this.add.container(cx, cy);
+    containerList?.push(container);
     const glowGfx    = this.add.graphics();
     const bg         = this.add.graphics();
-    const titleText  = this.add.text(0, -h / 2 + 145, title, {
+    const titleText  = this.add.text(0, -h / 2 + 85, title, {
       fontFamily: 'FoxwhelpFont',
       fontSize: '100px',
       fontStyle: 'bold',
-      color: COLORS.UI_TITLE,
+      color: this.modeColorStr(mode),
     }).setOrigin(0.5);
-    const descText   = this.add.text(0, -h / 2 + 220, desc, {
+    const descText   = this.add.text(0, -h / 2 + 160, desc, {
       fontFamily: 'FoxwhelpFont',
       fontSize: '50px',
       color: COLORS.UI_SUBTITLE,
@@ -214,21 +217,47 @@ export class ModeSelectScene extends Phaser.Scene {
       align: 'center',
     }).setOrigin(0.5, 0);
     const illustGfx  = this.drawModeIllustration(mode);
-    const bestText   = this.add.text(0, 225, this.bestLabel(mode), {
+    const statStyle = {
       fontFamily: 'FoxwhelpFont',
       fontSize: '38px',
       fontStyle: 'bold italic',
       color: COLORS.UI_SUBTITLE,
       align: 'center',
-    }).setOrigin(0.5, 1);
-    const dailyText  = this.add.text(0, 275, this.dailyLabel(mode), {
-      fontFamily: 'FoxwhelpFont',
-      fontSize: '38px',
-      fontStyle: 'bold italic',
-      color: COLORS.UI_SUBTITLE,
-      align: 'center',
-    }).setOrigin(0.5, 1);
-    container.add([glowGfx, bg, illustGfx, titleText, descText, bestText, dailyText]);
+      padding: { right: 16 },
+    } as const;
+    const dailyLabel   = this.dailyLabel(mode);
+    const bestLabel    = this.bestLabel(mode);
+    const hasDaily     = !dailyLabel.startsWith('no ');
+    const hasBest      = !bestLabel.startsWith('no ');
+    const DB_COLOR = '#88ee88';
+    const PB_COLOR = COLORS.POPUP_GOLD;
+    const WR_COLOR = '#ff4444';
+    const dailyText    = this.add.text(0, 155, dailyLabel, statStyle).setOrigin(0.5, 1).setAlpha(hasDaily ? 1 : 0.5);
+    if (hasDaily) { dailyText.setColor(DB_COLOR); dailyText.setStroke('#000000', 6); }
+    const bestText     = this.add.text(0, 205, bestLabel, statStyle).setOrigin(0.5, 1).setAlpha(hasBest ? 1 : 0.5);
+    if (hasBest) { bestText.setColor(PB_COLOR); bestText.setStroke('#000000', 6); }
+    const wrText       = this.add.text(0, 255, 'world record: ...', statStyle).setOrigin(0.5, 1);
+    const wrHolderText = this.add.text(0, 295, '', statStyle).setOrigin(0.5, 1);
+    let hasWR = false;
+    container.add([glowGfx, bg, illustGfx, titleText, descText, bestText, dailyText, wrText, wrHolderText]);
+
+    fetchTopScores(mode)
+      .then(rows => {
+        if (!this.scene.isActive()) return;
+        if (rows.length === 0) {
+          hasWR = false;
+          wrText.setText('no world record yet').setAlpha(0.5);
+        } else {
+          hasWR = true;
+          const top = rows[0]!;
+          wrText.setText(`world record: ${this.formatScore(mode, top.score)}`).setColor(WR_COLOR).setStroke('#000000', 4);
+          wrHolderText.setText(`by ${top.username}`).setColor(WR_COLOR).setStroke('#000000', 6);
+        }
+      })
+      .catch(() => {
+        hasWR = false;
+        if (this.scene.isActive()) wrText.setText('world record: unavailable').setAlpha(0.5);
+      });
 
     const drawGlow = (on: boolean): void => {
       glowGfx.clear();
@@ -238,13 +267,21 @@ export class ModeSelectScene extends Phaser.Scene {
         glowGfx.fillRoundedRect(-w / 2 - pad, -h / 2 - pad, w + pad * 2, h + pad * 2, 18 + pad);
       }
     };
+    const statTexts = [dailyText, bestText, wrText, wrHolderText];
     const draw = (hovered: boolean): void => {
       bg.clear();
       bg.fillStyle(hovered ? COLORS.CARD_HOVER : COLORS.CARD, 1);
       bg.lineStyle(3, COLORS.BTN, 1);
       bg.fillRoundedRect(-w / 2, -h / 2, w, h, 12);
       bg.strokeRoundedRect(-w / 2, -h / 2, w, h, 12);
-      titleText.setText(hovered ? `~ ${title} ~` : title);
+      titleText.setText(title);
+    };
+    const setDimmed = (dimmed: boolean): void => {
+      for (const t of statTexts) {
+        const noRecord = (t === dailyText && !hasDaily) || (t === bestText && !hasBest) || ((t === wrText || t === wrHolderText) && !hasWR);
+        const baseAlpha = noRecord ? 0.5 : 1;
+        t.setAlpha(dimmed ? baseAlpha * 0.5 : baseAlpha);
+      }
     };
     draw(false);
 
@@ -258,22 +295,24 @@ export class ModeSelectScene extends Phaser.Scene {
     const flashAndGo = (): void => {
       stopPulse();
       bg.clear();
-      bg.fillStyle(0xddf4ff, 1);
+      bg.fillStyle(0xffffff, 1);
       bg.fillRoundedRect(-w / 2, -h / 2, w, h, 12);
-      titleText.setColor('#2a5ab8');
+      titleText.setColor(COLORS.UI_TITLE);
+      descText.setColor(COLORS.UI_TITLE);
       this.tweens.add({ targets: container, scaleX: 1.07, scaleY: 1.07, duration: 55, ease: 'Quad.easeOut', yoyo: true, onComplete: onClick });
     };
 
     // Hit area stays outside the container so it doesn't scale with it
     const hit = this.add.rectangle(cx, cy, w, h).setInteractive({ useHandCursor: true });
-    hit.on('pointerover', () => { onHover?.(); drawGlow(true); draw(true); startPulse(); });
-    hit.on('pointerout',  () => { drawGlow(false); draw(false); stopPulse(); });
+    hit.on('pointerover', () => { onHover?.(); drawGlow(true); draw(true); setDimmed(false); startPulse(); });
+    hit.on('pointerout',  () => { drawGlow(false); draw(false); setDimmed(false); stopPulse(); containerList?.forEach(c => c.setAlpha(1)); onLeave?.(); });
     hit.on('pointerdown', flashAndGo);
 
     return {
       setFocus: (f) => {
-        drawGlow(f); draw(f);
+        drawGlow(f); draw(f); setDimmed(!f);
         if (f) startPulse(); else stopPulse();
+        container.setAlpha(1);
       },
       activate: flashAndGo,
     };
@@ -281,11 +320,11 @@ export class ModeSelectScene extends Phaser.Scene {
 
   private dailyLabel(mode: GameMode): string {
     const best = HighScoreManager.getDailyBest(mode);
-    if (!best) return 'daily: —';
+    if (!best) return 'no daily best yet';
     switch (mode) {
-      case GameMode.FreeSki: return `daily: ${best.distance.toLocaleString()} m`;
-      case GameMode.Slalom:  return best.timeMs !== undefined ? `daily: ${formatRaceTime(best.timeMs)}` : 'daily: —';
-      case GameMode.Jump:    return `daily: ${best.score}`;
+      case GameMode.FreeSki: return `daily best: ${best.distance.toLocaleString()} m`;
+      case GameMode.Slalom:  return best.timeMs !== undefined ? `daily best: ${formatRaceTime(best.timeMs)}` : 'no daily best yet';
+      case GameMode.Jump:    return `daily best: ${best.score}`;
     }
   }
 
@@ -296,6 +335,20 @@ export class ModeSelectScene extends Phaser.Scene {
       case GameMode.FreeSki: return `personal best: ${best.distance.toLocaleString()} m`;
       case GameMode.Slalom:  return best.timeMs !== undefined ? `personal best: ${formatRaceTime(best.timeMs)}` : 'no personal best yet';
       case GameMode.Jump:    return `personal best: ${best.score}`;
+    }
+  }
+
+  private modeColorStr(mode: GameMode): string {
+    if (mode === GameMode.Slalom) return '#e63030';
+    if (mode === GameMode.Jump)   return '#3a7a32';
+    return COLORS.UI_TITLE;
+  }
+
+  private formatScore(mode: GameMode, score: number): string {
+    switch (mode) {
+      case GameMode.FreeSki: return `${score.toLocaleString()} m`;
+      case GameMode.Slalom:  return formatRaceTime(score);
+      case GameMode.Jump:    return `${score}`;
     }
   }
 
@@ -320,7 +373,7 @@ export class ModeSelectScene extends Phaser.Scene {
     const g  = this.add.graphics();
     const s  = 3.0;
     const cx = 0;
-    const oy = 115;  // shift so visual mass sits in lower card half
+    const oy = 35;   // shift so visual mass sits in lower card half
 
     g.fillStyle(0x000000, 0.12);
     g.fillEllipse(cx + 4 * s, oy + 10 * s, 28 * s, 10 * s);
@@ -352,7 +405,7 @@ export class ModeSelectScene extends Phaser.Scene {
     const poleH    = 84;
     const bannerH  = 21;
     const cx       = 0;
-    const oy       = 110;
+    const oy       = 30;
 
     g.fillStyle(0x000000, 0.12);
     g.fillEllipse(cx - halfGap, oy + poleH / 2 + 4, halfPole * 4, 8);
@@ -390,7 +443,7 @@ export class ModeSelectScene extends Phaser.Scene {
     const hd   = (RAMP_D / 2) * s;
     const lipH = 7 * s;
     const cx   = 0;
-    const oy   = 105;
+    const oy   = 25;
 
     g.fillStyle(0x000000, 0.18);
     g.fillRoundedRect(cx - hw + 4 * s, oy + hd - 2 * s, RAMP_W * s, 10 * s, 4);

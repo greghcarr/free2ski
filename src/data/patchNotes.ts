@@ -6,6 +6,18 @@ export interface PatchEntry {
 
 export const PATCH_NOTES: PatchEntry[] = [
   {
+    version: 'v0.4.0-pre-alpha',
+    date:    'Mar 14, 2026',
+    notes: [
+      'star (free ski) and lightning bolt (slalom) powerups — collect stars for invincibility, lightning bolts for a speed boost',
+      'slalom gates redesigned, allow collision',
+      'jump mode awards bonus points for flying over trees mid-air',
+      'live score badges during gameplay',
+      'daily leaderboards',
+      'UI tweaks galore',
+    ],
+  },
+  {
     version: 'v0.3.10.1-pre-alpha',
     date:    'Mar 12, 2026',
     notes: [

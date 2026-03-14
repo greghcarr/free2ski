@@ -42,6 +42,10 @@ export class PreloadScene extends Phaser.Scene {
 
   create(): void {
     HighScoreManager.submitLegacyScores(submitRun).catch(() => {});
+    if (DEBUG.gameSceneMode !== null) {
+      this.scene.start(SceneKey.Game, { session: { mode: DEBUG.gameSceneMode } });
+      return;
+    }
     if (DEBUG.gameOverMode !== null) {
       this.scene.start(SceneKey.GameOver, buildDebugGameOverData(DEBUG.gameOverMode));
       return;
